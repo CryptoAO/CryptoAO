@@ -1,0 +1,562 @@
+[
+  {
+    "id": "vault_001",
+    "title": "k_phonics item 1",
+    "grade": "K",
+    "subject": "Reading",
+    "skill_id": "k_phonics",
+    "body": "Sound match: the letter a says /a/."
+  },
+  {
+    "id": "vault_002",
+    "title": "k_phonics item 2",
+    "grade": "K",
+    "subject": "Reading",
+    "skill_id": "k_phonics",
+    "body": "Sound match: the letter b says /b/."
+  },
+  {
+    "id": "vault_003",
+    "title": "k_phonics item 3",
+    "grade": "K",
+    "subject": "Reading",
+    "skill_id": "k_phonics",
+    "body": "Sound match: the letter c says /c/."
+  },
+  {
+    "id": "vault_004",
+    "title": "k_phonics item 4",
+    "grade": "K",
+    "subject": "Reading",
+    "skill_id": "k_phonics",
+    "body": "Sound match: the letter d says /d/."
+  },
+  {
+    "id": "vault_005",
+    "title": "k_phonics item 5",
+    "grade": "K",
+    "subject": "Reading",
+    "skill_id": "k_phonics",
+    "body": "Sound match: the letter e says /e/."
+  },
+  {
+    "id": "vault_006",
+    "title": "k_counting item 1",
+    "grade": "K",
+    "subject": "Math",
+    "skill_id": "k_counting",
+    "body": "Count to 2 using objects."
+  },
+  {
+    "id": "vault_007",
+    "title": "k_counting item 2",
+    "grade": "K",
+    "subject": "Math",
+    "skill_id": "k_counting",
+    "body": "Count to 4 using objects."
+  },
+  {
+    "id": "vault_008",
+    "title": "k_counting item 3",
+    "grade": "K",
+    "subject": "Math",
+    "skill_id": "k_counting",
+    "body": "Count to 6 using objects."
+  },
+  {
+    "id": "vault_009",
+    "title": "k_counting item 4",
+    "grade": "K",
+    "subject": "Math",
+    "skill_id": "k_counting",
+    "body": "Count to 8 using objects."
+  },
+  {
+    "id": "vault_010",
+    "title": "k_counting item 5",
+    "grade": "K",
+    "subject": "Math",
+    "skill_id": "k_counting",
+    "body": "Count to 10 using objects."
+  },
+  {
+    "id": "vault_011",
+    "title": "k_shapes item 1",
+    "grade": "K",
+    "subject": "Math",
+    "skill_id": "k_shapes",
+    "body": "A triangle has 3 sides."
+  },
+  {
+    "id": "vault_012",
+    "title": "k_shapes item 2",
+    "grade": "K",
+    "subject": "Math",
+    "skill_id": "k_shapes",
+    "body": "A square has 4 sides."
+  },
+  {
+    "id": "vault_013",
+    "title": "k_shapes item 3",
+    "grade": "K",
+    "subject": "Math",
+    "skill_id": "k_shapes",
+    "body": "A rectangle has 4 sides."
+  },
+  {
+    "id": "vault_014",
+    "title": "k_shapes item 4",
+    "grade": "K",
+    "subject": "Math",
+    "skill_id": "k_shapes",
+    "body": "A pentagon has 5 sides."
+  },
+  {
+    "id": "vault_015",
+    "title": "k_shapes item 5",
+    "grade": "K",
+    "subject": "Math",
+    "skill_id": "k_shapes",
+    "body": "A hexagon has 6 sides."
+  },
+  {
+    "id": "vault_016",
+    "title": "g1_addition item 1",
+    "grade": "1",
+    "subject": "Math",
+    "skill_id": "g1_addition",
+    "body": "Add 2 + 1 by counting on."
+  },
+  {
+    "id": "vault_017",
+    "title": "g1_addition item 2",
+    "grade": "1",
+    "subject": "Math",
+    "skill_id": "g1_addition",
+    "body": "Add 3 + 2 by counting on."
+  },
+  {
+    "id": "vault_018",
+    "title": "g1_addition item 3",
+    "grade": "1",
+    "subject": "Math",
+    "skill_id": "g1_addition",
+    "body": "Add 4 + 3 by counting on."
+  },
+  {
+    "id": "vault_019",
+    "title": "g1_addition item 4",
+    "grade": "1",
+    "subject": "Math",
+    "skill_id": "g1_addition",
+    "body": "Add 5 + 4 by counting on."
+  },
+  {
+    "id": "vault_020",
+    "title": "g1_addition item 5",
+    "grade": "1",
+    "subject": "Math",
+    "skill_id": "g1_addition",
+    "body": "Add 6 + 5 by counting on."
+  },
+  {
+    "id": "vault_021",
+    "title": "g1_subtraction item 1",
+    "grade": "1",
+    "subject": "Math",
+    "skill_id": "g1_subtraction",
+    "body": "Subtract 1 from 6 by counting back."
+  },
+  {
+    "id": "vault_022",
+    "title": "g1_subtraction item 2",
+    "grade": "1",
+    "subject": "Math",
+    "skill_id": "g1_subtraction",
+    "body": "Subtract 2 from 7 by counting back."
+  },
+  {
+    "id": "vault_023",
+    "title": "g1_subtraction item 3",
+    "grade": "1",
+    "subject": "Math",
+    "skill_id": "g1_subtraction",
+    "body": "Subtract 3 from 8 by counting back."
+  },
+  {
+    "id": "vault_024",
+    "title": "g1_subtraction item 4",
+    "grade": "1",
+    "subject": "Math",
+    "skill_id": "g1_subtraction",
+    "body": "Subtract 4 from 9 by counting back."
+  },
+  {
+    "id": "vault_025",
+    "title": "g1_subtraction item 5",
+    "grade": "1",
+    "subject": "Math",
+    "skill_id": "g1_subtraction",
+    "body": "Subtract 5 from 10 by counting back."
+  },
+  {
+    "id": "vault_026",
+    "title": "g1_sight_words item 1",
+    "grade": "1",
+    "subject": "Reading",
+    "skill_id": "g1_sight_words",
+    "body": "Sight word: the."
+  },
+  {
+    "id": "vault_027",
+    "title": "g1_sight_words item 2",
+    "grade": "1",
+    "subject": "Reading",
+    "skill_id": "g1_sight_words",
+    "body": "Sight word: and."
+  },
+  {
+    "id": "vault_028",
+    "title": "g1_sight_words item 3",
+    "grade": "1",
+    "subject": "Reading",
+    "skill_id": "g1_sight_words",
+    "body": "Sight word: to."
+  },
+  {
+    "id": "vault_029",
+    "title": "g1_sight_words item 4",
+    "grade": "1",
+    "subject": "Reading",
+    "skill_id": "g1_sight_words",
+    "body": "Sight word: you."
+  },
+  {
+    "id": "vault_030",
+    "title": "g1_sight_words item 5",
+    "grade": "1",
+    "subject": "Reading",
+    "skill_id": "g1_sight_words",
+    "body": "Sight word: are."
+  },
+  {
+    "id": "vault_031",
+    "title": "g2_multiplication item 1",
+    "grade": "2",
+    "subject": "Math",
+    "skill_id": "g2_multiplication",
+    "body": "Multiplication means equal groups: 2 groups of 2."
+  },
+  {
+    "id": "vault_032",
+    "title": "g2_multiplication item 2",
+    "grade": "2",
+    "subject": "Math",
+    "skill_id": "g2_multiplication",
+    "body": "Multiplication means equal groups: 3 groups of 2."
+  },
+  {
+    "id": "vault_033",
+    "title": "g2_multiplication item 3",
+    "grade": "2",
+    "subject": "Math",
+    "skill_id": "g2_multiplication",
+    "body": "Multiplication means equal groups: 4 groups of 2."
+  },
+  {
+    "id": "vault_034",
+    "title": "g2_multiplication item 4",
+    "grade": "2",
+    "subject": "Math",
+    "skill_id": "g2_multiplication",
+    "body": "Multiplication means equal groups: 5 groups of 2."
+  },
+  {
+    "id": "vault_035",
+    "title": "g2_multiplication item 5",
+    "grade": "2",
+    "subject": "Math",
+    "skill_id": "g2_multiplication",
+    "body": "Multiplication means equal groups: 6 groups of 2."
+  },
+  {
+    "id": "vault_036",
+    "title": "g2_reading_fluency item 1",
+    "grade": "2",
+    "subject": "Reading",
+    "skill_id": "g2_reading_fluency",
+    "body": "Read the sentence and find the main idea."
+  },
+  {
+    "id": "vault_037",
+    "title": "g2_reading_fluency item 2",
+    "grade": "2",
+    "subject": "Reading",
+    "skill_id": "g2_reading_fluency",
+    "body": "Read the sentence and find the main idea."
+  },
+  {
+    "id": "vault_038",
+    "title": "g2_reading_fluency item 3",
+    "grade": "2",
+    "subject": "Reading",
+    "skill_id": "g2_reading_fluency",
+    "body": "Read the sentence and find the main idea."
+  },
+  {
+    "id": "vault_039",
+    "title": "g2_reading_fluency item 4",
+    "grade": "2",
+    "subject": "Reading",
+    "skill_id": "g2_reading_fluency",
+    "body": "Read the sentence and find the main idea."
+  },
+  {
+    "id": "vault_040",
+    "title": "g2_reading_fluency item 5",
+    "grade": "2",
+    "subject": "Reading",
+    "skill_id": "g2_reading_fluency",
+    "body": "Read the sentence and find the main idea."
+  },
+  {
+    "id": "vault_041",
+    "title": "g3_fractions item 1",
+    "grade": "3",
+    "subject": "Math",
+    "skill_id": "g3_fractions",
+    "body": "A fraction shows parts of a whole: 1/2."
+  },
+  {
+    "id": "vault_042",
+    "title": "g3_fractions item 2",
+    "grade": "3",
+    "subject": "Math",
+    "skill_id": "g3_fractions",
+    "body": "A fraction shows parts of a whole: 2/3."
+  },
+  {
+    "id": "vault_043",
+    "title": "g3_fractions item 3",
+    "grade": "3",
+    "subject": "Math",
+    "skill_id": "g3_fractions",
+    "body": "A fraction shows parts of a whole: 3/4."
+  },
+  {
+    "id": "vault_044",
+    "title": "g3_fractions item 4",
+    "grade": "3",
+    "subject": "Math",
+    "skill_id": "g3_fractions",
+    "body": "A fraction shows parts of a whole: 4/5."
+  },
+  {
+    "id": "vault_045",
+    "title": "g3_fractions item 5",
+    "grade": "3",
+    "subject": "Math",
+    "skill_id": "g3_fractions",
+    "body": "A fraction shows parts of a whole: 5/6."
+  },
+  {
+    "id": "vault_046",
+    "title": "g3_science item 1",
+    "grade": "3",
+    "subject": "Science",
+    "skill_id": "g3_science",
+    "body": "Science fact: Water can change from liquid to gas.."
+  },
+  {
+    "id": "vault_047",
+    "title": "g3_science item 2",
+    "grade": "3",
+    "subject": "Science",
+    "skill_id": "g3_science",
+    "body": "Science fact: Plants make food with sunlight.."
+  },
+  {
+    "id": "vault_048",
+    "title": "g3_science item 3",
+    "grade": "3",
+    "subject": "Science",
+    "skill_id": "g3_science",
+    "body": "Science fact: Forces can push or pull.."
+  },
+  {
+    "id": "vault_049",
+    "title": "g3_science item 4",
+    "grade": "3",
+    "subject": "Science",
+    "skill_id": "g3_science",
+    "body": "Science fact: The Earth orbits the Sun.."
+  },
+  {
+    "id": "vault_050",
+    "title": "g3_science item 5",
+    "grade": "3",
+    "subject": "Science",
+    "skill_id": "g3_science",
+    "body": "Science fact: Animals live in habitats.."
+  },
+  {
+    "id": "vault_051",
+    "title": "k_phonics item 51",
+    "grade": "K",
+    "subject": "Reading",
+    "skill_id": "k_phonics",
+    "body": "Blend the sounds to make cat."
+  },
+  {
+    "id": "vault_052",
+    "title": "k_phonics item 52",
+    "grade": "K",
+    "subject": "Reading",
+    "skill_id": "k_phonics",
+    "body": "Blend the sounds to make sun."
+  },
+  {
+    "id": "vault_053",
+    "title": "k_phonics item 53",
+    "grade": "K",
+    "subject": "Reading",
+    "skill_id": "k_phonics",
+    "body": "Blend the sounds to make map."
+  },
+  {
+    "id": "vault_054",
+    "title": "k_phonics item 54",
+    "grade": "K",
+    "subject": "Reading",
+    "skill_id": "k_phonics",
+    "body": "Blend the sounds to make bed."
+  },
+  {
+    "id": "vault_055",
+    "title": "k_phonics item 55",
+    "grade": "K",
+    "subject": "Reading",
+    "skill_id": "k_phonics",
+    "body": "Blend the sounds to make log."
+  },
+  {
+    "id": "vault_056",
+    "title": "g1_subtraction item 56",
+    "grade": "1",
+    "subject": "Math",
+    "skill_id": "g1_subtraction",
+    "body": "Subtract: 7 - 2."
+  },
+  {
+    "id": "vault_057",
+    "title": "g1_subtraction item 57",
+    "grade": "1",
+    "subject": "Math",
+    "skill_id": "g1_subtraction",
+    "body": "Subtract: 9 - 4."
+  },
+  {
+    "id": "vault_058",
+    "title": "g1_subtraction item 58",
+    "grade": "1",
+    "subject": "Math",
+    "skill_id": "g1_subtraction",
+    "body": "Subtract: 10 - 3."
+  },
+  {
+    "id": "vault_059",
+    "title": "g1_subtraction item 59",
+    "grade": "1",
+    "subject": "Math",
+    "skill_id": "g1_subtraction",
+    "body": "Subtract: 8 - 5."
+  },
+  {
+    "id": "vault_060",
+    "title": "g1_subtraction item 60",
+    "grade": "1",
+    "subject": "Math",
+    "skill_id": "g1_subtraction",
+    "body": "Subtract: 12 - 6."
+  },
+  {
+    "id": "vault_061",
+    "title": "g1_place_value item 61",
+    "grade": "1",
+    "subject": "Math",
+    "skill_id": "g1_place_value",
+    "body": "Place value: 23 has 2 tens and 3 ones."
+  },
+  {
+    "id": "vault_062",
+    "title": "g1_place_value item 62",
+    "grade": "1",
+    "subject": "Math",
+    "skill_id": "g1_place_value",
+    "body": "Place value: 41 has 4 tens and 1 ones."
+  },
+  {
+    "id": "vault_063",
+    "title": "g1_place_value item 63",
+    "grade": "1",
+    "subject": "Math",
+    "skill_id": "g1_place_value",
+    "body": "Place value: 58 has 5 tens and 8 ones."
+  },
+  {
+    "id": "vault_064",
+    "title": "g1_place_value item 64",
+    "grade": "1",
+    "subject": "Math",
+    "skill_id": "g1_place_value",
+    "body": "Place value: 32 has 3 tens and 2 ones."
+  },
+  {
+    "id": "vault_065",
+    "title": "g1_place_value item 65",
+    "grade": "1",
+    "subject": "Math",
+    "skill_id": "g1_place_value",
+    "body": "Place value: 67 has 6 tens and 7 ones."
+  },
+  {
+    "id": "vault_066",
+    "title": "g2_comprehension item 66",
+    "grade": "2",
+    "subject": "Reading",
+    "skill_id": "g2_comprehension",
+    "body": "Read the sentence and tell the main idea."
+  },
+  {
+    "id": "vault_067",
+    "title": "g2_comprehension item 67",
+    "grade": "2",
+    "subject": "Reading",
+    "skill_id": "g2_comprehension",
+    "body": "Read the sentence and tell the main idea."
+  },
+  {
+    "id": "vault_068",
+    "title": "g2_comprehension item 68",
+    "grade": "2",
+    "subject": "Reading",
+    "skill_id": "g2_comprehension",
+    "body": "Read the sentence and tell the main idea."
+  },
+  {
+    "id": "vault_069",
+    "title": "g2_comprehension item 69",
+    "grade": "2",
+    "subject": "Reading",
+    "skill_id": "g2_comprehension",
+    "body": "Read the sentence and tell the main idea."
+  },
+  {
+    "id": "vault_070",
+    "title": "g2_comprehension item 70",
+    "grade": "2",
+    "subject": "Reading",
+    "skill_id": "g2_comprehension",
+    "body": "Read the sentence and tell the main idea."
+  }
+]

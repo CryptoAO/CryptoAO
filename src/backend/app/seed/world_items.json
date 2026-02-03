@@ -1,0 +1,26 @@
+[
+  {
+    "id": "world_glow_mushroom",
+    "name": "Glow Mushroom",
+    "skill_id": "g1_addition",
+    "description": "A warm mushroom that lights the Haven path."
+  },
+  {
+    "id": "world_story_lantern",
+    "name": "Story Lantern",
+    "skill_id": "k_phonics",
+    "description": "A lantern that shines when you read a word."
+  },
+  {
+    "id": "world_word_bricks",
+    "name": "Word Bricks",
+    "skill_id": "k_phonics",
+    "description": "Colorful bricks that build new words."
+  },
+  {
+    "id": "world_story_fountain",
+    "name": "Story Fountain",
+    "skill_id": "g2_comprehension",
+    "description": "A fountain that sparkles when you understand a story."
+  }
+]
