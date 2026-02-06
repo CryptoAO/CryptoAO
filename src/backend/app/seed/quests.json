@@ -1,0 +1,140 @@
+[
+  {
+    "id": "quest_math_1",
+    "title": "Forest Number Quest",
+    "grade": "1-2",
+    "skill_ids": [
+      "g1_addition",
+      "g1_subtraction"
+    ],
+    "reward_item_id": "world_glow_mushroom",
+    "reflection_question": "How did counting on help you solve the problems?",
+    "steps": [
+      {
+        "prompt": "You find 2 acorns and then 3 more. How many in all?",
+        "answer": "5",
+        "choices": [
+          "4",
+          "5",
+          "6"
+        ],
+        "hint": "Try counting: 2\u2026 then 3 more.",
+        "explanation": "2 + 3 = 5."
+      },
+      {
+        "prompt": "A squirrel has 6 nuts and shares 2. How many are left?",
+        "answer": "4",
+        "choices": [
+          "3",
+          "4",
+          "5"
+        ],
+        "hint": "Count back 2 from 6.",
+        "explanation": "6 - 2 = 4."
+      }
+    ]
+  },
+  {
+    "id": "quest_reading_1",
+    "title": "Lantern Letters Quest",
+    "grade": "K-1",
+    "skill_ids": [
+      "k_phonics",
+      "g1_sight_words"
+    ],
+    "reward_item_id": "world_story_lantern",
+    "reflection_question": "Which word felt easiest to read today?",
+    "steps": [
+      {
+        "prompt": "What sound does the letter 'b' make at the start of 'bat'?",
+        "answer": "b",
+        "choices": [
+          "b",
+          "t",
+          "s"
+        ],
+        "hint": "Say 'bat' slowly: bbb-at.",
+        "explanation": "The beginning sound is /b/."
+      },
+      {
+        "prompt": "Choose the sight word: the",
+        "answer": "the",
+        "choices": [
+          "the",
+          "them",
+          "then"
+        ],
+        "hint": "We see this word a lot in stories.",
+        "explanation": "The correct sight word is 'the'."
+      }
+    ]
+  },
+  {
+    "id": "quest_phonics_1",
+    "title": "Word Builder Quest",
+    "grade": "K-1",
+    "skill_ids": [
+      "k_phonics"
+    ],
+    "reward_item_id": "world_word_bricks",
+    "reflection_question": "Which sound was easiest to blend today?",
+    "steps": [
+      {
+        "prompt": "Blend the sounds: c - a - t",
+        "answer": "cat",
+        "choices": [
+          "cat",
+          "cot",
+          "cut"
+        ],
+        "hint": "Say the sounds quickly together.",
+        "explanation": "c + a + t makes cat."
+      },
+      {
+        "prompt": "Blend the sounds: s - u - n",
+        "answer": "sun",
+        "choices": [
+          "sun",
+          "son",
+          "sin"
+        ],
+        "hint": "Listen for the /u/ sound.",
+        "explanation": "s + u + n makes sun."
+      }
+    ]
+  },
+  {
+    "id": "quest_story_1",
+    "title": "Mini Story Quest",
+    "grade": "2-3",
+    "skill_ids": [
+      "g2_comprehension"
+    ],
+    "reward_item_id": "world_story_fountain",
+    "reflection_question": "What was the story mostly about?",
+    "steps": [
+      {
+        "prompt": "Story: The bird found a seed and shared it. What is the main idea?",
+        "answer": "sharing",
+        "choices": [
+          "sharing",
+          "sleeping",
+          "running"
+        ],
+        "hint": "What did the bird do with the seed?",
+        "explanation": "The bird shared the seed."
+      },
+      {
+        "prompt": "Story: The rain helped the flowers grow. What is the main idea?",
+        "answer": "rain helps plants",
+        "choices": [
+          "rain helps plants",
+          "rain is loud",
+          "rain is cold"
+        ],
+        "hint": "What happened to the flowers?",
+        "explanation": "Rain helped the flowers grow."
+      }
+    ]
+  }
+]

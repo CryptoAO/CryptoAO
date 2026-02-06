@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Daily Adventure Pack",
+  "type": "object",
+  "required": ["date", "mcq", "conversations", "minigame"],
+  "properties": {
+    "date": {"type": "string", "format": "date"},
+    "mcq": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "question", "choices", "answer", "skill_id"],
+        "properties": {
+          "id": {"type": "string"},
+          "question": {"type": "string"},
+          "choices": {"type": "array", "items": {"type": "string"}},
+          "answer": {"type": "string"},
+          "skill_id": {"type": "string"}
+        }
+      }
+    },
+    "conversations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "steps"],
+        "properties": {
+          "id": {"type": "string"},
+          "steps": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["spark", "choices"],
+              "properties": {
+                "spark": {"type": "string"},
+                "choices": {"type": "array", "items": {"type": "string"}}
+              }
+            }
+          }
+        }
+      }
+    },
+    "minigame": {
+      "type": "object",
+      "required": ["id", "name", "rules"],
+      "properties": {
+        "id": {"type": "string"},
+        "name": {"type": "string"},
+        "rules": {"type": "string"}
+      }
+    }
+  }
+}

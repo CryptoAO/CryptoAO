@@ -1,0 +1,20 @@
+[
+  {
+    "title": "Adding Together",
+    "content_type": "lesson",
+    "grade": "K",
+    "subject": "Math",
+    "skill_id": "k_addition",
+    "difficulty": 1,
+    "body": "Adding means putting groups together."
+  },
+  {
+    "title": "Plant Basics",
+    "content_type": "lesson",
+    "grade": "1",
+    "subject": "Science",
+    "skill_id": "g1_plants",
+    "difficulty": 1,
+    "body": "Plants need sunlight, water, and air to grow."
+  }
+]

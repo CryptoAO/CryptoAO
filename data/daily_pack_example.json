@@ -1,0 +1,28 @@
+{
+  "date": "2025-01-01",
+  "mcq": [
+    {
+      "id": "mcq_1",
+      "question": "What shape has 3 sides?",
+      "choices": ["Circle", "Triangle", "Square"],
+      "answer": "Triangle",
+      "skill_id": "k_shapes"
+    }
+  ],
+  "conversations": [
+    {
+      "id": "conv_1",
+      "steps": [
+        {
+          "spark": "Let’s count stars! How many stars do you see? ✨✨",
+          "choices": ["1", "2", "3"]
+        }
+      ]
+    }
+  ],
+  "minigame": {
+    "id": "mini_1",
+    "name": "Magic Match",
+    "rules": "Match the number to the group of stars."
+  }
+}
