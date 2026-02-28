@@ -4,12 +4,24 @@
     {
       "src": "api/index.py",
       "use": "@vercel/python"
+    },
+    {
+      "src": "static/**",
+      "use": "@vercel/static"
     }
   ],
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/v1/(.*)",
       "destination": "/api/index"
+    },
+    {
+      "source": "/health",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/",
+      "destination": "/static/index.html"
     }
   ]
 }

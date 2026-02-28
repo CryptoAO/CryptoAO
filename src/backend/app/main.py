@@ -1,6 +1,11 @@
+import os
 from datetime import datetime
+from pathlib import Path
+
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from .models import (
     ChatRequest,
@@ -332,3 +337,15 @@ def _recommend_quests(child_id: str) -> list[dict]:
     skills = {skill for skill, _ in weakest}
     recommended = [q for q in store.quests if skills.intersection(set(q["skill_ids"]))]
     return recommended[:2] if recommended else store.quests[:2]
+
+
+# ---- Serve the web dashboard ----
+_STATIC_DIR = Path(__file__).resolve().parent.parent.parent.parent / "static"
+
+
+@app.get("/")
+async def root():
+    index = _STATIC_DIR / "index.html"
+    if index.exists():
+        return FileResponse(str(index), media_type="text/html")
+    return {"message": "SAFELEARN API is running. Dashboard not found."}

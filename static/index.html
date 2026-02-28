@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SAFELEARN — Helm Live Dashboard</title>
+  <style>
+    :root {
+      --primary: #7c3aed;
+      --primary-light: #a78bfa;
+      --primary-dark: #5b21b6;
+      --bg: #f5f3ff;
+      --card: #ffffff;
+      --text: #1e1b4b;
+      --muted: #6b7280;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    header {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(124,58,237,0.3);
+    }
+    header h1 { font-size: 1.3rem; font-weight: 700; }
+    header .subtitle { font-size: 0.8rem; opacity: 0.85; }
+    .nav-bar {
+      display: flex;
+      gap: 4px;
+      background: var(--card);
+      padding: 6px;
+      border-bottom: 1px solid #e5e7eb;
+      overflow-x: auto;
+    }
+    .nav-bar button {
+      padding: 8px 14px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      cursor: pointer;
+      font-size: 0.85rem;
+      color: var(--muted);
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .nav-bar button.active {
+      background: var(--primary);
+      color: white;
+      font-weight: 600;
+    }
+    .nav-bar button:hover:not(.active) {
+      background: #ede9fe;
+      color: var(--primary);
+    }
+    .screen { display: none; padding: 20px; max-width: 900px; margin: 0 auto; }
+    .screen.active { display: block; }
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+    .card h2 { font-size: 1.1rem; margin-bottom: 12px; color: var(--primary-dark); }
+    .card h3 { font-size: 0.95rem; margin-bottom: 8px; }
+    .btn {
+      display: inline-block;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      background: var(--primary);
+      color: white;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: var(--primary-dark); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-sm { padding: 6px 14px; font-size: 0.8rem; }
+    .btn-outline {
+      background: transparent;
+      border: 2px solid var(--primary);
+      color: var(--primary);
+    }
+    .btn-outline:hover { background: var(--primary); color: white; }
+    .btn-success { background: var(--success); }
+    .btn-warning { background: var(--warning); color: var(--text); }
+    .btn-danger { background: var(--danger); }
+    .chat-area {
+      height: 360px;
+      overflow-y: auto;
+      border: 1px solid #e5e7eb;
+      border-radius: var(--radius);
+      padding: 12px;
+      margin-bottom: 12px;
+      background: #faf5ff;
+    }
+    .chat-msg {
+      margin-bottom: 10px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      max-width: 80%;
+      line-height: 1.4;
+      font-size: 0.9rem;
+    }
+    .chat-msg.user {
+      background: var(--primary);
+      color: white;
+      margin-left: auto;
+      border-bottom-right-radius: 2px;
+    }
+    .chat-msg.bot {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-bottom-left-radius: 2px;
+    }
+    .chat-msg .label { font-size: 0.7rem; color: var(--muted); margin-bottom: 2px; }
+    .chat-msg.user .label { color: rgba(255,255,255,0.7); }
+    .chat-input-area { display: flex; gap: 8px; }
+    .chat-input-area input {
+      flex: 1;
+      padding: 10px 14px;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      outline: none;
+    }
+    .chat-input-area input:focus { border-color: var(--primary-light); }
+    .choices { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+    .choices button {
+      padding: 6px 12px;
+      border: 1.5px solid var(--primary-light);
+      border-radius: 20px;
+      background: white;
+      color: var(--primary);
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .choices button:hover { background: var(--primary); color: white; }
+    .quest-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+    .quest-card {
+      background: white;
+      border: 2px solid #e5e7eb;
+      border-radius: var(--radius);
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .quest-card:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(124,58,237,0.15); }
+    .quest-card h4 { color: var(--primary-dark); margin-bottom: 4px; }
+    .quest-card .grade { font-size: 0.75rem; color: var(--muted); }
+    .quest-card .skills { font-size: 0.78rem; color: var(--primary); margin-top: 6px; }
+    .world-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+    .world-item {
+      text-align: center;
+      padding: 20px 12px;
+      border-radius: var(--radius);
+      border: 2px solid #e5e7eb;
+      background: white;
+    }
+    .world-item.unlocked { border-color: var(--success); background: #ecfdf5; }
+    .world-item .icon { font-size: 2.2rem; margin-bottom: 8px; }
+    .world-item .name { font-size: 0.85rem; font-weight: 600; }
+    .world-item .status { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+    .world-item.unlocked .status { color: var(--success); }
+    .mastery-bar {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 0.85rem;
+    }
+    .mastery-bar .label { width: 160px; }
+    .mastery-bar .bar {
+      flex: 1;
+      height: 10px;
+      background: #e5e7eb;
+      border-radius: 5px;
+      overflow: hidden;
+      margin: 0 10px;
+    }
+    .mastery-bar .bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary-light), var(--primary));
+      border-radius: 5px;
+      transition: width 0.4s;
+    }
+    .mastery-bar .score { width: 40px; text-align: right; font-weight: 600; color: var(--primary); }
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 16px; }
+    .stat {
+      text-align: center;
+      padding: 16px;
+      border-radius: var(--radius);
+      background: #ede9fe;
+    }
+    .stat .value { font-size: 1.6rem; font-weight: 700; color: var(--primary-dark); }
+    .stat .label { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+    .event-list { font-size: 0.85rem; }
+    .event-item {
+      padding: 8px 12px;
+      border-bottom: 1px solid #f3f4f6;
+      display: flex;
+      justify-content: space-between;
+    }
+    .event-item:last-child { border-bottom: none; }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+    .badge-danger { background: #fee2e2; color: var(--danger); }
+    .badge-warning { background: #fef3c7; color: #92400e; }
+    .badge-success { background: #d1fae5; color: #065f46; }
+    .badge-info { background: #dbeafe; color: #1e40af; }
+    .quest-runner { text-align: center; }
+    .quest-runner .prompt {
+      font-size: 1.1rem;
+      margin: 20px 0;
+      padding: 20px;
+      background: #faf5ff;
+      border-radius: var(--radius);
+      border-left: 4px solid var(--primary);
+    }
+    .quest-runner .hint {
+      font-size: 0.85rem;
+      color: var(--warning);
+      margin: 8px 0;
+      font-style: italic;
+    }
+    .quest-runner .explanation {
+      font-size: 0.85rem;
+      color: var(--success);
+      margin: 8px 0;
+    }
+    .pin-gate { text-align: center; padding: 40px 20px; }
+    .pin-gate input {
+      padding: 12px;
+      font-size: 1.2rem;
+      text-align: center;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      width: 160px;
+      letter-spacing: 8px;
+      margin-bottom: 16px;
+    }
+    .pin-gate input:focus { border-color: var(--primary); outline: none; }
+    .spinner {
+      display: inline-block;
+      width: 20px; height: 20px;
+      border: 3px solid #e5e7eb;
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 24px;
+      background: var(--text);
+      color: white;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      z-index: 1000;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .toast.show { opacity: 1; }
+    .login-screen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+    }
+    .login-card {
+      text-align: center;
+      padding: 40px;
+      max-width: 400px;
+    }
+    .login-card h2 { font-size: 1.5rem; margin-bottom: 8px; }
+    .login-card p { color: var(--muted); margin-bottom: 24px; }
+    .session-item {
+      padding: 12px;
+      border-bottom: 1px solid #f3f4f6;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .session-item:hover { background: #faf5ff; }
+    .session-item .date { font-size: 0.8rem; color: var(--muted); }
+    .session-item .detail { font-size: 0.85rem; margin-top: 4px; }
+    .lock-banner {
+      padding: 12px 16px;
+      background: #fee2e2;
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      color: var(--danger);
+      font-size: 0.85rem;
+      margin-bottom: 12px;
+    }
+    @media (max-width: 600px) {
+      .stat-grid { grid-template-columns: repeat(2, 1fr); }
+      .quest-grid { grid-template-columns: 1fr; }
+      .world-grid { grid-template-columns: repeat(2, 1fr); }
+      .nav-bar { gap: 2px; padding: 4px; }
+      .nav-bar button { padding: 6px 10px; font-size: 0.78rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>SAFELEARN</h1>
+    <div class="subtitle">Helm Live Dashboard</div>
+  </div>
+  <div id="header-user" style="font-size:0.85rem; opacity:0.9;"></div>
+</header>
+
+<!-- Login Screen -->
+<div id="login-screen" class="screen active">
+  <div class="login-screen">
+    <div class="card login-card">
+      <h2>Welcome to SAFELEARN</h2>
+      <p>Child-safe educational platform with AI-powered learning quests</p>
+      <button class="btn" onclick="demoLogin()">Start Demo Session</button>
+      <p style="margin-top:16px;font-size:0.75rem;color:var(--muted);">Demo: Parent PIN is 1234</p>
+    </div>
+  </div>
+</div>
+
+<!-- Nav bar (hidden until login) -->
+<div id="main-nav" class="nav-bar" style="display:none;">
+  <button class="active" onclick="showScreen('home')">Home</button>
+  <button onclick="showScreen('chat')">Chat with Spark</button>
+  <button onclick="showScreen('quests')">Quests</button>
+  <button onclick="showScreen('world')">Learning World</button>
+  <button onclick="showScreen('parent')">Parent Dashboard</button>
+  <button onclick="showScreen('safety')">Safety Audit</button>
+  <button onclick="showScreen('sessions')">Sessions</button>
+</div>
+
+<!-- Home -->
+<div id="screen-home" class="screen">
+  <div class="card" style="text-align:center;padding:30px;">
+    <h2 id="home-greeting">Welcome!</h2>
+    <p style="color:var(--muted);margin-bottom:20px;">Choose an adventure below</p>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <button class="btn" onclick="showScreen('chat')">Chat with Spark</button>
+      <button class="btn btn-outline" onclick="showScreen('quests')">Start a Quest</button>
+      <button class="btn btn-outline" onclick="showScreen('world')">Learning World</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Quick Stats</h2>
+    <div id="home-stats" class="stat-grid"></div>
+  </div>
+</div>
+
+<!-- Chat -->
+<div id="screen-chat" class="screen">
+  <div class="card">
+    <h2>Chat with Spark</h2>
+    <div id="chat-messages" class="chat-area"></div>
+    <div id="chat-choices" class="choices"></div>
+    <div class="chat-input-area" style="margin-top:8px;">
+      <input type="text" id="chat-input" placeholder="Ask Spark anything..." onkeydown="if(event.key==='Enter')sendChat()" />
+      <button class="btn" onclick="sendChat()">Send</button>
+    </div>
+  </div>
+</div>
+
+<!-- Quests -->
+<div id="screen-quests" class="screen">
+  <div class="card">
+    <h2>Learning Quests</h2>
+    <div id="quest-list" class="quest-grid"></div>
+  </div>
+  <div id="quest-runner-area" class="card" style="display:none;">
+    <div class="quest-runner">
+      <h2 id="qr-title"></h2>
+      <div id="qr-prompt" class="prompt"></div>
+      <div id="qr-hint" class="hint" style="display:none;"></div>
+      <div id="qr-explanation" class="explanation" style="display:none;"></div>
+      <div id="qr-choices" class="choices" style="justify-content:center;margin-top:16px;"></div>
+      <div id="qr-complete" style="display:none;margin-top:16px;">
+        <button class="btn btn-success" onclick="completeQuest()">Complete Quest</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- World -->
+<div id="screen-world" class="screen">
+  <div class="card">
+    <h2>Magic Haven — Learning World</h2>
+    <p style="color:var(--muted);margin-bottom:16px;">Complete quests to unlock items!</p>
+    <div id="world-items" class="world-grid"></div>
+  </div>
+</div>
+
+<!-- Parent Dashboard -->
+<div id="screen-parent" class="screen">
+  <div id="parent-pin-gate" class="card pin-gate">
+    <h2>Parent Dashboard</h2>
+    <p style="color:var(--muted);margin-bottom:16px;">Enter your PIN to view your child's progress</p>
+    <div>
+      <input type="password" id="parent-pin" maxlength="4" placeholder="PIN" onkeydown="if(event.key==='Enter')unlockParent()" />
+    </div>
+    <button class="btn" onclick="unlockParent()">Unlock</button>
+  </div>
+  <div id="parent-dashboard" style="display:none;">
+    <div class="card">
+      <h2>Progress Overview</h2>
+      <div id="parent-stats" class="stat-grid"></div>
+    </div>
+    <div class="card">
+      <h2>Skill Mastery</h2>
+      <div id="parent-mastery"></div>
+    </div>
+    <div class="card">
+      <h2>Recommended Quests</h2>
+      <div id="parent-recommended"></div>
+    </div>
+    <div class="card">
+      <h2>Unlocked World Items</h2>
+      <div id="parent-unlocked"></div>
+    </div>
+    <div style="text-align:center;margin-top:16px;">
+      <button class="btn btn-danger btn-sm" onclick="resetDemo()">Reset Demo Data</button>
+    </div>
+  </div>
+</div>
+
+<!-- Safety Audit -->
+<div id="screen-safety" class="screen">
+  <div id="safety-pin-gate" class="card pin-gate">
+    <h2>Safety Audit Log</h2>
+    <p style="color:var(--muted);margin-bottom:16px;">Enter your PIN to view safety events</p>
+    <div>
+      <input type="password" id="safety-pin" maxlength="4" placeholder="PIN" onkeydown="if(event.key==='Enter')unlockSafety()" />
+    </div>
+    <button class="btn" onclick="unlockSafety()">Unlock</button>
+  </div>
+  <div id="safety-dashboard" style="display:none;">
+    <div id="safety-lock-banner"></div>
+    <div class="card">
+      <h2>Recent Safety Events</h2>
+      <div id="safety-events" class="event-list"></div>
+      <p id="safety-empty" style="color:var(--muted);text-align:center;padding:20px;display:none;">No safety events recorded. All clear!</p>
+    </div>
+  </div>
+</div>
+
+<!-- Sessions -->
+<div id="screen-sessions" class="screen">
+  <div id="sessions-pin-gate" class="card pin-gate">
+    <h2>Session History</h2>
+    <p style="color:var(--muted);margin-bottom:16px;">Enter your PIN to view session history</p>
+    <div>
+      <input type="password" id="sessions-pin" maxlength="4" placeholder="PIN" onkeydown="if(event.key==='Enter')unlockSessions()" />
+    </div>
+    <button class="btn" onclick="unlockSessions()">Unlock</button>
+  </div>
+  <div id="sessions-dashboard" style="display:none;">
+    <div class="card">
+      <h2>Recent Sessions</h2>
+      <div id="session-list"></div>
+      <p id="sessions-empty" style="color:var(--muted);text-align:center;padding:20px;display:none;">No sessions yet. Complete a quest to see session data!</p>
+    </div>
+    <div id="session-detail" class="card" style="display:none;">
+      <h2>Session Detail</h2>
+      <div id="session-detail-content"></div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const API = '';  // same origin on Vercel
+let state = {
+  token: null,
+  childId: null,
+  childName: null,
+  currentSessionId: null,
+  currentQuestTitle: null,
+  parentUnlocked: false,
+  safetyUnlocked: false,
+  sessionsUnlocked: false,
+};
+
+// ---- API helpers ----
+async function api(method, path, body) {
+  const opts = {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+  };
+  if (state.token) opts.headers['Authorization'] = 'Bearer ' + state.token;
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(API + path, opts);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || res.statusText);
+  }
+  return res.json();
+}
+
+// ---- Toast ----
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ---- Navigation ----
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById('screen-' + name);
+  if (el) el.classList.add('active');
+  document.querySelectorAll('.nav-bar button').forEach((b, i) => {
+    b.classList.toggle('active', b.textContent.toLowerCase().includes(name) ||
+      (name === 'home' && i === 0));
+  });
+  // Load data for the screen
+  if (name === 'quests') loadQuests();
+  if (name === 'world') loadWorld();
+  if (name === 'home') loadHomeStats();
+}
+
+// ---- Login ----
+async function demoLogin() {
+  try {
+    const data = await api('POST', '/v1/auth/demo-login');
+    state.token = data.token;
+    if (data.children && data.children.length > 0) {
+      state.childId = data.children[0].id;
+      state.childName = data.children[0].name;
+      await api('POST', '/v1/children/select', { child_id: state.childId });
+    }
+    document.getElementById('login-screen').classList.remove('active');
+    document.getElementById('main-nav').style.display = 'flex';
+    document.getElementById('header-user').textContent = state.childName || 'Demo';
+    showScreen('home');
+    addChatMessage('bot', "Hi! I'm Spark, your learning buddy. Ask me anything or pick a quick topic!", ["Math help", "Reading fun", "Tell me a fact"]);
+    toast('Logged in as ' + (state.childName || 'Demo'));
+  } catch (e) {
+    toast('Login failed: ' + e.message);
+  }
+}
+
+// ---- Home Stats ----
+async function loadHomeStats() {
+  try {
+    const summary = await api('GET', '/v1/parent/summary?child_id=' + state.childId);
+    const el = document.getElementById('home-stats');
+    document.getElementById('home-greeting').textContent = 'Hello, ' + (state.childName || 'Learner') + '!';
+    el.innerHTML = `
+      <div class="stat"><div class="value">${summary.quests_completed}</div><div class="label">Quests Done</div></div>
+      <div class="stat"><div class="value">${Object.keys(summary.mastery).length}</div><div class="label">Skills Tracked</div></div>
+      <div class="stat"><div class="value">${summary.skills_in_progress}</div><div class="label">In Progress</div></div>
+      <div class="stat"><div class="value">${summary.unlocked_items.length}</div><div class="label">Items Unlocked</div></div>
+    `;
+  } catch (e) { /* ignore */ }
+}
+
+// ---- Chat ----
+function addChatMessage(type, text, choices) {
+  const area = document.getElementById('chat-messages');
+  const label = type === 'user' ? 'You' : 'Spark';
+  area.innerHTML += `<div class="chat-msg ${type}"><div class="label">${label}</div>${escapeHtml(text)}</div>`;
+  area.scrollTop = area.scrollHeight;
+  const choiceArea = document.getElementById('chat-choices');
+  choiceArea.innerHTML = '';
+  if (choices && choices.length) {
+    choices.forEach(c => {
+      choiceArea.innerHTML += `<button onclick="sendChatChoice('${escapeAttr(c)}')">${escapeHtml(c)}</button>`;
+    });
+  }
+}
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+  addChatMessage('user', msg);
+  try {
+    const data = await api('POST', '/v1/chat', { child_id: state.childId, message: msg });
+    addChatMessage('bot', data.reply, data.choices);
+    if (data.safety_event) {
+      toast('Safety: ' + data.safety_event.category);
+    }
+  } catch (e) {
+    addChatMessage('bot', 'Oops, something went wrong. Try again!');
+  }
+}
+
+function sendChatChoice(text) {
+  document.getElementById('chat-input').value = text;
+  sendChat();
+}
+
+// ---- Quests ----
+async function loadQuests() {
+  try {
+    const data = await api('GET', '/v1/quests');
+    const el = document.getElementById('quest-list');
+    el.innerHTML = '';
+    data.quests.forEach(q => {
+      const skills = (q.skill_ids || []).map(s => s.replace(/_/g, ' ')).join(', ') || 'Mixed review';
+      el.innerHTML += `
+        <div class="quest-card" onclick="startQuest('${q.id}', '${escapeAttr(q.title)}')">
+          <h4>${escapeHtml(q.title)}</h4>
+          <div class="grade">Grade: ${escapeHtml(q.grade)}</div>
+          <div class="skills">${escapeHtml(skills)}</div>
+        </div>`;
+    });
+  } catch (e) { toast('Failed to load quests'); }
+}
+
+async function startQuest(questId, title) {
+  try {
+    const data = await api('POST', '/v1/quests/start', { child_id: state.childId, quest_id: questId });
+    state.currentSessionId = data.session_id;
+    state.currentQuestTitle = title;
+    document.getElementById('quest-runner-area').style.display = 'block';
+    document.getElementById('qr-title').textContent = title;
+    renderQuestStep(data);
+    document.getElementById('quest-runner-area').scrollIntoView({ behavior: 'smooth' });
+  } catch (e) { toast('Failed to start quest: ' + e.message); }
+}
+
+function renderQuestStep(data) {
+  document.getElementById('qr-prompt').textContent = data.prompt || 'Loading...';
+  const hintEl = document.getElementById('qr-hint');
+  const expEl = document.getElementById('qr-explanation');
+  const completeEl = document.getElementById('qr-complete');
+  hintEl.style.display = data.hint ? 'block' : 'none';
+  hintEl.textContent = data.hint || '';
+  expEl.style.display = data.explanation ? 'block' : 'none';
+  expEl.textContent = data.explanation || '';
+  const isComplete = data.status === 'complete_ready';
+  completeEl.style.display = isComplete ? 'block' : 'none';
+  const choiceEl = document.getElementById('qr-choices');
+  choiceEl.innerHTML = '';
+  if (!isComplete && data.choices) {
+    data.choices.forEach(c => {
+      choiceEl.innerHTML += `<button onclick="submitQuestAnswer('${escapeAttr(c)}')">${escapeHtml(c)}</button>`;
+    });
+  }
+}
+
+async function submitQuestAnswer(answer) {
+  try {
+    const data = await api('POST', '/v1/quests/step', { session_id: state.currentSessionId, answer });
+    renderQuestStep(data);
+  } catch (e) { toast('Error: ' + e.message); }
+}
+
+async function completeQuest() {
+  try {
+    const data = await api('POST', '/v1/quests/complete', { session_id: state.currentSessionId });
+    let msg = 'Quest complete!';
+    if (data.reward_item) {
+      msg += ' You unlocked: ' + data.reward_item.name;
+    }
+    toast(msg);
+    document.getElementById('quest-runner-area').style.display = 'none';
+    loadQuests();
+  } catch (e) { toast('Error completing quest: ' + e.message); }
+}
+
+// ---- World ----
+const WORLD_ICONS = {
+  world_glow_mushroom: '🍄',
+  world_story_lantern: '🏮',
+  world_word_bricks: '🧱',
+  world_story_fountain: '⛲',
+};
+
+async function loadWorld() {
+  try {
+    const data = await api('GET', '/v1/world?child_id=' + state.childId);
+    const el = document.getElementById('world-items');
+    el.innerHTML = '';
+    data.items.forEach(item => {
+      const icon = WORLD_ICONS[item.id] || '🎁';
+      el.innerHTML += `
+        <div class="world-item ${item.unlocked ? 'unlocked' : ''}">
+          <div class="icon">${item.unlocked ? icon : '🔒'}</div>
+          <div class="name">${escapeHtml(item.name)}</div>
+          <div class="status">${item.unlocked ? 'Unlocked!' : 'Locked'}</div>
+        </div>`;
+    });
+  } catch (e) { toast('Failed to load world'); }
+}
+
+// ---- Parent Dashboard ----
+function unlockParent() {
+  const pin = document.getElementById('parent-pin').value;
+  if (pin === '1234') {
+    state.parentUnlocked = true;
+    document.getElementById('parent-pin-gate').style.display = 'none';
+    document.getElementById('parent-dashboard').style.display = 'block';
+    loadParentDashboard();
+  } else {
+    toast('Incorrect PIN');
+  }
+}
+
+async function loadParentDashboard() {
+  try {
+    const data = await api('GET', '/v1/parent/summary?child_id=' + state.childId);
+    document.getElementById('parent-stats').innerHTML = `
+      <div class="stat"><div class="value">${data.quests_completed}</div><div class="label">Quests Done</div></div>
+      <div class="stat"><div class="value">${Object.keys(data.mastery).length}</div><div class="label">Skills Tracked</div></div>
+      <div class="stat"><div class="value">${data.skills_in_progress}</div><div class="label">In Progress</div></div>
+      <div class="stat"><div class="value">${data.unlocked_items.length}</div><div class="label">World Items</div></div>
+    `;
+    const masteryEl = document.getElementById('parent-mastery');
+    masteryEl.innerHTML = '';
+    if (Object.keys(data.mastery).length === 0) {
+      masteryEl.innerHTML = '<p style="color:var(--muted);text-align:center;">No skills tracked yet. Complete a quest!</p>';
+    } else {
+      Object.entries(data.mastery).forEach(([skill, score]) => {
+        const pct = (score / 5) * 100;
+        masteryEl.innerHTML += `
+          <div class="mastery-bar">
+            <div class="label">${escapeHtml(skill.replace(/_/g, ' '))}</div>
+            <div class="bar"><div class="bar-fill" style="width:${pct}%"></div></div>
+            <div class="score">${score}/5</div>
+          </div>`;
+      });
+    }
+    const recEl = document.getElementById('parent-recommended');
+    recEl.innerHTML = '';
+    if (data.recommended_quests.length === 0) {
+      recEl.innerHTML = '<p style="color:var(--muted);">No recommendations yet.</p>';
+    } else {
+      data.recommended_quests.forEach(q => {
+        recEl.innerHTML += `<div style="padding:8px 0;border-bottom:1px solid #f3f4f6;"><strong>${escapeHtml(q.title)}</strong> — ${escapeHtml(q.grade)}</div>`;
+      });
+    }
+    const unlockEl = document.getElementById('parent-unlocked');
+    if (data.unlocked_items.length === 0) {
+      unlockEl.innerHTML = '<p style="color:var(--muted);">No items unlocked yet.</p>';
+    } else {
+      unlockEl.innerHTML = data.unlocked_items.map(i => `<span class="badge badge-success" style="margin:2px;">${escapeHtml(i.name)}</span>`).join(' ');
+    }
+  } catch (e) { toast('Failed to load dashboard'); }
+}
+
+async function resetDemo() {
+  if (!confirm('Reset all demo data? This cannot be undone.')) return;
+  try {
+    await api('POST', '/v1/admin/reset-demo', { child_id: state.childId, pin: '1234' });
+    toast('Demo data reset');
+    loadParentDashboard();
+  } catch (e) { toast('Reset failed: ' + e.message); }
+}
+
+// ---- Safety Audit ----
+function unlockSafety() {
+  const pin = document.getElementById('safety-pin').value;
+  if (pin === '1234') {
+    state.safetyUnlocked = true;
+    document.getElementById('safety-pin-gate').style.display = 'none';
+    document.getElementById('safety-dashboard').style.display = 'block';
+    loadSafetyAudit();
+  } else { toast('Incorrect PIN'); }
+}
+
+async function loadSafetyAudit() {
+  try {
+    const data = await api('GET', '/v1/parent/safety-audit?child_id=' + state.childId);
+    const bannerEl = document.getElementById('safety-lock-banner');
+    if (data.lock_active) {
+      bannerEl.innerHTML = `<div class="lock-banner">Account is temporarily locked. ${data.lock_remaining_minutes} minute(s) remaining.</div>`;
+    } else {
+      bannerEl.innerHTML = '';
+    }
+    const el = document.getElementById('safety-events');
+    const empty = document.getElementById('safety-empty');
+    if (!data.events || data.events.length === 0) {
+      el.innerHTML = '';
+      empty.style.display = 'block';
+    } else {
+      empty.style.display = 'none';
+      el.innerHTML = data.events.map(ev => {
+        const cat = ev.category || 'unknown';
+        const badgeClass = cat.includes('lock') ? 'badge-danger' : cat.includes('pii') ? 'badge-warning' : 'badge-info';
+        const time = ev.timestamp ? new Date(ev.timestamp * 1000).toLocaleString() : '';
+        return `<div class="event-item"><span class="badge ${badgeClass}">${escapeHtml(cat)}</span><span>${time}</span></div>`;
+      }).join('');
+    }
+  } catch (e) { toast('Failed to load safety audit'); }
+}
+
+// ---- Sessions ----
+function unlockSessions() {
+  const pin = document.getElementById('sessions-pin').value;
+  if (pin === '1234') {
+    state.sessionsUnlocked = true;
+    document.getElementById('sessions-pin-gate').style.display = 'none';
+    document.getElementById('sessions-dashboard').style.display = 'block';
+    loadSessions();
+  } else { toast('Incorrect PIN'); }
+}
+
+async function loadSessions() {
+  try {
+    const data = await api('GET', '/v1/parent/sessions?child_id=' + state.childId + '&days=30');
+    const el = document.getElementById('session-list');
+    const empty = document.getElementById('sessions-empty');
+    if (!data.sessions || data.sessions.length === 0) {
+      el.innerHTML = '';
+      empty.style.display = 'block';
+    } else {
+      empty.style.display = 'none';
+      el.innerHTML = data.sessions.map(s => {
+        const skills = (s.skills_practiced || []).map(sk => sk.replace(/_/g, ' ')).join(', ');
+        return `<div class="session-item" onclick="loadSessionDetail('${s.session_id}')">
+          <div class="date">${s.date ? new Date(s.date).toLocaleString() : 'Unknown'} — ${s.time_spent_minutes || '?'} min</div>
+          <div class="detail">Skills: ${escapeHtml(skills || 'None')}</div>
+        </div>`;
+      }).join('');
+    }
+  } catch (e) { toast('Failed to load sessions'); }
+}
+
+async function loadSessionDetail(sessionId) {
+  try {
+    const data = await api('GET', '/v1/parent/sessions/' + sessionId + '?child_id=' + state.childId);
+    const el = document.getElementById('session-detail-content');
+    document.getElementById('session-detail').style.display = 'block';
+    const skills = (data.skills_practiced || []).map(s => s.replace(/_/g, ' ')).join(', ');
+    const highlights = (data.spark_highlights || []).map(h => `<li>${escapeHtml(h)}</li>`).join('');
+    el.innerHTML = `
+      <p><strong>Date:</strong> ${data.date ? new Date(data.date).toLocaleString() : 'N/A'}</p>
+      <p><strong>Time:</strong> ${data.time_spent_minutes || '?'} minutes</p>
+      <p><strong>Skills Practiced:</strong> ${escapeHtml(skills || 'None')}</p>
+      <p><strong>Quests:</strong> ${(data.quests_completed || []).join(', ')}</p>
+      ${highlights ? '<p><strong>Highlights:</strong></p><ul>' + highlights + '</ul>' : ''}
+    `;
+    document.getElementById('session-detail').scrollIntoView({ behavior: 'smooth' });
+  } catch (e) { toast('Failed to load session detail'); }
+}
+
+// ---- Utilities ----
+function escapeHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+function escapeAttr(s) {
+  return (s || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+</script>
+</body>
+</html>
