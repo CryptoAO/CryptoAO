@@ -120,3 +120,36 @@ Frontend correctness fixes from the same review: provider profile edit no longer
   a seeded production build, and a smoke test that asserts `/api/notifications`
   and `/api/admin/overview` reject anonymous callers — so an authorization
   regression fails the build rather than reaching review.
+
+## 11. Safety, identity documents, and monitoring
+
+### Emergency support (SOS + check-in)
+
+A provider alone in a stranger's house is this product's core physical risk, so the panic path has its own rules that override the conventions used everywhere else in the codebase:
+
+- **The alert is always recorded.** SOS is not rate-limited, does not require KYC beyond a session, and tolerates a malformed body — a bad `jobId` downgrades the alert to account-level rather than rejecting it. The record is written *before* any notification is attempted, so a downstream failure can never swallow a call for help.
+- **Fan-out is best-effort and counted.** Each trusted contact is texted individually; the number actually reached is stored on the alert for the incident file. The counterparty is notified (often enough to defuse a misunderstanding) and every admin is paged.
+- **The operator console breaks the usual PII rule on purpose.** The SOS queue is the one place that shows a full phone number and precise coordinates — an operator has to be able to call the person and tell responders where to go. Every read of that queue is audit-logged.
+- **Check-ins** give both parties a timestamped arrival/departure trail, and give support something factual when a dispute turns into one person's word against another's.
+
+### Identity documents
+
+ID scans are the most valuable data in the system — worth more to a fraudster than a password. Controls:
+
+| Risk | Control |
+|---|---|
+| Polyglot / disguised upload | Type is decided by **magic bytes**, never the client's `Content-Type`. SVG and HTML are rejected outright; only JPEG, PNG, WEBP and PDF pass |
+| Oversized upload | Rejected on declared `Content-Length` before buffering, then again on actual size — 6 MB cap |
+| Enumeration | Keys are 24 random bytes, not sequential; a leaked key names one document and nothing else |
+| Public exposure | Files are written outside any web-servable path (`var/private/`, gitignored). There is **no** public URL — reads go through an admin-only route |
+| Path traversal | Keys are pattern-validated and the resolved path is re-checked against the storage root |
+| Attaching to someone else's application | Upload requires ownership of a `PENDING` submission; a foreign id returns 404 |
+| Active content in a PDF | The document response is served under `default-src 'none'; sandbox` via `src/middleware.ts`, plus `nosniff` and `no-store` |
+| Silent viewing | Every single document read writes an audit row naming the admin and the subject |
+| Indefinite retention | The image is **deleted from storage the moment a decision is recorded** (`docPurgedAt`), keeping the decision and audit trail but not the scan — RA 10173 data minimization. Subsequent reads return 410 |
+
+Verified live: an SVG renamed `photo.jpg` and an HTML file claiming `image/png` were both rejected; a second user attaching to another's submission got 404; owner and anonymous reads of the document returned 403/401; after approval the read returned 410 and zero files remained on disk.
+
+### Error monitoring
+
+`src/lib/monitoring.ts` reports unexpected errors with a `requestId` that is also returned to the caller and set as `X-Request-Id`, so a user can quote it to support. Reports are **scrubbed before they leave the process**: sensitive keys (`password`, `codeHash`, `token`, `accountRef`, `phone`, `addressNote`, `lat`, `lng`, `idLastFour`, …) are redacted by name, and PH phone numbers and email addresses are stripped from free text anywhere they appear. Only a user *id* is attached, never a name or number. Dev logs structured JSON; production ships to a Sentry-compatible collector with a 3-second timeout so monitoring can never stall a user request. `/api/health` is an intentionally boring liveness probe — database reachability and nothing else, so it cannot double as a reconnaissance endpoint.

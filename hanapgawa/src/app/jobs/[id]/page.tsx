@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { fetchJson, pesos, timeAgo } from "@/lib/client";
 import { Badge, Button, Card, ErrorNote, Field, Input, KycBadge, Spinner, TextArea } from "@/components/ui";
 import { ChatBox } from "@/components/chat";
+import { SafetyPanel } from "@/components/safety";
 import { getCity, getRegion } from "@/lib/psgc";
 
 interface PublicUser { id: string; firstName: string; lastInitial: string; kycLevel: number }
@@ -321,6 +322,8 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
               </Button>
             </div>
           )}
+
+          <SafetyPanel jobId={job.id} meId={meId} />
 
           <ChatBox jobId={job.id} withUserId={isOwner ? job.assignedProviderId! : job.clientId} meId={meId} />
         </Card>

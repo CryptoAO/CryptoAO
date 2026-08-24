@@ -27,7 +27,11 @@ export type NotificationType =
   | "KYC_REJECTED"
   | "PAYOUT_PAID"
   | "PAYOUT_REJECTED"
-  | "PAYMENT_RECEIVED";
+  | "PAYMENT_RECEIVED"
+  | "SOS_RAISED"
+  | "SOS_RESOLVED"
+  | "CHECKED_IN"
+  | "CHECKED_OUT";
 
 interface NotifyInput {
   userId: string;

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { fetchJson, pesos, timeAgo } from "@/lib/client";
 import { Badge, Button, Card, ErrorNote, Field, Input, KycBadge, Select, Spinner, TextArea } from "@/components/ui";
+import { TrustedContacts } from "@/components/safety";
 
 interface Me {
   user: {
@@ -44,6 +45,7 @@ function MeDashboard() {
     { id: "wallet", label: "Wallet" },
     { id: "provider", label: "Provider" },
     { id: "kyc", label: "Verification" },
+    { id: "safety", label: "Kaligtasan" },
   ];
 
   return (
@@ -79,6 +81,7 @@ function MeDashboard() {
       {tab === "wallet" && <WalletTab onChange={load} />}
       {tab === "provider" && <ProviderTab meId={u.id} isProvider={u.isProvider} bio={u.bio ?? ""} onSaved={load} />}
       {tab === "kyc" && <KycTab kycLevel={u.kycLevel} />}
+      {tab === "safety" && <TrustedContacts />}
 
       <div className="pt-2 text-center">
         <button
@@ -446,7 +449,7 @@ function ProviderTab({ meId, isProvider, bio: initialBio, onSaved }: { meId: str
 
 /* ---------------- KYC ---------------- */
 
-interface KycData { kycLevel: number; submissions: { id: string; level: number; docType: string; status: string; createdAt: string }[] }
+interface KycData { kycLevel: number; submissions: { id: string; level: number; docType: string; status: string; hasDocument: boolean; createdAt: string }[] }
 
 function KycTab({ kycLevel }: { kycLevel: number }) {
   const [data, setData] = useState<KycData | null>(null);
@@ -455,6 +458,7 @@ function KycTab({ kycLevel }: { kycLevel: number }) {
   const [idLastFour, setIdLastFour] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const load = useCallback(
     () => fetchJson<KycData>("/api/kyc").then(setData).catch((e) => setLoadError((e as Error).message)),
@@ -490,6 +494,27 @@ function KycTab({ kycLevel }: { kycLevel: number }) {
     }
   }
 
+  async function uploadDoc(submissionId: string, file: File) {
+    setUploading(true);
+    setError(null);
+    try {
+      const fd = new FormData();
+      fd.append("submissionId", submissionId);
+      fd.append("file", file);
+      // Not fetchJson: multipart must not carry a JSON Content-Type header.
+      const res = await fetch("/api/kyc/upload", { method: "POST", body: fd });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) throw new Error(data.error ?? "Hindi na-upload ang file");
+      await load();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  const pendingSub = data.submissions.find((s) => s.status === "PENDING");
+
   const steps = [
     { lvl: 1, name: "Phone verified", desc: "OTP sa cellphone mo", icon: "📱" },
     { lvl: 2, name: "ID verified", desc: "PhilSys / Driver's License / UMID / Passport", icon: "🪪" },
@@ -522,9 +547,40 @@ function KycTab({ kycLevel }: { kycLevel: number }) {
         <Card>
           <h2 className="font-bold">{nextLevel === 2 ? "I-verify ang ID mo (Level 2)" : "Maging Fully Vetted (Level 3)"}</h2>
           {pending ? (
-            <p className="mt-2 rounded-xl bg-amber-50 p-3 text-sm text-amber-800">
-              ⏳ Nire-review pa ng team ang submission mo (karaniwang 1 araw lang).
-            </p>
+            <div className="mt-3 space-y-3">
+              <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800">
+                ⏳ Nire-review pa ng team ang submission mo (karaniwang 1 araw lang).
+              </p>
+              {pendingSub && (
+                <div className="rounded-xl border border-stone-200 p-3">
+                  <div className="text-sm font-bold">
+                    {pendingSub.hasDocument ? "📎 May naka-attach nang larawan" : "📷 Mag-attach ng larawan ng ID"}
+                  </div>
+                  <p className="mt-1 text-xs text-gray-600">
+                    Kunan ng malinaw na litrato ang ID mo. Nakikita lang ito ng verification team, at
+                    binubura namin ito pagkatapos ma-review. JPG/PNG/PDF, hanggang 6MB.
+                  </p>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,application/pdf"
+                    disabled={uploading}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) uploadDoc(pendingSub.id, f);
+                      e.target.value = "";
+                    }}
+                    className="mt-2 block w-full text-sm file:mr-3 file:min-h-11 file:rounded-xl file:border-0 file:bg-brand-700 file:px-4 file:py-2 file:text-sm file:font-bold file:text-white"
+                  />
+                  {uploading && <p className="mt-2 text-xs text-gray-500">Ina-upload…</p>}
+                  {pendingSub.hasDocument && !uploading && (
+                    <p className="mt-2 text-xs text-emerald-700">
+                      ✔ Na-attach na. Pwede mo pa itong palitan hangga't hindi pa na-review.
+                    </p>
+                  )}
+                </div>
+              )}
+              <ErrorNote message={error} />
+            </div>
           ) : (
             <div className="mt-3 space-y-3">
               <Field label="Anong dokumento?">

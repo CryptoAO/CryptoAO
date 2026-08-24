@@ -3,6 +3,7 @@ import { api, ok, ApiError, parseBody, requireAdmin, audit, clientIp } from "@/l
 import { db } from "@/lib/db";
 import { publicUser } from "@/lib/serialize";
 import { notifyKycDecision } from "@/lib/notify";
+import { objectStore } from "@/lib/storage";
 
 export const GET = api(async () => {
   await requireAdmin();
@@ -18,6 +19,7 @@ export const GET = api(async () => {
       level: k.level,
       docType: k.docType,
       idLastFour: k.idLastFour,
+      hasDocument: k.docRef != null && k.docPurgedAt == null,
       createdAt: k.createdAt,
       user: { ...publicUser(k.user), lastName: k.user.lastName, phone: k.user.phone },
     })),
@@ -52,6 +54,16 @@ export const POST = api(async (req) => {
       });
     }
   });
+
+  // Data minimization (RA 10173): the image has served its purpose once a
+  // human has decided. Keep the decision and the audit trail, drop the scan.
+  if (submission.docRef) {
+    await objectStore().remove(submission.docRef);
+    await db.kycSubmission.update({
+      where: { id: submission.id },
+      data: { docPurgedAt: new Date() },
+    });
+  }
 
   await notifyKycDecision(submission.userId, body.decision === "APPROVED", submission.level);
   await audit("admin.kyc_decision", {

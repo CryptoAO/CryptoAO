@@ -62,6 +62,10 @@ model User {
   reportsAgainst     Report[]           @relation("ReportTarget")
   payoutRequests     PayoutRequest[]
   notifications      Notification[]
+  trustedContacts    TrustedContact[]
+  checkIns           JobCheckIn[]
+  sosRaised          SosAlert[]         @relation("SosRaiser")
+  sosResolved        SosAlert[]         @relation("SosResolver")
 
   @@index([regionCode, cityCode])
   @@index([isProvider, status])
@@ -158,14 +162,16 @@ model Job {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  client   User          @relation("JobClient", fields: [clientId], references: [id], onDelete: Cascade)
-  provider User?         @relation("JobProvider", fields: [assignedProviderId], references: [id])
-  category Category      @relation(fields: [categoryId], references: [id])
-  offers   Offer[]
-  messages Message[]
-  reviews  Review[]
-  ledger   LedgerEntry[]
-  disputes Dispute[]
+  client    User          @relation("JobClient", fields: [clientId], references: [id], onDelete: Cascade)
+  provider  User?         @relation("JobProvider", fields: [assignedProviderId], references: [id])
+  category  Category      @relation(fields: [categoryId], references: [id])
+  offers    Offer[]
+  messages  Message[]
+  reviews   Review[]
+  ledger    LedgerEntry[]
+  disputes  Dispute[]
+  checkIns  JobCheckIn[]
+  sosAlerts SosAlert[]
 
   @@index([status, regionCode, cityCode])
   @@index([clientId])
@@ -267,17 +273,20 @@ model PayoutRequest {
 }
 
 model KycSubmission {
-  id         String    @id @default(cuid())
-  userId     String
-  level      Int // 2 = gov ID, 3 = NBI/police clearance
-  docType    String // PHILSYS | DRIVERS_LICENSE | UMID | PASSPORT | NBI | POLICE
-  idLastFour String? // never store the full ID number
-  docRef     String? // object-storage key (stubbed in MVP)
-  status     String    @default("PENDING") // PENDING | APPROVED | REJECTED
-  reviewerId String?
-  notes      String?
-  reviewedAt DateTime?
-  createdAt  DateTime  @default(now())
+  id          String    @id @default(cuid())
+  userId      String
+  level       Int // 2 = gov ID, 3 = NBI/police clearance
+  docType     String // PHILSYS | DRIVERS_LICENSE | UMID | PASSPORT | NBI | POLICE
+  idLastFour  String? // never store the full ID number
+  docRef      String? // storage key for the uploaded image — NEVER a public URL
+  docMime     String?
+  docBytes    Int?
+  docPurgedAt DateTime? // set when the image is deleted post-decision (DPA minimization)
+  status      String    @default("PENDING") // PENDING | APPROVED | REJECTED
+  reviewerId  String?
+  notes       String?
+  reviewedAt  DateTime?
+  createdAt   DateTime  @default(now())
 
   user     User  @relation("KycOwner", fields: [userId], references: [id], onDelete: Cascade)
   reviewer User? @relation("KycReviewer", fields: [reviewerId], references: [id])
@@ -355,4 +364,64 @@ model Notification {
 
   @@index([userId, readAt])
   @@index([userId, createdAt])
+}
+
+// Someone the user chooses to alert if they raise an SOS. Stored so a
+// provider heading to a stranger's house always has a person who knows.
+model TrustedContact {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  phone     String // canonical +639XXXXXXXXX
+  relation  String? // "Asawa", "Kapatid", "Kaibigan"
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// Arrival / departure record for an active booking. Gives both sides a
+// timestamped trail, and gives support something factual in a dispute.
+model JobCheckIn {
+  id     String  @id @default(cuid())
+  jobId  String
+  userId String
+  kind   String // ARRIVED | LEFT
+  lat    Float?
+  lng    Float?
+  note   String?
+
+  createdAt DateTime @default(now())
+
+  job  Job  @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([jobId, createdAt])
+}
+
+// A panic alert. Never rate-limited into uselessness: the record is always
+// written. Resolution is manual and human.
+model SosAlert {
+  id              String    @id @default(cuid())
+  userId          String
+  jobId           String?
+  lat             Float?
+  lng             Float?
+  note            String?
+  // How many trusted contacts we actually reached, for the incident file
+  alertedContacts Int       @default(0)
+  status          String    @default("OPEN") // OPEN | ACKNOWLEDGED | RESOLVED
+  handlerId       String?
+  resolution      String?
+  resolvedAt      DateTime?
+
+  createdAt DateTime @default(now())
+
+  user    User  @relation("SosRaiser", fields: [userId], references: [id], onDelete: Cascade)
+  handler User? @relation("SosResolver", fields: [handlerId], references: [id])
+  job     Job?  @relation(fields: [jobId], references: [id])
+
+  @@index([status, createdAt])
+  @@index([userId])
 }

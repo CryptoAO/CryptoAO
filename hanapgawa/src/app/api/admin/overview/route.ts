@@ -4,7 +4,7 @@ import { platformEarningsCents } from "@/lib/wallet";
 
 export const GET = api(async () => {
   await requireAdmin();
-  const [users, providers, jobs, completed, openDisputes, pendingKyc, pendingPayouts, openReports, flaggedUsers, earnings] =
+  const [users, providers, jobs, completed, openDisputes, pendingKyc, pendingPayouts, openReports, flaggedUsers, openSos, earnings] =
     await Promise.all([
       db.user.count(),
       db.user.count({ where: { isProvider: true } }),
@@ -15,6 +15,7 @@ export const GET = api(async () => {
       db.payoutRequest.count({ where: { status: "PENDING" } }),
       db.report.count({ where: { status: "OPEN" } }),
       db.user.count({ where: { status: "FLAGGED" } }),
+      db.sosAlert.count({ where: { status: { in: ["OPEN", "ACKNOWLEDGED"] } } }),
       platformEarningsCents(),
     ]);
   // GMV = value of completed jobs only. Summing raw ESCROW_HOLDs would count
@@ -33,6 +34,7 @@ export const GET = api(async () => {
     pendingPayouts,
     openReports,
     flaggedUsers,
+    openSos,
     earningsCents: earnings,
     gmvCents: gmv._sum.agreedPriceCents ?? 0,
   });

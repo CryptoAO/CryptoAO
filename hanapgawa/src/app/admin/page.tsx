@@ -7,14 +7,14 @@ import { Badge, Button, Card, ErrorNote, Spinner } from "@/components/ui";
 
 interface Overview {
   users: number; providers: number; jobs: number; completed: number;
-  openDisputes: number; pendingKyc: number; pendingPayouts: number; openReports: number;
+  openDisputes: number; pendingKyc: number; pendingPayouts: number; openReports: number; openSos: number;
   flaggedUsers: number; earningsCents: number; gmvCents: number;
 }
 
 export default function AdminPage() {
   const router = useRouter();
   const [overview, setOverview] = useState<Overview | null>(null);
-  const [tab, setTab] = useState<"kyc" | "disputes" | "payouts" | "reports">("kyc");
+  const [tab, setTab] = useState<"sos" | "kyc" | "disputes" | "payouts" | "reports">("sos");
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -55,6 +55,7 @@ export default function AdminPage() {
 
       <div className="flex gap-1 overflow-x-auto rounded-2xl bg-stone-100 p-1">
         {([
+          ["sos", overview.openSos > 0 ? `🚨 SOS (${overview.openSos})` : "SOS"],
           ["kyc", `KYC (${overview.pendingKyc})`],
           ["disputes", `Disputes (${overview.openDisputes})`],
           ["payouts", `Payouts (${overview.pendingPayouts})`],
@@ -70,6 +71,7 @@ export default function AdminPage() {
         ))}
       </div>
 
+      {tab === "sos" && <SosQueue onChange={load} />}
       {tab === "kyc" && <KycQueue onChange={load} />}
       {tab === "disputes" && <DisputeQueue onChange={load} />}
       {tab === "payouts" && <PayoutQueue onChange={load} />}
@@ -85,8 +87,99 @@ function useQueue<T>(url: string) {
   return { data, load };
 }
 
+interface SosRow {
+  id: string; status: string; createdAt: string; note?: string | null;
+  mapUrl: string | null; alertedContacts: number;
+  raiser: { id: string; name: string; phone: string };
+  contacts: { name: string; phone: string; relation?: string | null }[];
+  job: { id: string; title: string; where: string } | null;
+}
+
+function SosQueue({ onChange }: { onChange: () => void }) {
+  const { data, load } = useQueue<{ alerts: SosRow[] }>("/api/admin/sos");
+  const [resolution, setResolution] = useState<Record<string, string>>({});
+  if (!data) return <Spinner />;
+  if (data.alerts.length === 0) {
+    return <Card className="py-8 text-center text-sm text-gray-500">Walang aktibong SOS. 🕊️</Card>;
+  }
+
+  async function act(id: string, status: "ACKNOWLEDGED" | "RESOLVED") {
+    await fetchJson("/api/admin/sos", {
+      method: "POST",
+      body: JSON.stringify({ alertId: id, status, resolution: resolution[id] || undefined }),
+    });
+    load();
+    onChange();
+  }
+
+  return (
+    <div className="space-y-3">
+      {data.alerts.map((a) => (
+        <Card key={a.id} className="border-red-300 bg-red-50/40">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <div className="text-base font-extrabold text-red-800">🚨 {a.raiser.name}</div>
+              <a href={`tel:${a.raiser.phone}`} className="text-sm font-bold text-brand-800 underline">
+                {a.raiser.phone}
+              </a>
+              <div className="mt-0.5 text-xs text-gray-600">
+                {timeAgo(a.createdAt)} · {a.alertedContacts} contact(s) na-text
+              </div>
+            </div>
+            <Badge tone={a.status === "OPEN" ? "red" : "amber"}>{a.status}</Badge>
+          </div>
+
+          {a.job && (
+            <div className="mt-2 rounded-xl bg-white p-3 text-sm">
+              <div className="font-semibold">{a.job.title}</div>
+              {a.job.where && <div className="text-gray-600">📍 {a.job.where}</div>}
+            </div>
+          )}
+          {a.note && <p className="mt-2 text-sm text-gray-700">&ldquo;{a.note}&rdquo;</p>}
+          {a.mapUrl && (
+            <a href={a.mapUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm font-bold text-brand-800 underline">
+              🗺️ Buksan ang huling lokasyon
+            </a>
+          )}
+
+          {a.contacts.length > 0 && (
+            <div className="mt-2 text-sm">
+              <div className="font-semibold">Trusted contacts:</div>
+              <ul className="mt-1 space-y-0.5">
+                {a.contacts.map((c) => (
+                  <li key={c.phone}>
+                    {c.name}{c.relation ? ` (${c.relation})` : ""} —{" "}
+                    <a href={`tel:${c.phone}`} className="font-bold text-brand-800 underline">{c.phone}</a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <textarea
+            className="mt-3 w-full rounded-xl border border-stone-300 p-3 text-sm"
+            placeholder="Ano ang nangyari / anong ginawa?"
+            value={resolution[a.id] ?? ""}
+            onChange={(e) => setResolution((r) => ({ ...r, [a.id]: e.target.value }))}
+          />
+          <div className="mt-2 flex gap-2">
+            {a.status === "OPEN" && (
+              <Button variant="secondary" className="min-h-10 px-3 py-2 text-sm" onClick={() => act(a.id, "ACKNOWLEDGED")}>
+                Kinakausap ko na
+              </Button>
+            )}
+            <Button className="min-h-10 px-3 py-2 text-sm" onClick={() => act(a.id, "RESOLVED")}>
+              Isara — ligtas na
+            </Button>
+          </div>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
 function KycQueue({ onChange }: { onChange: () => void }) {
-  const { data, load } = useQueue<{ queue: { id: string; level: number; docType: string; idLastFour?: string | null; createdAt: string; user: { firstName: string; lastName?: string; phone?: string; kycLevel: number } }[] }>("/api/admin/kyc");
+  const { data, load } = useQueue<{ queue: { id: string; level: number; docType: string; idLastFour?: string | null; hasDocument: boolean; createdAt: string; user: { firstName: string; lastName?: string; phone?: string; kycLevel: number } }[] }>("/api/admin/kyc");
   if (!data) return <Spinner />;
   if (data.queue.length === 0) return <Card className="py-8 text-center text-sm text-gray-500">Walang pending KYC. 🎉</Card>;
   return (
@@ -98,6 +191,18 @@ function KycQueue({ onChange }: { onChange: () => void }) {
             <div className="text-xs text-gray-500">
               Level {k.level} · {k.docType} {k.idLastFour ? `(••••${k.idLastFour})` : ""} · {timeAgo(k.createdAt)}
             </div>
+            {k.hasDocument ? (
+              <a
+                href={`/api/admin/kyc/${k.id}/document`}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-1 inline-block text-xs font-bold text-brand-800 underline"
+              >
+                📎 Tingnan ang ID (naka-log ang bawat pagtingin)
+              </a>
+            ) : (
+              <div className="mt-1 text-xs text-amber-700">⚠️ Walang naka-attach na larawan</div>
+            )}
           </div>
           <div className="flex gap-2">
             <Button className="min-h-10 px-3 py-2 text-sm" onClick={async () => { await fetchJson("/api/admin/kyc", { method: "POST", body: JSON.stringify({ submissionId: k.id, decision: "APPROVED" }) }); load(); onChange(); }}>Approve</Button>

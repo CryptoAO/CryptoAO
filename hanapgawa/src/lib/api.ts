@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { ZodError, ZodSchema } from "zod";
 import { getSessionUser } from "./session";
 import { db } from "./db";
+import { captureError, newRequestId } from "./monitoring";
 import type { User } from "@prisma/client";
 
 export class ApiError extends Error {
@@ -119,8 +120,21 @@ export function api(handler: Handler): Handler {
         const msg = e.errors[0] ? `${e.errors[0].path.join(".")}: ${e.errors[0].message}` : "Invalid input";
         return NextResponse.json({ error: msg }, { status: 400 });
       }
-      console.error("API error", e);
-      return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
+      // Unexpected: report it with a correlation id the user can quote to
+      // support, and never leak internals into the response body.
+      const requestId = newRequestId();
+      const session = await getSessionUser().catch(() => null);
+      await captureError(e, {
+        requestId,
+        route: new URL(req.url).pathname,
+        method: req.method,
+        userId: session?.id,
+        status: 500,
+      });
+      return NextResponse.json(
+        { error: "Something went wrong. Please try again.", requestId },
+        { status: 500, headers: { "X-Request-Id": requestId } },
+      );
     }
   };
 }

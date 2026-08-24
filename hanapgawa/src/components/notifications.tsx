@@ -30,6 +30,10 @@ const ICONS: Record<string, string> = {
   PAYOUT_PAID: "🏧",
   PAYOUT_REJECTED: "⚠️",
   PAYMENT_RECEIVED: "💵",
+  SOS_RAISED: "🚨",
+  SOS_RESOLVED: "🤝",
+  CHECKED_IN: "📍",
+  CHECKED_OUT: "👋",
 };
 
 export function NotificationBell() {

@@ -27,6 +27,9 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   async headers() {
+    // Identity-document responses get a stricter policy, applied in
+    // src/middleware.ts — a headers() entry here would be overridden by
+    // the catch-all below on conflicting keys.
     return [{ source: "/(.*)", headers: securityHeaders }];
   },
 };

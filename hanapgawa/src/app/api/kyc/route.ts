@@ -10,7 +10,17 @@ export const GET = api(async () => {
     where: { userId: user.id },
     orderBy: { createdAt: "desc" },
   });
-  return ok({ kycLevel: user.kycLevel, submissions });
+  return ok({
+    kycLevel: user.kycLevel,
+    submissions: submissions.map((s) => ({
+      id: s.id,
+      level: s.level,
+      docType: s.docType,
+      status: s.status,
+      hasDocument: s.docRef != null && s.docPurgedAt == null,
+      createdAt: s.createdAt,
+    })),
+  });
 });
 
 // Submit for L2 (gov ID) or L3 (NBI/police clearance). MVP records the
