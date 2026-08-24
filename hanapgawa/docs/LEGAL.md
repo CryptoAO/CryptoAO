@@ -31,6 +31,7 @@
 - **People: heavily regulated** — TNC accreditation + per-driver TNVS CPCs + regulated fares + mandatory passenger insurance; **motorcycle taxis are closed to new entrants** (pilot-only: Angkas/JoyRide/Move It; no law as of 2026). ❌ Out of scope until properly licensed. The "driver" category in-app is household/family-driver *labor*, not ride-hailing — keep it that way and say so in ToS.
 
 ## 6. Tax
+- [ ] **RA 12023 (VAT on digital services, enforced mid-2025)**: the platform's own commission/booking-fee revenue is VATable at **12%** once annual gross receipts exceed ₱3M (below: 3% percentage tax or the 8% flat option). Decide pricing display ("12% + VAT" vs absorbing ~1.4pp of GMV) before launch; structure year 1 around the sub-₱3M window
 - [ ] Counsel decision: **RR 16-2023** e-marketplace withholding (1% on half of gross remittances, ₱500k/yr de-minimis per seller) vs **RR 11-2018** professional-fee EWT (5%/10%) — definition covers services platforms; don't double-withhold
 - [ ] Collect BIR registration/sworn declarations at provider onboarding; auto-generate **Form 2307** quarterly; file 0619-E/1601-EQ
 - [ ] Educate providers on the **8% flat tax option** (≤₱3M gross) — onboarding feature that lowers their effective tax and our withholding rate
@@ -38,5 +39,6 @@
 ## 7. Kasambahay adjacency
 - Recurring domestic placements drift toward **RA 10361 (Batas Kasambahay)**: regional minimum wages (₱5,500–7,800/month, NCR ₱7,800 from Feb 2026), barangay registration, SSS/PhilHealth/Pag-IBIG for 6+ month engagements. Product: prompt compliance for recurring engagements; convert compliance into a **"Verified Employer" badge** — trust and legality in one feature.
 
-## 8. Insurance
+## 8. Insurance & guarantees
 - No statutory mandate for independent gig workers today, but cheap rails exist: Cebuana Lhuillier DriverCARE-class personal accident cover ≈ **₱260/year** (Malayan-underwritten, GInsure-distributed). Embed as default/opt-out benefit; pre-positions for pending mandates.
+- **Household-side theft/damage cover does not exist as a per-booking product in PH.** A TaskRabbit-style "Protection Pledge" is the answer — a **self-funded discretionary reimbursement program, capped (e.g., ₱25–50k damage / ₱10k theft), valid only for on-platform-paid jobs**. Never market it as "insurance" (unlicensed-insurer risk under the Insurance Code); negotiate a bespoke group policy with Pioneer/Malayan/Cebuana once volume justifies.

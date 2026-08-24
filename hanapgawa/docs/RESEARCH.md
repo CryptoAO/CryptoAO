@@ -35,7 +35,7 @@
 **Key structural insights:**
 
 1. **Errands were absorbed by delivery superapps; tasks were not.** No player owns "ironing, laundry pickup, dog walk, tutoring, aircon cleaning, queueing at SSS" as one marketplace.
-2. **The GCash mini-program lesson**: Raket's "Gigs" and PasaJob's "GJobs" both launched *inside GCash* rather than as standalone apps — GJobs got 2.4M registered users in 17 months. Masa users resist downloading new apps but will use a gig feature inside a wallet they already trust. → Our web-first PWA (shareable as a link in FB groups, no install) matches this reality; a GCash mini-program partnership is a serious growth lever later.
+2. **The GCash mini-program lesson — with a caveat**: Raket's "Gigs" and PasaJob's "GJobs" both launched *inside GCash* rather than as standalone apps — GJobs got 2.4M registered users in 17 months. Masa users resist downloading new apps but will use a gig feature inside a wallet they already trust. → Our web-first PWA (shareable as a link in FB groups, no install) matches this reality. But treat GLife as upside BD only, never the launch-critical channel: onboarding is enterprise-gated with unpublished terms, and GCash has *already allocated the gig slot to competitors* (GJobs, Gigs by Raket) — single-gatekeeper risk. The PWA is the owned path; evaluate Maya's ecosystem as the counterweight.
 3. **Worker conditions are an open wound and a differentiator**: Fairwork Philippines 2025 scored every rated platform ≤3/10 (Foodpanda/JoyRide/Maxim: 0/10). A platform that ships fair take rates, transparent pay, insurance, and SSS/Pag-IBIG remittance options can win supply loyalty and regulator goodwill simultaneously.
 
 ## 3. What people pay today (price anchors, 2024–2026)
@@ -73,7 +73,7 @@
 
 ## 6. Trust & safety infrastructure available to us (PH-specific)
 
-- **PhilSys National ID: 90.3M PSNs issued (~80% of population)**. PSA's **eVerify** (selfie-to-registry face match) and **National ID Check** (QR validation) are live, onboardable by private companies **fully online, currently FREE**. Already powers ~56% of new GCash verifications; Maya gives instant KYC to PhilSys holders.
+- **PhilSys National ID: 90.3M PSNs issued (~80% of population)**. PSA's **eVerify** (selfie-to-registry face match) and **National ID Check** (QR validation) are live, onboardable by private companies **fully online, currently FREE**. Already powers ~56% of new GCash verifications; Maya gives instant KYC to PhilSys holders. *Caveats (gap analysis)*: "free" is a current policy, not a contract; onboarding precedents are banks/fintechs (SLA for a seed-stage startup unknown — start PSA paperwork immediately, it is the long pole); and ~1 in 5 target workers (skewing rural — exactly the expansion market) has no PSN yet, so **manual document review is a permanent fallback, not a transition**: eVerify failure must degrade to "pending manual review," never rejection.
 - **Worker clearance stack**: NBI clearance ₱155 (1-yr validity, same-day if no hit; 5–15 working days on a name "HIT"), National Police Clearance ~₱150–180 (6-month validity), barangay clearance ₱20–200. **Free for first-time jobseekers (RA 11261).** Total ≈ ₱350–600. No API exists — clearances are documents requiring an upload-and-review pipeline.
 - **Benchmark (Grab PH)**: NBI + PNP clearance both issued within 6 months, random in-day selfie re-verification, SOS button, trip sharing, ₱1M free passenger accident insurance + opt-in ₱7/trip Ride Cover (Chubb).
 - **Microinsurance rails exist**: Cebuana Lhuillier DriverCARE ≈ **₱260/year** personal accident cover (Malayan-underwritten, sold via GInsure). A ₱5–15/booking accident+damage cover is affordable and monetizable.
@@ -111,6 +111,7 @@ No credible public GMV number exists for PH on-demand home services (Statista's 
 
 | # | Risk | Severity | Mitigation |
 |---|---|---|---|
+| 0 | **Demand frequency too low to sustain a paid platform** (the Gawin/GoLife/Homejoy killer; no PH willingness-to-pay data exists) | Existential | Concierge MVP test (§11 step 0) before any scale spend; measure paid conversion + 30-day repeat |
 | 1 | **Off-platform leakage** | Existential | §8 economics-first design; measure from day one |
 | 2 | **Worker reclassification as employees** (Ditiangkin v. Lazada doctrine) | High | Marketplace-venue design: clients choose, providers set prices, no platform discipline beyond fraud/safety (see LEGAL.md) |
 | 3 | **A safety incident early** (assault/theft on a booked job) | High | KYC ladder, two-sided vetting, SOS features, insurance, fast incident response SLA — and honest badges |
@@ -122,6 +123,7 @@ No credible public GMV number exists for PH on-demand home services (Statista's 
 
 ## 11. Recommended go-to-market (synthesis)
 
+0. **Concierge demand test first (2–4 weeks, <₱50k)**: before spending on growth, match jobs manually via a Facebook page in 1–2 barangays, charge a real ₱20–50 booking fee, and measure paid conversion + 30-day repeat rate. The competitor graveyard suggests demand frequency — not supply — is the primary kill risk, and no public willingness-to-pay data exists. This test can invalidate the plan cheaply.
 1. **City 1, categories 3–4**: launch ONE city (QC or a provincial city like Iloilo/CDO with zero organized competition) with laundry/labada, house cleaning, padala-errands, and aircon cleaning — high-frequency, standardizable, rate-card-able. Defer trust-heavy categories (yaya, elder care, family driver) until review density exists; defer passenger transport indefinitely (LTFRB licensing wall).
 2. **Seed supply first**: 200–500 verified providers before marketing demand. Recruit from the exact FB groups that exist today; run assisted-onboarding days with barangay/PESO offices (clearances are FREE for first-time jobseekers — run "Libreng NBI day" onboarding events); subsidize the ₱350–600 clearance stack against first earnings.
 3. **Sachet-economy pricing**: no subscriptions for workers; commission-on-completion + eventual ₱10–25 booking fees on thin tickets; GCash payouts.

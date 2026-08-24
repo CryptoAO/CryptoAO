@@ -19,6 +19,9 @@ The original brief was strong. Here it is restated as the sharpened one-page PRD
 > - **Cash reality**: wallet-escrow first, but a cash-on-completion mode (commission as provider ledger debt, capped) is required to win outside NCR — phase 2.
 > - **Two-sided safety**: households get vetted too; workers get insurance, SOS, and a report channel — supply retention is the harder side.
 > - **The OFW wedge**: let an OFW abroad book & pay for services for family back home.
+> - **Demand validation before scale spend**: a 2–4 week concierge MVP (manual matching via a Facebook page, real ₱20–50 booking fee) measuring paid conversion and 30-day repeat — the cheapest test that could invalidate the whole plan.
+> - **The VAT line**: RA 12023 puts 12% VAT on the platform's own commission above ₱3M/yr gross receipts — price it in from day one.
+> - **Household protection**: a capped self-funded "Protection Pledge" (never marketed as insurance) valid only for on-platform-paid jobs — the trust product and the anti-leakage hook are the same feature.
 
 ## 1. Personas
 

@@ -29,13 +29,21 @@ The 12% buys things Facebook can never give and agencies overcharge for:
 |---|---|
 | Gross booking value | ₱500.00 |
 | Platform commission (12%) | **+₱60.00** |
+| **VAT on our commission (RA 12023, 12% once gross receipts > ₱3M/yr)** | −₱7.20 |
 | Payment-in cost (~2.5% e-wallet MDR on ₱500) | −₱12.50 |
 | Payout cost (Xendit-style flat disbursement) | −₱10.00 |
 | SMS/OTP amortized (~2 messages @ ₱0.56) | −₱1.12 |
+| Protection Pledge reserve (~0.5–1% of GMV, see §3a) | −₱2.50–5.00 |
 | Infra amortized (at 50k jobs/mo scale) | −₱1–2 |
-| **Contribution per job** | **≈ ₱34–35 (~7% of GMV)** |
+| **Contribution per job** | **≈ ₱23–26 (~5% of GMV)** |
 
-Break-even against a lean fixed base (₱600k–1M/month: 4–6 staff + infra + support) ≈ **18,000–29,000 completed jobs/month ≈ ₱9–15M GMV/month** — one dense city at 2% household penetration. Thin-ticket padala jobs need the flat booking fee to be contribution-positive; that is why phase 2 exists.
+Break-even against a lean fixed base (₱600k–1M/month: 4–6 staff + infra + support) ≈ **25,000–40,000 completed jobs/month ≈ ₱12–20M GMV/month** — one dense city at 2–3% household penetration. Thin-ticket padala jobs need the flat booking fee to be contribution-positive; that is why phase 2 exists.
+
+**The VAT trap (found in gap analysis):** RA 12023 (enforced mid-2025) makes online-marketplace commission revenue VATable at 12% once annual gross receipts pass ₱3M — below that, 3% percentage tax (or the 8% flat option). Decide early: display fees as "12% + VAT" to providers (communication risk with masa suppliers) or absorb the ~1.4pp of GMV. Year-1 structuring should exploit the sub-₱3M window.
+
+### 3a. The Protection Pledge (household-side trust, done legally)
+
+Households trusting a stranger in their home need theft/damage cover — but no PH insurer sells per-booking home-service liability, and TaskRabbit's "Happiness Pledge"-style programs are **self-funded discretionary reimbursement, not insurance**. Plan: a capped **HanapGawa Protection Pledge** (e.g., ₱25–50k damage / ₱10k theft), reserved at ~0.5–1% of GMV, **valid only for jobs paid on-platform** — making it simultaneously the trust product and the strongest anti-disintermediation hook. Never market it as "insurance" (Insurance Code risk); negotiate a bespoke group policy with Pioneer/Malayan/Cebuana once volume justifies a quote.
 
 ## 4. Will it be expensive to build and run? (the honest answer)
 
@@ -43,8 +51,8 @@ Break-even against a lean fixed base (₱600k–1M/month: 4–6 staff + infra + 
 
 | Cost bucket | Bootstrap (this repo's path) | Funded |
 |---|---|---|
-| MVP build | Already built (this codebase); founder time | Agency quotes for marketplace MVPs run ₱1.5–4M — avoided |
-| Hosting (to ~50k MAU) | ₱3k–15k/month (Vercel/Railway/Fly + managed Postgres) | ₱30k–80k/month with Redis, object storage, observability |
+| MVP build | Already built (this codebase); founder time | PH agency quotes for marketplace MVPs cluster at $15–60k (₱850k–3.4M) — avoided |
+| Hosting | ₱0–3k/mo at 1k MAU; ₱9–29k/mo at 50k MAU (Vercel/Supabase-class + R2) | ₱115–350k/mo at 500k MAU (AWS ap-southeast-1, multi-AZ) |
 | SMS OTP | ₱0.56/SMS (Semaphore); ~₱5–10k/month at 10k signups | scale linearly |
 | eVerify (PSA) | **FREE currently** | fallback eKYC vendor ₱15–50/check for the ~20% without National IDs |
 | KYC review staff | Founders at first | 2–4 support/trust staff (₱25–45k/month each) |
@@ -53,7 +61,9 @@ Break-even against a lean fixed base (₱600k–1M/month: 4–6 staff + infra + 
 | Legal (one-time) | ₱150–400k: entity, ToS/privacy, payments opinion, NPC registration | + retained counsel |
 | Insurance partner | Revenue-share, no capital | program fees |
 
-**Realistic bootstrap runway**: ₱2.5–5M gets a one-city pilot to the 6-month liquidity checkpoint. **Seed-funded**: ₱15–30M does 2–3 cities properly with a trust & safety team. (MyKuya raised only ~$1.18M total and could never leave Metro Manila — undercapitalization, not demand, was its ceiling. Plan the raise around city-level contribution-margin proof.)
+**Realistic bootstrap runway**: ₱2.5–5M gets a one-city pilot to the 6-month liquidity checkpoint (people are 80–90% of spend at every stage below 500k MAU — infra never exceeds one mid-level dev's salary). **Seed-funded**: comparable PH raises are small (ServeHappy launched on $50k; GoodWork's seed was $1.6M; PH 2024 tracked funding ~$245M total) — plan a $500k–1.6M seed sized for 24+ months at ₱2.5–3.5M/month burn, with 30–50% of funded burn going to supply/demand acquisition, not engineering. (MyKuya raised only ~$1.18M total and could never leave Metro Manila.)
+
+**Validate demand before spending any of it (gap analysis finding):** there is *no* public evidence masa households pay a platform premium over free Facebook — the graveyard (Gawin, GoLife, Homejoy, Raket's ₱13/user/year) suggests demand *frequency*, not supply, is the kill risk. Cheapest decisive test: a **2–4 week concierge MVP** in 1–2 barangays — match manually through a Facebook page, charge a real ₱20–50 booking fee, measure paid conversion and 30-day repeat rate. This can invalidate or de-risk the whole plan for under ₱50k.
 
 ## 5. KPIs that decide life or death
 
