@@ -81,3 +81,20 @@ Every sensitive route re-derives rights from the database row, never from client
 5. CSP nonce migration (drop `unsafe-inline` for scripts).
 6. Password reset flow (support-assisted today).
 7. Independent penetration test before public launch.
+
+## 10. Adversarial review — findings fixed before merge
+
+A multi-agent adversarial review (authz, web, money-flow, API-contract, schema, frontend dimensions; each finding independently verified) was run against this codebase. Everything confirmed was fixed and regression-tested live:
+
+| Severity | Finding | Fix |
+|---|---|---|
+| Critical | Client could **dispute-then-cancel** to self-refund full escrow after work was done, bypassing admin resolution | DISPUTED jobs are frozen for both parties; `resolveDispute()` (admin) is the only exit — verified live: exploit now returns 409 |
+| High | Rate-limit/audit IP came from the **leftmost** `X-Forwarded-For` entry (attacker-controlled) | Rightmost (proxy-appended) entry is used |
+| High | Money transitions (accept/complete/cancel/resolve/payout decisions) raced under concurrency (TOCTOU on Postgres) | Atomic conditional `updateMany` state-claims before any ledger write, plus `Serializable` isolation on Postgres |
+| High | PayMongo mode had **no webhook**, so real top-ups never credited | `/api/webhooks/paymongo` with HMAC signature verification (timing-safe) and per-event idempotency |
+| Medium | `jobView` leaked precise **lat/lng** to anonymous viewers while gating the text address | Coordinates now gated exactly like the address; server-side distance sort unaffected |
+| Medium | Registration 409 allowed **account enumeration** | Uniform response; unverified numbers get the OTP re-sent, verified ones learn nothing |
+| Medium | Admin payout/KYC decisions could double-apply on double-click | Atomic PENDING-state claims |
+| Low | OTP attempt counter racy; duplicate provider categories 500'd; PSGC validation skipped on job post; refunded bookings inflated GMV | All fixed (atomic increments/consume, explicit 400s, city-in-region check, GMV = completed jobs only) |
+
+Frontend correctness fixes from the same review: provider profile edit no longer wipes existing categories/availability (prefills), Level-3 KYC no longer submits a Level-2 doc type, withdrawn offers can re-offer, disputed jobs keep chat accessible, chat scrolls its own pane only, stale feed responses are dropped, provider list paginates.

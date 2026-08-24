@@ -20,10 +20,21 @@ export const POST = api(async (req) => {
     throw new ApiError(400, "Please pick your city and region");
   }
 
-  const existing = await db.user.findUnique({ where: { phone } });
-  if (existing) throw new ApiError(409, "This number already has an account — log in instead");
-
+  // Hash before the existence check so both paths cost about the same time.
   const passwordHash = await bcrypt.hash(body.password, 12);
+
+  const existing = await db.user.findUnique({ where: { phone } });
+  if (existing) {
+    // Anti-enumeration: identical response whether or not the number is
+    // registered. A still-unverified account gets its OTP re-sent; a verified
+    // owner simply receives no code (they log in instead), and an attacker
+    // learns nothing from the response.
+    if (!existing.phoneVerifiedAt && rateLimit(`otp:${phone}`, LIMITS.otpSend.max, LIMITS.otpSend.windowMs)) {
+      await issueOtp(phone, "REGISTER");
+    }
+    return ok({ next: "verify", phone }, 201);
+  }
+
   const user = await db.user.create({
     data: {
       phone,

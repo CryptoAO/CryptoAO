@@ -67,7 +67,8 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
   const meId = me.user?.id;
   const isOwner = viewerRole === "owner";
   const isAssigned = meId != null && job.assignedProviderId === meId;
-  const myOffer = meId ? offers.find((o) => o.providerId === meId) : undefined;
+  // A withdrawn offer doesn't block a fresh one — treat it as "no offer".
+  const myOffer = meId ? offers.find((o) => o.providerId === meId && o.status !== "WITHDRAWN") : undefined;
   const status = STATUS_LABEL[job.status] ?? { label: job.status, tone: "gray" as const };
 
   async function action(name: string, extra: Record<string, unknown> = {}) {
@@ -283,11 +284,14 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
       )}
 
       {/* ===== Booked / in-progress panel ===== */}
-      {meId && (isOwner || isAssigned) && ["BOOKED", "IN_PROGRESS", "DONE_BY_PROVIDER"].includes(job.status) && (
+      {meId && (isOwner || isAssigned) && ["BOOKED", "IN_PROGRESS", "DONE_BY_PROVIDER", "DISPUTED"].includes(job.status) && (
         <Card className="space-y-3">
           <h2 className="font-bold">Status ng trabaho</h2>
           <div className="rounded-xl bg-brand-50 p-3 text-sm text-brand-900">
-            💰 <strong>{pesos(job.agreedPriceCents ?? 0)}</strong> — naka-hold sa escrow. Ire-release lang kapag kinumpirma ng client na tapos ang trabaho.
+            💰 <strong>{pesos(job.agreedPriceCents ?? 0)}</strong> —{" "}
+            {job.status === "DISPUTED"
+              ? "naka-freeze sa escrow habang inaayos ng support ang dispute."
+              : "naka-hold sa escrow. Ire-release lang kapag kinumpirma ng client na tapos ang trabaho."}
           </div>
 
           {isAssigned && job.status === "BOOKED" && (
@@ -305,7 +309,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
             <Button variant="ghost" disabled={busy} onClick={() => action("cancel")}>I-cancel (ibabalik ang hold)</Button>
           )}
 
-          {!showDispute ? (
+          {job.status === "DISPUTED" ? null : !showDispute ? (
             <button className="text-sm font-semibold text-red-600 underline" onClick={() => setShowDispute(true)}>
               May problema? Mag-file ng dispute
             </button>

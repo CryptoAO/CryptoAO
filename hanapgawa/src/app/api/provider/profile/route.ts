@@ -10,8 +10,11 @@ export const POST = api(async (req) => {
   const body = await parseBody(req, providerProfileSchema);
 
   const categoryIds = body.categories.map((c) => c.categoryId);
+  if (new Set(categoryIds).size !== categoryIds.length) {
+    throw new ApiError(400, "Duplicate category selected");
+  }
   const validCount = await db.category.count({ where: { id: { in: categoryIds }, active: true } });
-  if (validCount !== new Set(categoryIds).size) throw new ApiError(400, "Invalid category selected");
+  if (validCount !== categoryIds.length) throw new ApiError(400, "Invalid category selected");
 
   await db.$transaction(async (tx) => {
     await tx.user.update({

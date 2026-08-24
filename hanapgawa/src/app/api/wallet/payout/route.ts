@@ -1,5 +1,5 @@
 import { api, ok, ApiError, parseBody, requireProvider, audit, clientIp } from "@/lib/api";
-import { db } from "@/lib/db";
+import { db, moneyTxOptions } from "@/lib/db";
 import { payoutRequestSchema } from "@/lib/validation";
 import { parsePhpToCents } from "@/lib/money";
 import { walletBalanceCents } from "@/lib/wallet";
@@ -26,8 +26,12 @@ export const POST = api(async (req) => {
     await tx.ledgerEntry.create({
       data: { userId: user.id, type: "PAYOUT_CASHOUT", amountCents: -amountCents, note: `Cash-out ${maskedRef}` },
     });
+    // Belt-and-braces: if a concurrent debit slipped between the balance
+    // check and our insert (possible outside Serializable), roll back.
+    const after = await walletBalanceCents(user.id, tx);
+    if (after < 0) throw new ApiError(409, "Balance changed — try again");
     return payout;
-  });
+  }, moneyTxOptions);
 
   await audit("wallet.payout_request", { actorId: user.id, targetType: "PayoutRequest", targetId: result.id, ip: clientIp(req) });
   return ok({ payout: result }, 201);

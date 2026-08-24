@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { fetchJson, pesos, timeAgo } from "@/lib/client";
@@ -28,6 +28,7 @@ function JobsFeed() {
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<"recent" | "near">("recent");
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const reqSeq = useRef(0);
 
   useEffect(() => {
     fetchJson<{ categories: Category[] }>("/api/categories").then((d) => setCategories(d.categories)).catch(() => {});
@@ -46,7 +47,9 @@ function JobsFeed() {
       sp.set("lat", String(coords.lat));
       sp.set("lng", String(coords.lng));
     }
+    const seq = ++reqSeq.current;
     const d = await fetchJson<{ jobs: JobRow[]; total: number }>(`/api/jobs?${sp}`);
+    if (seq !== reqSeq.current) return; // a newer request superseded this one
     setJobs(d.jobs);
     setTotal(d.total);
     setPage(p);

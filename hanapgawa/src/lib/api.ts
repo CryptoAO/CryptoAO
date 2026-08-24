@@ -59,11 +59,18 @@ export async function requireAdmin(): Promise<User> {
 }
 
 export function clientIp(req: NextRequest): string {
-  return (
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    req.headers.get("x-real-ip") ||
-    "unknown"
-  );
+  // Trust only what OUR proxy appended: the RIGHTMOST X-Forwarded-For entry.
+  // The leftmost entries are attacker-controlled (any client can send an XFF
+  // header), so using them would let callers rotate fake IPs to bypass
+  // per-IP rate limits and poison audit logs. If the platform sits behind
+  // more than one trusted proxy hop, count further from the right.
+  const xff = req.headers.get("x-forwarded-for");
+  if (xff) {
+    const parts = xff.split(",");
+    const last = parts[parts.length - 1]?.trim();
+    if (last) return last;
+  }
+  return req.headers.get("x-real-ip") ?? "unknown";
 }
 
 export async function parseBody<T>(req: NextRequest, schema: ZodSchema<T>): Promise<T> {

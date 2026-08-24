@@ -239,7 +239,9 @@ model LedgerEntry {
   note        String?
   createdAt   DateTime @default(now())
 
-  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Financial records must survive account removal — never cascade-delete
+  // money history. Account erasure (DPA) anonymizes the user row instead.
+  user User? @relation(fields: [userId], references: [id], onDelete: Restrict)
   job  Job?  @relation(fields: [jobId], references: [id])
 
   @@index([userId, createdAt])
@@ -257,7 +259,7 @@ model PayoutRequest {
   processedAt DateTime?
   createdAt   DateTime  @default(now())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
 
   @@index([status])
   @@index([userId])

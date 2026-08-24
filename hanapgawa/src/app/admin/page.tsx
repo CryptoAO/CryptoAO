@@ -37,7 +37,7 @@ export default function AdminPage() {
     { label: "Providers", value: overview.providers },
     { label: "Jobs", value: overview.jobs },
     { label: "Completed", value: overview.completed },
-    { label: "GMV (held)", value: pesos(overview.gmvCents) },
+    { label: "GMV (completed)", value: pesos(overview.gmvCents) },
     { label: "Platform earnings", value: pesos(overview.earningsCents) },
   ];
 

@@ -77,7 +77,7 @@ function MeDashboard() {
 
       {tab === "activity" && <ActivityTab meId={u.id} />}
       {tab === "wallet" && <WalletTab onChange={load} />}
-      {tab === "provider" && <ProviderTab isProvider={u.isProvider} bio={u.bio ?? ""} onSaved={load} />}
+      {tab === "provider" && <ProviderTab meId={u.id} isProvider={u.isProvider} bio={u.bio ?? ""} onSaved={load} />}
       {tab === "kyc" && <KycTab kycLevel={u.kycLevel} />}
 
       <div className="pt-2 text-center">
@@ -290,7 +290,7 @@ function WalletTab({ onChange }: { onChange: () => void }) {
 
 interface CatRow { categoryId: string; headline?: string; ratePhp?: number; rateUnit?: "PER_HOUR" | "PER_JOB" | "PER_KILO" | "PER_DAY"; yearsExp?: number }
 
-function ProviderTab({ isProvider, bio: initialBio, onSaved }: { isProvider: boolean; bio: string; onSaved: () => void }) {
+function ProviderTab({ meId, isProvider, bio: initialBio, onSaved }: { meId: string; isProvider: boolean; bio: string; onSaved: () => void }) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [bio, setBio] = useState(initialBio);
   const [rows, setRows] = useState<CatRow[]>([]);
@@ -298,10 +298,35 @@ function ProviderTab({ isProvider, bio: initialBio, onSaved }: { isProvider: boo
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [loaded, setLoaded] = useState(!isProvider);
 
   useEffect(() => {
     fetchJson<{ categories: Category[] }>("/api/categories").then((d) => setCategories(d.categories)).catch(() => {});
   }, []);
+
+  // Prefill the form with the existing profile — otherwise saving would
+  // silently wipe categories/availability the provider set up before.
+  useEffect(() => {
+    if (!isProvider) return;
+    fetchJson<{ provider: {
+      categories: { categoryId: string; headline?: string | null; rateCents?: number | null; rateUnit?: string | null; yearsExp?: number | null }[];
+      availability: { weekday: number; startMin: number; endMin: number }[];
+    } }>(`/api/providers/${meId}`)
+      .then((d) => {
+        setRows(d.provider.categories.map((c) => ({
+          categoryId: c.categoryId,
+          headline: c.headline ?? undefined,
+          ratePhp: c.rateCents != null ? c.rateCents / 100 : undefined,
+          rateUnit: (c.rateUnit ?? undefined) as CatRow["rateUnit"],
+          yearsExp: c.yearsExp ?? undefined,
+        })));
+        setAvail(d.provider.availability);
+      })
+      .catch(() => {})
+      .finally(() => setLoaded(true));
+  }, [isProvider, meId]);
+
+  if (!loaded) return <Spinner />;
 
   function toggleCategory(id: string) {
     setRows((r) => (r.some((x) => x.categoryId === id) ? r.filter((x) => x.categoryId !== id) : [...r, { categoryId: id }]));
@@ -425,14 +450,25 @@ interface KycData { kycLevel: number; submissions: { id: string; level: number; 
 
 function KycTab({ kycLevel }: { kycLevel: number }) {
   const [data, setData] = useState<KycData | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [docType, setDocType] = useState("PHILSYS");
   const [idLastFour, setIdLastFour] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const load = useCallback(() => fetchJson<KycData>("/api/kyc").then(setData).catch(() => {}), []);
+  const load = useCallback(
+    () => fetchJson<KycData>("/api/kyc").then(setData).catch((e) => setLoadError((e as Error).message)),
+    [],
+  );
   useEffect(() => { load(); }, [load]);
 
+  // Keep the doc dropdown's state in sync with which level is being applied
+  // for — otherwise a Level-3 submit could silently send a Level-2 doc type.
+  useEffect(() => {
+    if (data) setDocType(data.kycLevel < 2 ? "PHILSYS" : "NBI");
+  }, [data]);
+
+  if (loadError && !data) return <ErrorNote message={loadError} />;
   if (!data) return <Spinner />;
   const level = data.kycLevel;
   const nextLevel = level < 2 ? 2 : level < 3 ? 3 : null;

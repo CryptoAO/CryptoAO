@@ -48,8 +48,11 @@ export function jobView(job: Job & { client?: User; provider?: User | null }, vi
     barangay: job.barangay,
     // Exact meeting address only after you're actually on the job.
     addressNote: showPrivate && job.status !== "OPEN" ? job.addressNote : null,
-    lat: job.lat,
-    lng: job.lng,
+    // Precise coordinates are as sensitive as the address — never expose them
+    // to non-parties. (Server-side "near" sorting reads the DB rows directly,
+    // so public distance sort still works without leaking the pin.)
+    lat: showPrivate ? job.lat : null,
+    lng: showPrivate ? job.lng : null,
     payType: job.payType,
     budgetCents: job.budgetCents,
     durationMin: job.durationMin,

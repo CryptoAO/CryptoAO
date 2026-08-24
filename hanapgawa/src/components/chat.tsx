@@ -11,7 +11,7 @@ export function ChatBox({ jobId, withUserId, meId }: { jobId: string; withUserId
   const [text, setText] = useState("");
   const [warning, setWarning] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
     try {
@@ -29,7 +29,9 @@ export function ChatBox({ jobId, withUserId, meId }: { jobId: string; withUserId
   }, [load]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    // Scroll only the chat pane — scrollIntoView would drag the whole page.
+    const el = listRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
   }, [messages.length]);
 
   async function send(e: React.FormEvent) {
@@ -56,7 +58,7 @@ export function ChatBox({ jobId, withUserId, meId }: { jobId: string; withUserId
       <div className="border-b border-stone-100 px-4 py-2 text-xs font-semibold text-gray-500">
         💬 Usap dito sa app — para protektado kayo pareho. Bawal magpalitan ng number.
       </div>
-      <div className="max-h-72 space-y-2 overflow-y-auto p-4">
+      <div ref={listRef} className="max-h-72 space-y-2 overflow-y-auto p-4">
         {messages.length === 0 && <p className="text-center text-sm text-gray-400">Simulan ang usapan 👋</p>}
         {messages.map((m) => (
           <div key={m.id} className={`flex ${m.senderId === meId ? "justify-end" : "justify-start"}`}>
@@ -70,7 +72,6 @@ export function ChatBox({ jobId, withUserId, meId }: { jobId: string; withUserId
             </div>
           </div>
         ))}
-        <div ref={bottomRef} />
       </div>
       {warning && <div className="mx-4 mb-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">{warning}</div>}
       <form onSubmit={send} className="flex gap-2 border-t border-stone-100 p-3">

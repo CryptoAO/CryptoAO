@@ -25,9 +25,27 @@ export async function verifyOtp(phone: string, purpose: string, code: string): P
     orderBy: { createdAt: "desc" },
   });
   if (!record) throw new ApiError(400, "Code expired — request a new one");
-  if (record.attempts >= MAX_ATTEMPTS) throw new ApiError(429, "Too many tries — request a new code");
-  await db.otpCode.update({ where: { id: record.id }, data: { attempts: { increment: 1 } } });
+
+  // Atomic attempt accounting: the conditional increment IS the gate, so
+  // concurrent requests can't collectively exceed MAX_ATTEMPTS.
+  const claimed = await db.otpCode.updateMany({
+    where: {
+      id: record.id,
+      attempts: { lt: MAX_ATTEMPTS },
+      consumedAt: null,
+      expiresAt: { gt: new Date() },
+    },
+    data: { attempts: { increment: 1 } },
+  });
+  if (claimed.count === 0) throw new ApiError(429, "Too many tries — request a new code");
+
   const okCode = await bcrypt.compare(code, record.codeHash);
   if (!okCode) throw new ApiError(400, "Wrong code, please try again");
-  await db.otpCode.update({ where: { id: record.id }, data: { consumedAt: new Date() } });
+
+  // Consume exactly once — a concurrent correct submission loses.
+  const consumed = await db.otpCode.updateMany({
+    where: { id: record.id, consumedAt: null },
+    data: { consumedAt: new Date() },
+  });
+  if (consumed.count === 0) throw new ApiError(400, "Code already used — request a new one");
 }

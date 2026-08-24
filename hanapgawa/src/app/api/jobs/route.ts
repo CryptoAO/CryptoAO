@@ -6,7 +6,7 @@ import { rateLimit, LIMITS } from "@/lib/ratelimit";
 import { parsePhpToCents } from "@/lib/money";
 import { jobView } from "@/lib/serialize";
 import { getSessionUser } from "@/lib/session";
-import { distanceKm, getCity } from "@/lib/psgc";
+import { distanceKm, getCity, isValidCityInRegion } from "@/lib/psgc";
 
 const PAGE_SIZE = 20;
 
@@ -60,7 +60,10 @@ export const GET = api(async (req: NextRequest) => {
   }
 
   return ok({
-    total,
+    // "near" sorts within a window of the 200 newest matches — report the
+    // window honestly instead of a total the pager can't actually reach.
+    total: sort === "near" ? Math.min(total, 200) : total,
+    windowed: sort === "near" && total > 200 ? true : undefined,
     page,
     pageSize: PAGE_SIZE,
     jobs: list.map((j) => ({
@@ -84,6 +87,9 @@ export const POST = api(async (req: NextRequest) => {
     throw new ApiError(429, "You're posting too fast — try again in a bit");
   }
   const body = await parseBody(req, jobCreateSchema);
+  if (!isValidCityInRegion(body.cityCode, body.regionCode)) {
+    throw new ApiError(400, "Please pick a valid city and region");
+  }
 
   const category = await db.category.findUnique({ where: { id: body.categoryId } });
   if (!category || !category.active) throw new ApiError(400, "Pick a valid category");

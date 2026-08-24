@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { fetchJson, pesos } from "@/lib/client";
-import { Card, KycBadge, Select, Spinner, Stars } from "@/components/ui";
+import { Button, Card, KycBadge, Select, Spinner, Stars } from "@/components/ui";
 import { REGIONS, citiesOfRegion, getCity } from "@/lib/psgc";
 
 interface Category { id: string; name: string; nameTl: string; icon: string }
@@ -21,23 +21,28 @@ export default function ProvidersPage() {
   const [region, setRegion] = useState("");
   const [city, setCity] = useState("");
   const [category, setCategory] = useState("");
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
     fetchJson<{ categories: Category[] }>("/api/categories").then((d) => setCategories(d.categories)).catch(() => {});
   }, []);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (p: number) => {
     setProviders(null);
     const sp = new URLSearchParams();
     if (region) sp.set("region", region);
     if (city) sp.set("city", city);
     if (category) sp.set("category", category);
-    const d = await fetchJson<{ providers: ProviderRow[] }>(`/api/providers?${sp}`);
+    sp.set("page", String(p));
+    const d = await fetchJson<{ providers: ProviderRow[]; total: number }>(`/api/providers?${sp}`);
     setProviders(d.providers);
+    setTotal(d.total);
+    setPage(p);
   }, [region, city, category]);
 
   useEffect(() => {
-    load().catch(() => setProviders([]));
+    load(1).catch(() => setProviders([]));
   }, [load]);
 
   return (
@@ -65,6 +70,7 @@ export default function ProvidersPage() {
       ) : providers.length === 0 ? (
         <Card className="py-10 text-center text-gray-500">Wala pang provider dito. Ikaw kaya ang mauna? 😉</Card>
       ) : (
+        <>
         <div className="grid gap-3 sm:grid-cols-2">
           {providers.map((p) => (
             <Link key={p.id} href={`/providers/${p.id}`}>
@@ -90,6 +96,13 @@ export default function ProvidersPage() {
             </Link>
           ))}
         </div>
+        {total > 20 && (
+          <div className="flex justify-center gap-2">
+            <Button variant="secondary" disabled={page <= 1} onClick={() => load(page - 1)}>← Prev</Button>
+            <Button variant="secondary" disabled={page * 20 >= total} onClick={() => load(page + 1)}>Next →</Button>
+          </div>
+        )}
+        </>
       )}
     </div>
   );

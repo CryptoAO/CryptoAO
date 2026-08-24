@@ -4,7 +4,7 @@ import { isValidCityInRegion } from "./psgc";
 export const phoneSchema = z
   .string()
   .min(10)
-  .max(16)
+  .max(24) // roomy: normalizePhPhone is the real gate; this only bounds input
   .describe("PH mobile number, e.g. 09171234567");
 
 export const passwordSchema = z

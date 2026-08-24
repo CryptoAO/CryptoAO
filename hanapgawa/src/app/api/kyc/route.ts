@@ -1,9 +1,11 @@
-import { api, ok, ApiError, parseBody, requireVerifiedUser, audit, clientIp } from "@/lib/api";
+import { api, ok, ApiError, parseBody, requireUser, requireVerifiedUser, audit, clientIp } from "@/lib/api";
 import { db } from "@/lib/db";
 import { kycSubmitSchema } from "@/lib/validation";
 
 export const GET = api(async () => {
-  const user = await requireVerifiedUser();
+  // Own submissions are readable even before phone verification, so the
+  // Verification tab can render the ladder for a brand-new account.
+  const user = await requireUser();
   const submissions = await db.kycSubmission.findMany({
     where: { userId: user.id },
     orderBy: { createdAt: "desc" },

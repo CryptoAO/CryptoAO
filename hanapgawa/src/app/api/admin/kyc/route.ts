@@ -37,10 +37,12 @@ export const POST = api(async (req) => {
   if (!submission || submission.status !== "PENDING") throw new ApiError(404, "Submission not found or already handled");
 
   await db.$transaction(async (tx) => {
-    await tx.kycSubmission.update({
-      where: { id: submission.id },
+    // Atomic claim: two admins deciding at once can't both apply.
+    const claim = await tx.kycSubmission.updateMany({
+      where: { id: submission.id, status: "PENDING" },
       data: { status: body.decision, reviewerId: admin.id, notes: body.notes, reviewedAt: new Date() },
     });
+    if (claim.count === 0) throw new ApiError(409, "Submission already handled");
     if (body.decision === "APPROVED") {
       const stamp = submission.level === 2 ? { idVerifiedAt: new Date() } : { clearanceVerifiedAt: new Date() };
       await tx.user.update({

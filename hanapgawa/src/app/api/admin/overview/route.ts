@@ -17,9 +17,11 @@ export const GET = api(async () => {
       db.user.count({ where: { status: "FLAGGED" } }),
       platformEarningsCents(),
     ]);
-  const gmv = await db.ledgerEntry.aggregate({
-    where: { type: "ESCROW_HOLD" },
-    _sum: { amountCents: true },
+  // GMV = value of completed jobs only. Summing raw ESCROW_HOLDs would count
+  // bookings that were later refunded/cancelled and overstate the number.
+  const gmv = await db.job.aggregate({
+    where: { status: "COMPLETED" },
+    _sum: { agreedPriceCents: true },
   });
   return ok({
     users,
@@ -32,6 +34,6 @@ export const GET = api(async () => {
     openReports,
     flaggedUsers,
     earningsCents: earnings,
-    gmvCents: -(gmv._sum.amountCents ?? 0),
+    gmvCents: gmv._sum.agreedPriceCents ?? 0,
   });
 });
