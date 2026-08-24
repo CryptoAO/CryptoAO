@@ -73,14 +73,14 @@ function JobsFeed() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold">Hanap Trabaho 🔎</h1>
+        <h1 className="whitespace-nowrap text-xl font-extrabold sm:text-2xl">Hanap Trabaho 🔎</h1>
         <Link href="/jobs/new" className="rounded-xl bg-brand-700 px-4 py-2 text-sm font-bold text-white">➕ Post</Link>
       </div>
 
       {/* Filters */}
       <Card className="space-y-3">
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <Select value={region} onChange={(e) => { setRegion(e.target.value); setCity(""); }}>
+        <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 sm:grid-cols-4">
+          <Select value={region} onChange={(e) => { setRegion(e.target.value); setCity(""); }} className="w-full">
             <option value="">Lahat ng region</option>
             {REGIONS.map((r) => <option key={r.code} value={r.code}>{r.short}</option>)}
           </Select>
@@ -99,20 +99,20 @@ function JobsFeed() {
             onChange={(e) => setQ(e.target.value)}
           />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 overflow-x-auto">
           <button
             onClick={() => setSort("recent")}
-            className={`rounded-full px-4 py-1.5 text-sm font-semibold ${sort === "recent" ? "bg-brand-700 text-white" : "bg-stone-100 text-gray-600"}`}
+            className={`whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-semibold ${sort === "recent" ? "bg-brand-700 text-white" : "bg-stone-100 text-gray-600"}`}
           >
             Pinakabago
           </button>
           <button
             onClick={useMyLocation}
-            className={`rounded-full px-4 py-1.5 text-sm font-semibold ${sort === "near" ? "bg-brand-700 text-white" : "bg-stone-100 text-gray-600"}`}
+            className={`whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-semibold ${sort === "near" ? "bg-brand-700 text-white" : "bg-stone-100 text-gray-600"}`}
           >
             📍 Malapit sa'kin
           </button>
-          <span className="ml-auto text-sm text-gray-500">{total} trabaho</span>
+          <span className="ml-auto whitespace-nowrap text-sm text-gray-500">{total} trabaho</span>
         </div>
       </Card>
 

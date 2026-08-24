@@ -2,6 +2,7 @@ import { z } from "zod";
 import { api, ok, ApiError, parseBody, requireAdmin, audit, clientIp } from "@/lib/api";
 import { db } from "@/lib/db";
 import { publicUser } from "@/lib/serialize";
+import { notifyKycDecision } from "@/lib/notify";
 
 export const GET = api(async () => {
   await requireAdmin();
@@ -52,6 +53,7 @@ export const POST = api(async (req) => {
     }
   });
 
+  await notifyKycDecision(submission.userId, body.decision === "APPROVED", submission.level);
   await audit("admin.kyc_decision", {
     actorId: admin.id,
     targetType: "KycSubmission",

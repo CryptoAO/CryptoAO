@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { api, ok, ApiError, parseBody, requireAdmin, audit, clientIp } from "@/lib/api";
 import { db, moneyTxOptions } from "@/lib/db";
+import { notifyPayoutDecision } from "@/lib/notify";
 
 export const GET = api(async () => {
   await requireAdmin();
@@ -51,6 +52,7 @@ export const POST = api(async (req) => {
     }
   }, moneyTxOptions);
 
+  await notifyPayoutDecision(payout.userId, body.decision === "PAID", payout.amountCents);
   await audit("admin.payout_decision", {
     actorId: admin.id,
     targetType: "PayoutRequest",

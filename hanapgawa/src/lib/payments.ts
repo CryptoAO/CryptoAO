@@ -3,6 +3,7 @@
 // online banking) without touching call sites.
 
 import { creditTopup } from "./wallet";
+import { notifyPaymentReceived } from "./notify";
 
 export interface TopupResult {
   kind: "instant" | "redirect";
@@ -17,6 +18,7 @@ export interface PaymentProvider {
 class DevPayments implements PaymentProvider {
   async createTopup(userId: string, amountCents: number): Promise<TopupResult> {
     await creditTopup(userId, amountCents, "Dev top-up (simulated GCash)");
+    await notifyPaymentReceived(userId, amountCents);
     return { kind: "instant" };
   }
 }

@@ -1,6 +1,10 @@
 import { db, moneyTxOptions } from "./db";
 import { ApiError } from "./api";
 import { escrowHold, escrowRelease, escrowRefund } from "./wallet";
+import {
+  notifyOfferAccepted, notifyOfferDeclined, notifyJobStarted, notifyJobDone,
+  notifyJobCompleted, notifyJobCancelled, notifyDisputeOpened, notifyDisputeResolved,
+} from "./notify";
 
 // Job lifecycle (single source of truth):
 //
@@ -97,10 +101,17 @@ export async function acceptOffer(jobId: string, offerId: string, clientId: stri
       throw e;
     }
 
+    const losers = await tx.offer.findMany({
+      where: { jobId, id: { not: offerId }, status: "PENDING" },
+      select: { providerId: true },
+    });
     await tx.offer.updateMany({
       where: { jobId, id: { not: offerId }, status: "PENDING" },
       data: { status: "DECLINED" },
     });
+
+    await notifyOfferAccepted(offer.providerId, jobId, job.title, offer.priceCents, tx);
+    for (const l of losers) await notifyOfferDeclined(l.providerId, jobId, job.title, tx);
 
     return tx.job.findUniqueOrThrow({ where: { id: jobId } });
   }, moneyTxOptions);
@@ -116,6 +127,8 @@ export async function startJob(jobId: string, providerId: string) {
     data: { status: "IN_PROGRESS" },
   });
   if (flip.count === 0) throw new ApiError(409, "Job just changed — refresh and try again");
+  const provider = await db.user.findUnique({ where: { id: providerId }, select: { firstName: true } });
+  await notifyJobStarted(job.clientId, jobId, job.title, provider?.firstName ?? "Ang provider");
   return db.job.findUniqueOrThrow({ where: { id: jobId } });
 }
 
@@ -129,6 +142,8 @@ export async function markDone(jobId: string, providerId: string) {
     data: { status: "DONE_BY_PROVIDER" },
   });
   if (flip.count === 0) throw new ApiError(409, "Job just changed — refresh and try again");
+  const doneBy = await db.user.findUnique({ where: { id: providerId }, select: { firstName: true } });
+  await notifyJobDone(job.clientId, jobId, job.title, doneBy?.firstName ?? "Ang provider");
   return db.job.findUniqueOrThrow({ where: { id: jobId } });
 }
 
@@ -151,6 +166,7 @@ export async function confirmComplete(jobId: string, clientId: string) {
     if (flip.count === 0) throw new ApiError(409, "Job was already finalized");
 
     const split = await escrowRelease(tx, jobId, job.assignedProviderId, job.agreedPriceCents, job.takeRateBps);
+    await notifyJobCompleted(job.assignedProviderId, jobId, job.title, split.payoutCents, tx);
     const updated = await tx.job.findUniqueOrThrow({ where: { id: jobId } });
     return { job: updated, ...split };
   }, moneyTxOptions);
@@ -184,6 +200,9 @@ export async function cancelJob(jobId: string, byUserId: string, isAdmin = false
     if (job.escrowHeld && job.agreedPriceCents) {
       await escrowRefund(tx, jobId, job.clientId, job.agreedPriceCents);
     }
+    // Tell whoever did not press the button.
+    const other = byUserId === job.clientId ? job.assignedProviderId : job.clientId;
+    if (other) await notifyJobCancelled(other, jobId, job.title, tx);
     return tx.job.findUniqueOrThrow({ where: { id: jobId } });
   }, moneyTxOptions);
 }
@@ -203,6 +222,8 @@ export async function openDispute(jobId: string, byUserId: string, reason: strin
     });
     if (flip.count === 0) throw new ApiError(409, "Job just changed — refresh and try again");
     await tx.dispute.create({ data: { jobId, openedById: byUserId, reason } });
+    const other = byUserId === job.clientId ? job.assignedProviderId : job.clientId;
+    if (other) await notifyDisputeOpened(other, jobId, job.title, tx);
     return tx.job.findUniqueOrThrow({ where: { id: jobId } });
   }, moneyTxOptions);
 }
@@ -251,6 +272,15 @@ export async function resolveDispute(
       await escrowRefund(tx, job.id, job.clientId, half);
       await escrowRelease(tx, job.id, job.assignedProviderId, rest, job.takeRateBps);
     }
+
+    const outcome =
+      resolution === "REFUND_CLIENT"
+        ? "Naibalik sa client ang buong bayad."
+        : resolution === "PAY_PROVIDER"
+          ? "Nabayaran ang provider nang buo."
+          : "Hinati sa kalahati ang bayad.";
+    await notifyDisputeResolved(job.clientId, job.id, job.title, outcome, tx);
+    await notifyDisputeResolved(job.assignedProviderId, job.id, job.title, outcome, tx);
 
     void adminId; // recorded via the route's audit log
     return tx.dispute.findUniqueOrThrow({ where: { id: disputeId } });

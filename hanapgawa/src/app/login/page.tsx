@@ -43,6 +43,9 @@ export default function LoginPage() {
           <Button type="submit" full disabled={busy}>
             {busy ? "Sandali lang…" : "Login"}
           </Button>
+          <Link href="/forgot" className="block text-center text-sm font-semibold text-brand-800 underline">
+            Nakalimutan ang password?
+          </Link>
         </form>
       </Card>
       <p className="text-center text-sm text-gray-600">

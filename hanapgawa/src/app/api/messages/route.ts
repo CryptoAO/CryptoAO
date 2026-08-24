@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { messageCreateSchema } from "@/lib/validation";
 import { maskContacts, STRIKE_LIMIT } from "@/lib/safety";
 import { rateLimit, LIMITS } from "@/lib/ratelimit";
+import { notifyMessage } from "@/lib/notify";
 
 // Chat is scoped to a job and only between its client and a provider who has
 // an offer on it (or is booked). All contact info is masked server-side
@@ -76,6 +77,8 @@ export const POST = api(async (req: NextRequest) => {
       rawFlagged: flagged,
     },
   });
+
+  await notifyMessage(body.toUserId, body.jobId, user.firstName, masked);
 
   if (flagged) {
     const updated = await db.user.update({

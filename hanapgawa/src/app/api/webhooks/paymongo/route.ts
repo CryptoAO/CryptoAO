@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { creditTopup } from "@/lib/wallet";
 import { audit } from "@/lib/api";
+import { notifyPaymentReceived } from "@/lib/notify";
 
 // PayMongo webhook — the ONLY place a paymongo-mode top-up credits a wallet
 // (the checkout redirect is never trusted). Signature header format:
@@ -81,6 +82,7 @@ export async function POST(req: NextRequest) {
   });
   if (!already) {
     await creditTopup(userId, amountCents as number, dedupeNote);
+    await notifyPaymentReceived(userId, amountCents as number);
     await audit("wallet.topup_webhook", { actorId: userId, meta: { eventId, amountCents } });
   }
 

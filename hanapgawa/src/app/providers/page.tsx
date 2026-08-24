@@ -47,9 +47,9 @@ export default function ProvidersPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-extrabold">Mga Service Provider 🧰</h1>
+      <h1 className="text-xl font-extrabold sm:text-2xl">Mga Service Provider 🧰</h1>
       <Card>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 sm:grid-cols-3">
           <Select value={region} onChange={(e) => { setRegion(e.target.value); setCity(""); }}>
             <option value="">Lahat ng region</option>
             {REGIONS.map((r) => <option key={r.code} value={r.code}>{r.short}</option>)}

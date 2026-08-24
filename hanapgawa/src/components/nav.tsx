@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { fetchJson } from "@/lib/client";
+import { NotificationBell } from "@/components/notifications";
 
 interface Me {
   user: { id: string; firstName: string; isAdmin: boolean; isProvider: boolean; kycLevel: number } | null;
@@ -30,8 +31,8 @@ export function Nav() {
       <header className="sticky top-0 z-40 border-b border-stone-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
           <Link href="/" className="flex items-center gap-2 text-lg font-extrabold text-brand-800">
-            <span className="grid h-8 w-8 place-items-center rounded-lg bg-brand-700 text-white">HG</span>
-            HanapGawa
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-brand-700 text-white">HG</span>
+            <span className="hidden min-[380px]:inline">HanapGawa</span>
           </Link>
           <nav className="hidden items-center gap-1 sm:flex">
             <TopLink href="/jobs" active={pathname?.startsWith("/jobs")}>Hanap Trabaho</TopLink>
@@ -41,14 +42,21 @@ export function Nav() {
           </nav>
           <div className="flex items-center gap-2">
             {me?.user ? (
-              <Link href="/me" className="rounded-xl bg-brand-50 px-3 py-2 text-sm font-semibold text-brand-800">
-                Hi, {me.user.firstName} 👋
-              </Link>
+              <>
+                <NotificationBell />
+                <Link href="/me" className="rounded-xl bg-brand-50 px-3 py-2 text-sm font-semibold text-brand-800">
+                  Hi, {me.user.firstName} 👋
+                </Link>
+              </>
             ) : me ? (
               <>
-                <Link href="/login" className="px-3 py-2 text-sm font-semibold text-brand-800">Login</Link>
-                <Link href="/register" className="rounded-xl bg-brand-700 px-4 py-2 text-sm font-semibold text-white">
-                  Sign up — libre!
+                <Link href="/login" className="whitespace-nowrap px-2 py-2 text-xs font-semibold text-brand-800 sm:px-3 sm:text-sm">Login</Link>
+                <Link
+                  href="/register"
+                  className="whitespace-nowrap rounded-xl bg-brand-700 px-3 py-2 text-xs font-semibold text-white sm:px-4 sm:text-sm"
+                >
+                  <span className="min-[400px]:hidden">Sign up</span>
+                  <span className="hidden min-[400px]:inline">Sign up — libre!</span>
                 </Link>
               </>
             ) : null}

@@ -4,6 +4,7 @@ import { offerCreateSchema } from "@/lib/validation";
 import { parsePhpToCents, HIGH_VALUE_CENTS } from "@/lib/money";
 import { rateLimit, LIMITS } from "@/lib/ratelimit";
 import { offerView } from "@/lib/serialize";
+import { notifyOfferReceived } from "@/lib/notify";
 
 export const POST = api(async (req) => {
   const provider = await requireProvider();
@@ -39,6 +40,7 @@ export const POST = api(async (req) => {
         data: { jobId: job.id, providerId: provider.id, priceCents, message: body.message },
       });
 
+  await notifyOfferReceived(job.clientId, job.id, job.title, provider.firstName, priceCents);
   await audit("offer.create", { actorId: provider.id, targetType: "Offer", targetId: offer.id, ip: clientIp(req) });
   return ok({ offer: offerView(offer) }, 201);
 });

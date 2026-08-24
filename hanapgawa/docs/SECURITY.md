@@ -79,7 +79,9 @@ Every sensitive route re-derives rights from the database row, never from client
 3. SOS button, job check-in/out with trusted-contact sharing (Grab pattern).
 4. Redis-backed rate limiting + WAF/bot protection at the edge.
 5. CSP nonce migration (drop `unsafe-inline` for scripts).
-6. Password reset flow (support-assisted today).
+6. ~~Password reset flow~~ — **done**: SMS-code reset at `/forgot`; no account
+   enumeration, and a successful reset bumps `tokenVersion` so every existing
+   session (including an attacker's) is revoked at that moment.
 7. Independent penetration test before public launch.
 
 ## 10. Adversarial review — findings fixed before merge
@@ -98,3 +100,23 @@ A multi-agent adversarial review (authz, web, money-flow, API-contract, schema, 
 | Low | OTP attempt counter racy; duplicate provider categories 500'd; PSGC validation skipped on job post; refunded bookings inflated GMV | All fixed (atomic increments/consume, explicit 400s, city-in-region check, GMV = completed jobs only) |
 
 Frontend correctness fixes from the same review: provider profile edit no longer wipes existing categories/availability (prefills), Level-3 KYC no longer submits a Level-2 doc type, withdrawn offers can re-offer, disputed jobs keep chat accessible, chat scrolls its own pane only, stale feed responses are dropped, provider list paginates.
+
+## 11. Notifications and account recovery (added after the first review)
+
+- **Notifications** are written on every state change that matters to a
+  counterparty (offer received/accepted/declined, job started/done/completed/
+  cancelled, new message, dispute opened/resolved, KYC and payout decisions,
+  wallet credit). Reads and mark-read are scoped to the caller — passing
+  someone else's notification id marks nothing. Writes are best-effort: a
+  failed notification never rolls back the booking or payout that triggered
+  it, and that contract is unit-tested.
+- **Password reset** (`POST /api/auth/reset`) is a two-step SMS-code flow.
+  Both steps answer identically whether or not the number is registered, the
+  code is single-use and rate-limited on send and on verify, and a successful
+  reset increments `tokenVersion`, which invalidates every session already
+  issued for that account. Verified end to end: old cookie → 401, old
+  password → 401, replayed code → rejected.
+- **CI** (`.github/workflows/hanapgawa-ci.yml`) runs typecheck, unit tests,
+  a seeded production build, and a smoke test that asserts `/api/notifications`
+  and `/api/admin/overview` reject anonymous callers — so an authorization
+  regression fails the build rather than reaching review.
