@@ -1,0 +1,83 @@
+# Security & Privacy Architecture — HanapGawa
+
+Threat model and controls. The design principle throughout: **ease of use and safety are the same feature** for this audience — every control below is invisible or one-tap for the user.
+
+## 1. Assets & adversaries
+
+**Assets**: user identities (phone, name, address), KYC artifacts (ID types, last-4 only), money movements (ledger), chat content, location data, platform funds.
+
+**Adversaries**:
+| Adversary | Goal | Primary controls |
+|---|---|---|
+| Scammer posing as client/provider | Advance-fee fraud, no-show theft | KYC ladder, escrow (no user-to-user prepayment exists at all), reviews |
+| Account hijacker | Take over a trusted provider account | OTP on phone (SIM-registered), bcrypt(12) passwords, tokenVersion revocation, rate limits |
+| Disintermediator | Move deal off-platform | Chat masking + leak-hint detection, strikes, address privacy, loyalty pricing |
+| Malicious insider / stolen DB | PII harvest | PII minimization (last-4 only, no full IDs), serializer boundary, audit log |
+| Web attacker | XSS/CSRF/IDOR/injection | React auto-escaping + strict CSP, SameSite+origin checks, ownership guards, Prisma parameterization, zod validation |
+| Abusive counterpart (physical safety) | Harm during a job | Two-sided verification, job records, report/dispute pipeline, safety guidance, (roadmap: SOS + check-in/out) |
+
+## 2. Authentication & session design
+
+- **Phone-first identity** (`+639XXXXXXXXX` canonical): matches SIM Registration Act reality; no email required (masa-friendly).
+- OTP: 6-digit, bcrypt-hashed at rest, 5-minute TTL, max 5 attempts, consumed-once; send rate-limited per phone (3/10min). **No links in SMS** (Globe drops link-bearing SMS).
+- Passwords: bcrypt cost 12; login compares against a dummy hash on unknown phone (no user enumeration, uniform timing); generic error message.
+- Sessions: HS256 JWT in an **httpOnly, SameSite=Lax, Secure** cookie, 7-day TTL. Payload carries `tokenVersion`; bumping it (e.g., on suspension) **revokes all sessions instantly**. The server refuses to boot in production with the default secret.
+- CSRF: SameSite=Lax + explicit same-origin check (`Origin`/`Sec-Fetch-Site`) on every state-changing request.
+
+## 3. Authorization (the IDOR wall)
+
+Every sensitive route re-derives rights from the database row, never from client input:
+- Job lifecycle actions check `clientId` / `assignedProviderId` **inside the transaction** (`src/lib/jobs.ts`).
+- Chat requires the pair to be {job owner} × {provider with a live offer or booking} (`assertChatAllowed`).
+- Offers: only the job owner accepts/declines; only the offer owner withdraws; you cannot offer on your own job.
+- Reviews: only the two parties of a COMPLETED job, one per rater, enforced by a DB unique constraint.
+- Admin routes: `requireAdmin()`; admins cannot suspend admins.
+
+## 4. Money integrity
+
+- All money is **integer centavos**; the ledger is append-only — balances are `SUM(amountCents)`, never a mutable column, so every peso is traceable and reconstructible.
+- Escrow hold/release/refund run inside **one DB transaction** with the job-state transition; the state machine (`OPEN→BOOKED→IN_PROGRESS→DONE_BY_PROVIDER→COMPLETED`) forbids money-relevant shortcuts (no payout without work, no refund after payout) — property-tested in `tests/lifecycle.test.ts` and `tests/money.test.ts` (commission+payout always sums to the exact amount).
+- Cash-outs debit the wallet at request time (no double-spend window); rejection re-credits.
+- Take rate is **frozen onto the job at booking** — a later category config change can't alter an in-flight job's economics. Hard 30% ceiling in code protects providers from misconfiguration.
+- Production note: the "wallet" becomes a ledger view over **aggregator-held funds** (PayMongo/Xendit split payments) — the platform never holds deposits (see LEGAL.md); webhooks, not client redirects, credit top-ups.
+
+## 5. Data privacy (RA 10173 by design)
+
+- **PII minimization**: full ID numbers are never stored (last-4 + doc type only); payout account references stored masked (`GCASH:••••1234`); phone/email never serialized to any other user — the serializer layer (`src/lib/serialize.ts`) is the single choke point deciding `publicUser` vs `selfUser`.
+- **Address privacy**: exact address (`addressNote`) is a private field revealed only to the booked provider after escrow is held — never in the public feed, never pre-booking.
+- Surname reduced to an initial publicly; city-level location only.
+- **Audit log** on every sensitive action (auth, money, KYC decisions, admin actions, masked-chat events) with actor, target, IP — the DPA accountability trail and dispute evidence.
+- Compliance runway (see LEGAL.md): DPO designation at launch; NPC registration once sensitive records of 1,000+ people exist; 72-hour breach notification runbook; privacy notice in plain Taglish; data-subject rights (access/correct/delete) via support at MVP, self-serve later.
+- Retention: chat/job records kept ≥2 years (Internet Transactions Act) then pruned; KYC docs (when uploads ship) go to private object storage with short-lived signed URLs, encrypted at rest.
+
+## 6. Anti-disintermediation subsystem
+
+- `maskContacts()` masks before storage (raw text is never persisted): PH mobile formats (`09…`, `+63…`, spaced/dashed), any 7+ digit run, emails incl. `(at)/(dot)` obfuscation, messenger deep links (`wa.me`, `t.me`, `m.me`, `fb.com`…), platform+handle patterns, and digit-words spelled out in English *and* Tagalog ("zero nine one seven…", "sero siyam isa pito…").
+- Leak *hints* ("cash na lang wag na sa app", "PM kita sa FB") flag without rewriting — a human-review signal, not censorship.
+- Flagged message → user strike; 3 strikes → account FLAGGED → admin review queue → suspend (kills sessions via tokenVersion) or clear. Graduated, never fines.
+- The economic layer does the real work (escrow protection, reviews, loyalty pricing) — the filter just raises the cost of leaving. False positives cost one masked string; a leaked deal costs both users all protection.
+
+## 7. Platform hardening
+
+- Security headers on every response: strict CSP (self-only, no third-party scripts), HSTS, X-Frame-Options DENY, nosniff, restrictive Permissions-Policy. `poweredByHeader` off.
+- Input validation: zod schemas on **every** API body, PH-bounded lat/lng, length caps everywhere; Prisma = parameterized queries (no raw SQL in the codebase).
+- Rate limiting per route class (login 8/15min/IP, OTP 3/10min/phone, messages 30/min, posts 10/h) — in-memory now, Redis interface-compatible for multi-node (SCALING.md).
+- Uniform error envelope; stack traces never leave the server; generic 500 text.
+- Secrets via env only; `.env` gitignored; production boot fails without a real `SESSION_SECRET`.
+
+## 8. Trust & safety operations (the human layer)
+
+- KYC review queue with document-type constraints per level; approvals stamp verifier + timestamp.
+- Reports (scam/harassment/no-show/off-platform/unsafe) → admin queue → resolve/dismiss/suspend.
+- Disputes freeze escrow; admin resolves refund/pay/split — money moves only through the same transactional ledger paths.
+- Published safety guide (`/safety`) in Taglish: what badges mean exactly (the Care.com/FTC lesson), why chat stays in-app, emergency guidance (911 first), first-job-in-public advice.
+
+## 9. Known gaps (deliberate MVP scope — before public launch)
+
+1. Real SMS + PayMongo/Xendit integration (adapters stubbed; webhook signature verification required).
+2. KYC document upload + PSA eVerify face-match (declaration + manual review today).
+3. SOS button, job check-in/out with trusted-contact sharing (Grab pattern).
+4. Redis-backed rate limiting + WAF/bot protection at the edge.
+5. CSP nonce migration (drop `unsafe-inline` for scripts).
+6. Password reset flow (support-assisted today).
+7. Independent penetration test before public launch.
