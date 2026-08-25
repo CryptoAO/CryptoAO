@@ -16,6 +16,7 @@ interface JobDetail {
   payType: string; budgetCents: number; agreedPriceCents?: number | null;
   scheduledAt?: string | null; flexible: boolean; createdAt: string;
   clientId: string; assignedProviderId?: string | null;
+  autoReleaseAt?: string | null; autoReleased?: boolean;
   client?: PublicUser; provider?: PublicUser;
   category: { id: string; name: string; nameTl: string; icon: string };
 }
@@ -32,6 +33,13 @@ const STATUS_LABEL: Record<string, { label: string; tone: "gray" | "green" | "am
   CANCELLED: { label: "Kanselado", tone: "gray" },
   DISPUTED: { label: "May dispute — inaayos ng support", tone: "red" },
 };
+
+function releaseWhen(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleString("en-PH", {
+    weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", hour12: true,
+  });
+}
 
 export default function JobDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -310,8 +318,20 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
             💰 <strong>{pesos(job.agreedPriceCents ?? 0)}</strong> —{" "}
             {job.status === "DISPUTED"
               ? "naka-freeze sa escrow habang inaayos ng support ang dispute."
-              : "naka-hold sa escrow. Ire-release lang kapag kinumpirma ng client na tapos ang trabaho."}
+              : job.status === "DONE_BY_PROVIDER"
+                ? "naka-hold pa rin sa escrow. Ire-release ito kapag kinumpirma ng client — o awtomatiko kapag lumipas ang deadline sa baba."
+                : "naka-hold sa escrow. Ire-release lang kapag kinumpirma ng client na tapos ang trabaho."}
           </div>
+
+          {job.status === "DONE_BY_PROVIDER" && job.autoReleaseAt && (
+            <div className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">
+              ⏳ Awtomatikong ire-release ang bayad sa{" "}
+              <strong>{releaseWhen(job.autoReleaseAt)}</strong>{" "}
+              {isOwner
+                ? "kung walang na-report na problema. Hindi mo na kailangang hintayin — pwede mo nang kumpirmahin ngayon."
+                : "kahit hindi pa kumpirmahin ng client — hindi mahihinto ang bayad mo dahil lang nakalimutan nila."}
+            </div>
+          )}
 
           {isAssigned && job.status === "BOOKED" && (
             <Button full disabled={busy} onClick={() => action("start")}>▶ Sisimulan ko na ang trabaho</Button>

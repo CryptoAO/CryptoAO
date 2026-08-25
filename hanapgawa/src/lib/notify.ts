@@ -33,7 +33,9 @@ export type NotificationType =
   | "CHECKED_IN"
   | "CHECKED_OUT"
   | "JOB_NEARBY"
-  | "JOB_INVITE";
+  | "JOB_INVITE"
+  | "RELEASE_SOON"
+  | "AUTO_RELEASED";
 
 interface NotifyInput {
   userId: string;
@@ -149,6 +151,31 @@ export const notifyJobCompleted = (
     title: `Bayad na! ${formatPhp(payoutCents)} 💰`,
     body: `Kinumpirma ng client ang "${jobTitle}". Nasa wallet mo na ang bayad.`,
     href: "/me?tab=wallet",
+    jobId,
+    tx,
+  });
+
+const dayMonth = (d: Date) =>
+  d.toLocaleString("en-PH", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit", hour12: true });
+
+export const notifyReleaseSoon = (clientId: string, jobId: string, jobTitle: string, releaseAt: Date, tx?: Tx) =>
+  notify({
+    userId: clientId,
+    type: "RELEASE_SOON",
+    title: "Kailangan ng confirm mo ⏳",
+    body: `Kung walang aksyon, awtomatikong ire-release ang bayad para sa "${jobTitle}" sa ${dayMonth(releaseAt)}. May problema? Mag-report bago pa iyon.`,
+    href: jobHref(jobId),
+    jobId,
+    tx,
+  });
+
+export const notifyAutoReleased = (clientId: string, jobId: string, jobTitle: string, tx?: Tx) =>
+  notify({
+    userId: clientId,
+    type: "AUTO_RELEASED",
+    title: "Na-release na ang bayad",
+    body: `Walang na-report na problema sa "${jobTitle}", kaya awtomatikong naibayad na ito sa provider.`,
+    href: jobHref(jobId),
     jobId,
     tx,
   });

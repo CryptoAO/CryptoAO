@@ -4,7 +4,9 @@ import { escrowHold, escrowRelease, escrowRefund } from "./wallet";
 import {
   notifyOfferAccepted, notifyOfferDeclined, notifyJobStarted, notifyJobDone,
   notifyJobCompleted, notifyJobCancelled, notifyDisputeOpened, notifyDisputeResolved,
+  notifyAutoReleased,
 } from "./notify";
+import { releaseDeadline } from "./autorelease";
 
 // Job lifecycle (single source of truth):
 //
@@ -137,9 +139,13 @@ export async function markDone(jobId: string, providerId: string) {
   if (!job) throw new ApiError(404, "Job not found");
   if (job.assignedProviderId !== providerId) throw new ApiError(403, "Not your booking");
   if (!canTransition(job.status, "DONE_BY_PROVIDER")) throw new ApiError(409, `Cannot mark done from ${job.status}`);
+  // Starting the auto-release clock here, in the same write that flips the
+  // status, is what stops a provider's pay from hanging on a client
+  // remembering to press a button. See src/lib/autorelease.ts.
+  const doneAt = new Date();
   const flip = await db.job.updateMany({
     where: { id: jobId, status: job.status },
-    data: { status: "DONE_BY_PROVIDER" },
+    data: { status: "DONE_BY_PROVIDER", doneAt, autoReleaseAt: releaseDeadline(doneAt), releaseWarnedAt: null },
   });
   if (flip.count === 0) throw new ApiError(409, "Job just changed — refresh and try again");
   const doneBy = await db.user.findUnique({ where: { id: providerId }, select: { firstName: true } });
@@ -147,29 +153,65 @@ export async function markDone(jobId: string, providerId: string) {
   return db.job.findUniqueOrThrow({ where: { id: jobId } });
 }
 
-/** Client confirms completion → release escrow (payout + commission). */
-export async function confirmComplete(jobId: string, clientId: string) {
+/**
+ * Release escrow to the provider. Two actors can trigger this and they get
+ * the same money path on purpose — the only differences are who is allowed
+ * to ask and who gets told afterwards.
+ */
+async function releaseEscrow(jobId: string, actor: { kind: "client"; clientId: string } | { kind: "auto" }) {
   return db.$transaction(async (tx) => {
     const job = await tx.job.findUnique({ where: { id: jobId } });
     if (!job) throw new ApiError(404, "Job not found");
-    if (job.clientId !== clientId) throw new ApiError(403, "Only the job owner can confirm");
+    if (actor.kind === "client" && job.clientId !== actor.clientId) {
+      throw new ApiError(403, "Only the job owner can confirm");
+    }
+    // A dispute freezes the money for both the client and the clock. Only
+    // resolveDispute() can move it after that.
     if (job.status === "DISPUTED") throw new ApiError(409, DISPUTE_FROZEN);
+    if (actor.kind === "auto" && job.status !== "DONE_BY_PROVIDER") {
+      throw new ApiError(409, `Cannot auto-release from ${job.status}`);
+    }
     if (!canTransition(job.status, "COMPLETED")) throw new ApiError(409, `Cannot complete from ${job.status}`);
     if (!job.escrowHeld || !job.agreedPriceCents || !job.assignedProviderId || job.takeRateBps == null) {
       throw new ApiError(409, "Job has no active escrow");
     }
-    // Atomic guard: exactly one request may release this escrow.
+    // Atomic guard: exactly one request may release this escrow. This is also
+    // what makes the sweep safe to run twice or in parallel — a duplicate
+    // simply loses the race.
     const flip = await tx.job.updateMany({
       where: { id: jobId, status: job.status, escrowHeld: true },
-      data: { status: "COMPLETED", escrowHeld: false, completedAt: new Date() },
+      data: {
+        status: "COMPLETED",
+        escrowHeld: false,
+        completedAt: new Date(),
+        autoReleased: actor.kind === "auto",
+      },
     });
     if (flip.count === 0) throw new ApiError(409, "Job was already finalized");
 
     const split = await escrowRelease(tx, jobId, job.assignedProviderId, job.agreedPriceCents, job.takeRateBps);
     await notifyJobCompleted(job.assignedProviderId, jobId, job.title, split.payoutCents, tx);
+    if (actor.kind === "auto") {
+      // Tell the client too. Money moving without them touching anything is
+      // exactly the kind of surprise that turns into a support ticket.
+      await notifyAutoReleased(job.clientId, jobId, job.title, tx);
+    }
     const updated = await tx.job.findUniqueOrThrow({ where: { id: jobId } });
     return { job: updated, ...split };
   }, moneyTxOptions);
+}
+
+/** Client confirms completion → release escrow (payout + commission). */
+export async function confirmComplete(jobId: string, clientId: string) {
+  return releaseEscrow(jobId, { kind: "client", clientId });
+}
+
+/**
+ * The clock confirms on the client's behalf after they have gone quiet past
+ * the deadline. Called only from the auto-release sweep.
+ */
+export async function autoConfirmComplete(jobId: string) {
+  return releaseEscrow(jobId, { kind: "auto" });
 }
 
 /** Cancel: OPEN jobs just close; BOOKED/IN_PROGRESS refund the client. */

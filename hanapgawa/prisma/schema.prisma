@@ -163,6 +163,14 @@ model Job {
   escrowHeld         Boolean   @default(false)
   completedAt        DateTime?
 
+  // Auto-release clock. A provider must not be able to lose a week's pay
+  // because a client forgot to press one button, so escrow releases on its
+  // own after AUTO_RELEASE_HOURS unless somebody disputes.
+  doneAt          DateTime? // set when the provider marks the work done
+  autoReleaseAt   DateTime? // when escrow releases without client action
+  releaseWarnedAt DateTime? // the "confirm soon" nudge was sent
+  autoReleased    Boolean   @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -181,6 +189,7 @@ model Job {
   @@index([clientId])
   @@index([assignedProviderId])
   @@index([categoryId, status])
+  @@index([status, autoReleaseAt])
 }
 
 model Offer {

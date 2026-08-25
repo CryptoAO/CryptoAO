@@ -88,4 +88,18 @@ jobs:
           code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/api/admin/overview)
           test "$code" = "401" || { echo "expected 401, got $code"; exit 1; }
 
+          echo "→ escrow sweep refuses to run without a scheduler secret"
+          # CRON_SECRET is intentionally unset for this job, so the endpoint
+          # must fail closed. A 200 here would mean anyone on the internet
+          # could release every held escrow.
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:3000/api/cron/auto-release)
+          test "$code" = "503" || { echo "expected 503, got $code"; exit 1; }
+
+          echo "→ manifest is served for install"
+          curl -fsS http://localhost:3000/manifest.webmanifest | grep -q '"display":"standalone"'
+
+          echo "→ service worker and offline page are reachable"
+          curl -fsS -o /dev/null http://localhost:3000/sw.js
+          curl -fsS -o /dev/null http://localhost:3000/offline.html
+
           echo "all smoke checks passed"

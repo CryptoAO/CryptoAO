@@ -170,3 +170,21 @@ What the cache *does* hold: fingerprinted `/_next/static/` build output, the lau
 ### Rate limiting across more than one instance
 
 `rateLimit()` counts in process memory, which is correct for one node and wrong the moment there are two — eight login attempts becomes eight *per server*. `rateLimitAsync()` (used by login, register and OTP send) uses a shared Redis counter when `REDIS_URL` is set and falls back to memory when it is not. It **fails open** on a store error: a Redis outage must degrade abuse control, not lock every user out of their account.
+
+### Escrow auto-release
+
+Escrow that protects the client is a trap for the provider if it has no exit. Somebody cleans a house, marks the job done, and a client who is merely busy — not dishonest — never presses confirm. Under the original rules that money never moved. The clock fixes it:
+
+| | |
+|---|---|
+| Clock starts | When the provider marks the work done, in the same atomic write that flips the status |
+| Client nudged | `AUTO_RELEASE_WARN_HOURS` (default 48h) after that, once — the claim on `releaseWarnedAt` is atomic, so overlapping sweeps cannot double-notify |
+| Escrow releases | `AUTO_RELEASE_HOURS` (default 72h) after that, with the normal commission split, and **both** parties are notified — money moving without the client touching anything must never be a surprise |
+| Dispute | Stops the clock dead. The sweep only ever selects `DONE_BY_PROVIDER`, so a `DISPUTED` job is not merely skipped, it is never fetched |
+| Pre-clock bookings | Jobs marked done before this shipped have a null `autoReleaseAt` and are skipped. Reading null as "overdue" would have dumped every historical escrow on the first sweep |
+
+The release path is the *same function* the client's confirm button calls, with the actor swapped — so it inherits the atomic state-claim, the Serializable isolation, and the dispute freeze rather than reimplementing them. That is what makes the sweep safe to run twice, or concurrently, or after being down for a week.
+
+`/api/cron/auto-release` is gated on a bearer `CRON_SECRET` compared with `timingSafeEqual`. **There is no development bypass**: an unset secret returns 503 rather than running. "Open in dev" is one misconfigured environment away from letting anyone on the internet push every held escrow out the door.
+
+Verified end to end against the running server: unauthenticated, wrong-secret and wrong-length-secret calls all returned 401; a fresh job was not touched; at 50h the client was nudged exactly once and a second sweep did not nudge again; past the deadline the sweep released ₱500 as ₱440 to the provider (12% commission) and marked the job `autoReleased`; an immediate re-run released nothing; and a `DISPUTED` job 200 hours past its deadline kept its escrow held.

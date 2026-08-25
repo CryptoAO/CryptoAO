@@ -63,6 +63,11 @@ export function jobView(job: Job & { client?: User; provider?: User | null }, vi
     assignedProviderId: job.assignedProviderId,
     agreedPriceCents: isParty || viewerIsAdmin ? job.agreedPriceCents : null,
     escrowHeld: isParty || viewerIsAdmin ? job.escrowHeld : undefined,
+    // Both parties should see the same deadline. Hiding it from the client
+    // would make an automatic payout feel like it came out of nowhere, and
+    // hiding it from the provider is the anxiety the clock exists to remove.
+    autoReleaseAt: isParty || viewerIsAdmin ? job.autoReleaseAt : undefined,
+    autoReleased: isParty || viewerIsAdmin ? job.autoReleased : undefined,
     createdAt: job.createdAt,
     client: job.client ? publicUser(job.client) : undefined,
     provider: job.provider ? publicUser(job.provider) : undefined,

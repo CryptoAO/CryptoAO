@@ -11,7 +11,7 @@ The MVP is deliberately a **modular monolith**: one Next.js app, one Prisma sche
 - **Redis** (Upstash/ElastiCache): rate limiting is already wired — set `REDIS_URL`, `npm i ioredis`, and `rateLimitAsync()` moves from per-instance memory to a fleet-wide counter with no code change (it fails open on a store outage, so Redis going down degrades abuse control rather than locking users out). Then: session denylist, hot-feed caching (60s TTL per city/category page), OTP state.
 - **Object storage** (S3/R2) for KYC docs & photos: private buckets, short-lived signed URLs, encrypted at rest.
 - **Postgres indexes** are already declared in the schema (`status+region+city`, `category+status`, ledger by user/time). Add `pg_trgm` GIN index for search (replaces `contains`) and consider PostGIS or a geohash column when distance-sort outgrows the in-memory haversine over a 200-row window.
-- Background jobs (BullMQ or pg-boss): SMS sends, webhook retries, review reminders, escrow auto-release timers (e.g., auto-confirm 72h after DONE_BY_PROVIDER unless disputed).
+- Background jobs (BullMQ or pg-boss): SMS sends, webhook retries, review reminders. Escrow auto-release already ships as a sweep behind `/api/cron/auto-release` (hourly via `vercel.json`, or any scheduler that can send a bearer token); move it onto the queue only when the 500-row batch stops being enough.
 - Observability: Sentry + structured logs + uptime alerts; nightly DB backups with restore drills.
 
 ## Stage 2 — Multi-city (100k–500k MAU) · ~₱150–400k/month
