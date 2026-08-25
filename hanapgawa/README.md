@@ -57,6 +57,7 @@ npm run build        # production build
 - **[docs/SECURITY.md](docs/SECURITY.md)** — threat model, money integrity, RA 10173 privacy design, known MVP gaps
 - **[docs/LEGAL.md](docs/LEGAL.md)** — PH regulatory checklist: why we never say "escrow", worker-classification firewall, LTFRB boundaries, BIR withholding
 - **[docs/SCALING.md](docs/SCALING.md)** — modular-monolith → multi-city architecture without a rewrite
+- **[docs/OPERATIONS.md](docs/OPERATIONS.md)** — the runbook for whoever operates this: the daily loop, the 2am SOS call, how to decide a dispute, KYC standards, payouts, and the 72-hour breach clock
 
 ## Production posture (read before launching)
 
