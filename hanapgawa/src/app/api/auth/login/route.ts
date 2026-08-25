@@ -22,6 +22,7 @@ export const POST = api(async (req) => {
 
   const valid = await bcrypt.compare(body.password, user?.passwordHash ?? DUMMY_HASH);
   if (!user || !valid) throw new ApiError(401, "Wrong number or password");
+  if (user.status === "DELETED") throw new ApiError(401, "Wrong number or password");
   if (user.status === "BANNED" || user.status === "SUSPENDED") {
     throw new ApiError(403, "This account is suspended. Contact support.");
   }

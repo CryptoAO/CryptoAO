@@ -3,6 +3,7 @@
 import { Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { PrivacyControls } from "@/components/privacy-controls";
 import { ReadinessCard } from "@/components/readiness";
 import { fetchJson, pesos, timeAgo } from "@/lib/client";
 import { Badge, Button, Card, ErrorNote, Field, Input, KycBadge, Select, Spinner, TextArea } from "@/components/ui";
@@ -89,6 +90,8 @@ function MeDashboard() {
       {tab === "provider" && <ProviderTab meId={u.id} isProvider={u.isProvider} bio={u.bio ?? ""} onSaved={load} />}
       {tab === "kyc" && <KycTab kycLevel={u.kycLevel} />}
       {tab === "safety" && <TrustedContacts />}
+
+      <PrivacyControls />
 
       <div className="pt-2 text-center">
         <button

@@ -169,9 +169,25 @@ export default function PrivacyPage() {
           <li><strong>Magreklamo</strong> sa National Privacy Commission — privacy.gov.ph</li>
           <li><strong>Bayad-pinsala</strong> kung may napatunayang paglabag</li>
         </ul>
+        <div className="mt-3 rounded-xl bg-brand-50 p-3 text-sm text-brand-900">
+          <p className="font-semibold">Dalawa dito ay pwede mo nang gawin ngayon din, sa app:</p>
+          <ul className="mt-1 list-inside list-disc space-y-1">
+            <li>
+              <strong>I-download ang lahat ng data mo</strong> — isang file, sa{" "}
+              <Link href="/me" className="underline">profile mo</Link>. Walang bayad, walang hihintayin.
+            </li>
+            <li>
+              <strong>Isara ang account mo</strong> — nandoon din. Buburahin ang pangalan, number at
+              profile mo. Mananatili ang record ng bayaran at ang mga review na isinulat mo tungkol sa
+              iba — obligado kami sa batas na itago ang libro, at bahagi na ng reputasyon ng ibang tao
+              ang review — pero wala nang pangalan mo.
+            </li>
+          </ul>
+        </div>
         <p className="mt-3 text-sm text-gray-700">
-          Para gamitin ang alinman dito, mag-email sa DPO namin. Sasagot kami sa loob ng{" "}
-          <strong>15 araw</strong>. Libre ito — hindi ka namin sisingilin para makuha ang sarili mong data.
+          Para sa iba pang karapatan — pagtatama ng data, pagtutol sa paggamit, o reklamo — mag-email sa
+          DPO namin. Sasagot kami sa loob ng <strong>15 araw</strong>. Libre ito — hindi ka namin
+          sisingilin para makuha ang sarili mong data.
         </p>
       </Card>
 

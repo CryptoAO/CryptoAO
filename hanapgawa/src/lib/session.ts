@@ -58,7 +58,10 @@ export async function getSessionUser() {
     const user = await db.user.findUnique({ where: { id: uid } });
     if (!user) return null;
     if (user.tokenVersion !== tv) return null; // session revoked
-    if (user.status === "BANNED" || user.status === "SUSPENDED") return null;
+    // DELETED is here as well as BANNED/SUSPENDED. A closed account already
+    // has a mangled phone and a bumped tokenVersion, so this is belt and
+    // braces — but "no session, ever" is the one property closure promises.
+    if (user.status === "BANNED" || user.status === "SUSPENDED" || user.status === "DELETED") return null;
     return user;
   } catch {
     return null;

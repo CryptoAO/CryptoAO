@@ -188,3 +188,31 @@ The release path is the *same function* the client's confirm button calls, with 
 `/api/cron/auto-release` is gated on a bearer `CRON_SECRET` compared with `timingSafeEqual`. **There is no development bypass**: an unset secret returns 503 rather than running. "Open in dev" is one misconfigured environment away from letting anyone on the internet push every held escrow out the door.
 
 Verified end to end against the running server: unauthenticated, wrong-secret and wrong-length-secret calls all returned 401; a fresh job was not touched; at 50h the client was nudged exactly once and a second sweep did not nudge again; past the deadline the sweep released ₱500 as ₱440 to the provider (12% commission) and marked the job `autoReleased`; an immediate re-run released nothing; and a `DISPUTED` job 200 hours past its deadline kept its escrow held.
+
+### Data subject rights, implemented
+
+A privacy notice that routes access, portability and erasure through an email address is legally sufficient and practically hollow — the founder becomes the bottleneck and most people never bother. Both are in the app instead.
+
+**Export** (`GET /api/me/export`) returns everything held about the caller as one JSON file: profile, jobs on both sides, offers, their own sent messages, reviews given and received, the full wallet ledger and payout history, identity-submission *metadata*, trusted contacts, notifications and check-ins. Two deliberate omissions:
+
+- **Never the identity-document image, and never its storage key.** Re-emitting a scan of somebody's licence over HTTP to whoever is holding their session would create exactly the exposure the upload pipeline exists to prevent.
+- **Only the sender's own messages.** The counterparty's half of a conversation is their data, not this user's.
+
+The route is rate-limited (3/hour) — it is the most expensive read in the app and a stolen session should not be able to pull the same dossier repeatedly — and every export writes an audit row.
+
+**Closure** (`POST /api/me/close`) anonymises in place rather than hard-deleting, because a hard delete is the wrong shape:
+
+| Data | What happens | Why |
+|---|---|---|
+| Name, phone, email, bio, photo, coordinates, barangay | Destroyed; phone replaced with a `deleted:<id>` sentinel that no real number can collide with and `normalizePhPhone` can never produce | The identifiers are the point of erasure |
+| Password hash | Replaced with 32 random bytes that are never given out | The account cannot be logged into again even by whoever knew the old password |
+| Sessions | `tokenVersion` incremented; `status` set to `DELETED`, which both the session check and login reject | "No session, ever" is the one property closure promises |
+| Trusted contacts | Deleted | These are *other people's* phone numbers, given to us for a purpose that has now ended |
+| Notifications, KYC submissions, provider categories, availability | Deleted | Purely this person's, and useful to nobody once they are gone |
+| Ledger entries, payout requests | Kept | Financial records. Deleting them would corrupt the platform's own books and break the audit trail behind every payout — the schema already refuses (`onDelete: Restrict`) |
+| Reviews they wrote | Kept, unnamed | They are part of *another* person's reputation; wiping them silently re-rates providers who did nothing wrong |
+| Jobs and messages | Kept, unnamed | The counterparty has a legitimate interest in the record of a job they were part of |
+
+Closure is blocked — with every reason reported at once, not one at a time — while an unfinished job, a positive wallet balance, or a pending cash-out exists, and each blocker names something the person can go and resolve. The password is required even though the caller already holds a session: this is irreversible, and a borrowed unlocked phone should not be enough to erase somebody's work history. The check runs again inside the POST, so a booking accepted while the confirmation dialog sat open still blocks.
+
+Verified end to end: anonymous callers got 401 on both routes; the export carried no `docRef`, `passwordHash` or `tokenVersion`; an account with an unfinished job and a balance was refused with both reasons; a wrong password was refused before anything else; and closing a settled account left the user row anonymised with `status=DELETED`, both ledger rows and the review they wrote intact, their trusted contact, notification and KYC rows gone, the old session 401, login refused, their provider page 404, and an `account.close` audit row written.
