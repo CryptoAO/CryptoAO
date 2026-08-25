@@ -3,6 +3,7 @@
 import { Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { ReadinessCard } from "@/components/readiness";
 import { fetchJson, pesos, timeAgo } from "@/lib/client";
 import { Badge, Button, Card, ErrorNote, Field, Input, KycBadge, Select, Spinner, TextArea } from "@/components/ui";
 import { TrustedContacts } from "@/components/safety";
@@ -23,6 +24,9 @@ function MeDashboard() {
   const params = useSearchParams();
   const [me, setMe] = useState<Me | null>(null);
   const [tab, setTab] = useState(params.get("tab") ?? "activity");
+  // Bumped on every profile save so the readiness checklist re-reads
+  // instead of showing a step the provider has just completed.
+  const [revision, setRevision] = useState(0);
 
   const load = useCallback(async () => {
     const d = await fetchJson<Me>("/api/me");
@@ -31,6 +35,7 @@ function MeDashboard() {
       return;
     }
     setMe(d);
+    setRevision((n) => n + 1);
   }, [router]);
 
   useEffect(() => {
@@ -76,6 +81,8 @@ function MeDashboard() {
           </button>
         ))}
       </div>
+
+      {u.isProvider && <ReadinessCard key={revision} onGoToTab={setTab} />}
 
       {tab === "activity" && <ActivityTab meId={u.id} />}
       {tab === "wallet" && <WalletTab onChange={load} />}

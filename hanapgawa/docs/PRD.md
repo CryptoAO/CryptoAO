@@ -46,6 +46,14 @@ The original brief was strong. Here it is restated as the sharpened one-page PRD
 | Admin | Overview KPIs (GMV, earnings), KYC/dispute/payout/report queues | Category & take-rate console, city dashboards | Fraud graph tooling |
 | Localization | Taglish UI throughout | Cebuano/Bisaya support scripts | Regional ad kits |
 
+### Provider activation
+
+Tapping "gusto kong kumita dito" at sign-up does almost nothing on its own. The job broadcast only reaches providers who have verified a phone **and** picked at least one service category, so somebody who stops after the checkbox sits in the database forever, sees no work, and concludes the app is dead. They are not wrong from where they are standing — nobody ever told them what was missing.
+
+So /me now carries a checklist for providers, and each item says what it unlocks rather than that it is incomplete: "Kung wala kang napili, walang aabot sa'yo" is a reason; "complete your profile" is not. The two steps that actually gate income are marked as blocking and mirror the filter in `src/lib/matching.ts` exactly — a unit test fails if that filter gains a condition the checklist does not mention. The remaining items (rates, intro, ID verification, trusted contact) are listed as improvements, not obligations, and the whole card disappears at 100% because a permanent nag bar is how a dashboard becomes something people stop reading.
+
+There is deliberately no profile-photo step yet: nothing in the app can set `User.photoUrl`, and a checklist item with no way to complete it is worse than no checklist. It goes back in with avatar upload.
+
 ### Price guidance
 
 The person this is built for has never hired anyone. Ask them what an afternoon of ironing is worth and they guess — and a job priced at half the going rate simply never gets an offer, which they read as "nobody wants to work" rather than "I underpaid". Both sides then leave.
