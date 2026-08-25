@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
+import Link from "next/link";
 import { fetchJson, pesos, timeAgo } from "@/lib/client";
 import { Card, ErrorNote, KycBadge, Spinner, Stars } from "@/components/ui";
 import { Avatar } from "@/components/avatar";
@@ -67,6 +68,15 @@ export default function ProviderDetailPage({ params }: { params: Promise<{ id: s
           </div>
         </div>
         {p.bio && <p className="mt-4 text-sm text-gray-700">{p.bio}</p>}
+        <Link
+          href={`/jobs/new?direct=${p.id}`}
+          className="mt-4 flex min-h-12 w-full items-center justify-center rounded-xl bg-brand-700 px-5 py-3 text-base font-semibold text-white"
+        >
+          📩 I-book si {p.firstName} nang direkta
+        </Link>
+        <p className="mt-1 text-center text-xs text-gray-500">
+          Siya lang ang makakakita ng request mo. Kapag kinumpirma niya, booked na agad — protektado ng escrow.
+        </p>
       </Card>
 
       <Card>

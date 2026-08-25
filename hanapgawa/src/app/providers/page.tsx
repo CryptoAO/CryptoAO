@@ -23,6 +23,7 @@ export default function ProvidersPage() {
   const [region, setRegion] = useState("");
   const [city, setCity] = useState("");
   const [category, setCategory] = useState("");
+  const [needAt, setNeedAt] = useState("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
 
@@ -36,12 +37,13 @@ export default function ProvidersPage() {
     if (region) sp.set("region", region);
     if (city) sp.set("city", city);
     if (category) sp.set("category", category);
+    if (needAt) sp.set("at", new Date(needAt).toISOString());
     sp.set("page", String(p));
     const d = await fetchJson<{ providers: ProviderRow[]; total: number }>(`/api/providers?${sp}`);
     setProviders(d.providers);
     setTotal(d.total);
     setPage(p);
-  }, [region, city, category]);
+  }, [region, city, category, needAt]);
 
   useEffect(() => {
     load(1).catch(() => setProviders([]));
@@ -64,6 +66,22 @@ export default function ProvidersPage() {
             <option value="">Lahat ng serbisyo</option>
             {categories.map((c) => <option key={c.id} value={c.id}>{c.icon} {c.nameTl}</option>)}
           </Select>
+        </div>
+        <div className="mt-3">
+          <label className="block">
+            <span className="mb-1 block text-sm font-semibold text-gray-800">🗓️ Kailan mo kailangan? (optional)</span>
+            <input
+              type="datetime-local"
+              value={needAt}
+              onChange={(e) => setNeedAt(e.target.value)}
+              className="w-full min-h-12 rounded-xl border border-stone-300 bg-white px-4 py-3 text-base focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-200"
+            />
+            <span className="mt-1 block text-xs text-gray-500">
+              {needAt
+                ? "Ipinapakita lang ang mga bakante sa oras na iyan — walang ibang booking at pasok sa kanilang oras."
+                : "Piliin ang oras para makita kung sino ang bakante noon."}
+            </span>
+          </label>
         </div>
       </Card>
 

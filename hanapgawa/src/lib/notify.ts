@@ -35,7 +35,11 @@ export type NotificationType =
   | "JOB_NEARBY"
   | "JOB_INVITE"
   | "RELEASE_SOON"
-  | "AUTO_RELEASED";
+  | "AUTO_RELEASED"
+  | "DIRECT_REQUEST"
+  | "DIRECT_CONFIRMED"
+  | "DIRECT_DECLINED"
+  | "DIRECT_EXPIRED";
 
 interface NotifyInput {
   userId: string;

@@ -1,9 +1,10 @@
 import { z } from "zod";
 import { api, ok, ApiError, parseBody, requireVerifiedUser, audit, clientIp } from "@/lib/api";
 import { startJob, markDone, confirmComplete, cancelJob, openDispute } from "@/lib/jobs";
+import { confirmDirectJob, declineDirectJob } from "@/lib/direct";
 
 const actionSchema = z.object({
-  action: z.enum(["start", "done", "complete", "cancel", "dispute"]),
+  action: z.enum(["start", "done", "complete", "cancel", "dispute", "confirm", "decline"]),
   reason: z.string().trim().max(1000).optional(),
 });
 
@@ -31,6 +32,13 @@ export const POST = api(async (req, { params }) => {
     case "dispute":
       if (!reason) throw new ApiError(400, "Tell us what went wrong");
       result = await openDispute(id, user.id, reason);
+      break;
+    // Direct-request answers; both re-check that the caller IS the target.
+    case "confirm":
+      result = await confirmDirectJob(id, user.id);
+      break;
+    case "decline":
+      result = await declineDirectJob(id, user.id);
       break;
   }
 

@@ -168,6 +168,14 @@ model Job {
   // OPEN -> BOOKED -> IN_PROGRESS -> DONE_BY_PROVIDER -> COMPLETED
   //   \-> CANCELLED           \-> DISPUTED
 
+  // PUBLIC: in the feed, any provider may offer.
+  // DIRECT: a booking request aimed at one provider — never listed, never
+  // broadcast; only that provider can see it, and their confirmation books
+  // it (holding escrow from the client, who consented to that at request
+  // time). The Airbnb request-to-book shape, on our escrow rails.
+  visibility       String  @default("PUBLIC")
+  directProviderId String?
+
   assignedProviderId String?
   acceptedOfferId    String?   @unique
   agreedPriceCents   Int?
@@ -203,6 +211,7 @@ model Job {
   @@index([assignedProviderId])
   @@index([categoryId, status])
   @@index([status, autoReleaseAt])
+  @@index([directProviderId, status])
 }
 
 model Offer {

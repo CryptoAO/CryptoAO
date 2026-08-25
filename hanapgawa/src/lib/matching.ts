@@ -27,6 +27,9 @@ export async function broadcastNewJob(jobId: string): Promise<BroadcastResult> {
     include: { category: true },
   });
   if (!job || job.status !== "OPEN") return { matched: 0, notified: 0 };
+  // Never broadcast a private request — defense in depth; the create route
+  // already branches, but one future call site must not undo the privacy.
+  if (job.visibility === "DIRECT") return { matched: 0, notified: 0 };
 
   // Candidates: active, verified providers offering this category in this
   // city, who have not opted out — and never the client themselves.

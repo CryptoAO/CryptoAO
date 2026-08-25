@@ -47,6 +47,22 @@ function NewJobForm() {
 
   const params = useSearchParams();
   const rebookId = params.get("rebook");
+  const directId = params.get("direct");
+  const [directName, setDirectName] = useState<string | null>(null);
+
+  // Direct mode: this form becomes a private request to one provider.
+  useEffect(() => {
+    if (!directId) return;
+    fetchJson<{ provider: { firstName: string; lastInitial: string; categories: { categoryId: string }[] } }>(
+      `/api/providers/${directId}`,
+    )
+      .then((d) => {
+        setDirectName(`${d.provider.firstName} ${d.provider.lastInitial}`);
+        // Preselect their first service so the client is not asked to guess.
+        if (d.provider.categories[0]) setCategoryId((c) => c || d.provider.categories[0].categoryId);
+      })
+      .catch(() => {});
+  }, [directId]);
 
   useEffect(() => {
     fetchJson<{ categories: Category[] }>("/api/categories").then((d) => setCategories(d.categories)).catch(() => {});
@@ -104,7 +120,12 @@ function NewJobForm() {
         budgetPhp: Number(budget),
         flexible,
       };
-      if (inviteProviderId) body.inviteProviderId = inviteProviderId;
+      if (directId) {
+        body.inviteProviderId = directId;
+        body.direct = true;
+      } else if (inviteProviderId) {
+        body.inviteProviderId = inviteProviderId;
+      }
       if (scheduledAt) body.scheduledAt = new Date(scheduledAt).toISOString();
       const d = await fetchJson<{ job: { id: string } }>("/api/jobs", { method: "POST", body: JSON.stringify(body) });
       router.push(`/jobs/${d.job.id}`);
@@ -123,8 +144,15 @@ function NewJobForm() {
 
   return (
     <div className="mx-auto max-w-lg space-y-4">
-      <h1 className="text-2xl font-extrabold">Mag-post ng kailangan ➕</h1>
-      {rebookName && (
+      <h1 className="text-2xl font-extrabold">{directName ? "Direktang booking 📩" : "Mag-post ng kailangan ➕"}</h1>
+      {directName && (
+        <div className="rounded-xl bg-brand-50 p-3 text-sm text-brand-900">
+          📩 Booking request para kay <strong>{directName}</strong> lang — hindi ito makikita ng iba.
+          Kapag kinumpirma niya, <strong>booked na agad</strong> at iho-hold ang bayad mula sa wallet mo.
+          Kung hindi siya sumagot sa loob ng 48 oras, isasara namin ang request.
+        </div>
+      )}
+      {rebookName && !directName && (
         <div className="rounded-xl bg-brand-50 p-3 text-sm text-brand-900">
           🔁 Ino-book mo ulit si <strong>{rebookName}</strong>. Ide-derecho namin sa kanya ang post na
           ito — pwede pa ring mag-offer ang iba.
@@ -214,7 +242,7 @@ function NewJobForm() {
           </label>
           <ErrorNote message={error} />
           <Button type="submit" full disabled={busy || !categoryId || !regionCode || !cityCode}>
-            {busy ? "Pino-post…" : "I-post ang trabaho"}
+            {busy ? "Pino-post…" : directName ? "Ipadala ang booking request" : "I-post ang trabaho"}
           </Button>
         </form>
       </Card>

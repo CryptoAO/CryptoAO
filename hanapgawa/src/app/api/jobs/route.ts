@@ -3,11 +3,12 @@ import { api, ok, ApiError, parseBody, clientIp, requireVerifiedUser, audit } fr
 import { db } from "@/lib/db";
 import { jobCreateSchema } from "@/lib/validation";
 import { rateLimit, LIMITS } from "@/lib/ratelimit";
-import { parsePhpToCents } from "@/lib/money";
+import { formatPhp, parsePhpToCents } from "@/lib/money";
 import { jobView } from "@/lib/serialize";
 import { getSessionUser } from "@/lib/session";
 import { distanceKm, getCity, isValidCityInRegion } from "@/lib/psgc";
 import { broadcastNewJob, inviteProvider } from "@/lib/matching";
+import { notify } from "@/lib/notify";
 
 const PAGE_SIZE = 20;
 
@@ -23,6 +24,7 @@ export const GET = api(async (req: NextRequest) => {
 
   const where = {
     status: "OPEN",
+    visibility: "PUBLIC",
     ...(regionCode ? { regionCode } : {}),
     ...(cityCode ? { cityCode } : {}),
     ...(categoryId ? { categoryId } : {}),
@@ -100,6 +102,7 @@ async function nearbyWithWork(filters: {
 }): Promise<Alternative[]> {
   const relaxed = {
     status: "OPEN",
+    visibility: "PUBLIC",
     ...(filters.categoryId ? { categoryId: filters.categoryId } : {}),
     ...(filters.q ? { OR: [{ title: { contains: filters.q } }, { description: { contains: filters.q } }] } : {}),
   };
@@ -145,6 +148,17 @@ export const POST = api(async (req: NextRequest) => {
     throw new ApiError(400, `Minimum budget for this category is ₱${category.minPriceCents / 100}`);
   }
 
+  // A direct request needs a real target who can actually take the job.
+  let directProvider = null;
+  if (body.direct) {
+    if (!body.inviteProviderId) throw new ApiError(400, "Direct booking needs a provider");
+    directProvider = await db.user.findUnique({ where: { id: body.inviteProviderId } });
+    if (!directProvider || !directProvider.isProvider || directProvider.status !== "ACTIVE") {
+      throw new ApiError(400, "Hindi available ang provider na iyan");
+    }
+    if (directProvider.id === user.id) throw new ApiError(400, "Hindi mo pwedeng i-book ang sarili mo");
+  }
+
   const job = await db.job.create({
     data: {
       clientId: user.id,
@@ -162,6 +176,8 @@ export const POST = api(async (req: NextRequest) => {
       durationMin: body.durationMin,
       scheduledAt: body.scheduledAt ? new Date(body.scheduledAt) : null,
       flexible: body.flexible,
+      visibility: body.direct ? "DIRECT" : "PUBLIC",
+      directProviderId: body.direct ? body.inviteProviderId : null,
     },
   });
   // Tell the people who can actually do this work that it exists. Failure
@@ -169,11 +185,25 @@ export const POST = api(async (req: NextRequest) => {
   // the create and swallowed.
   let notified = 0;
   try {
-    if (body.inviteProviderId) {
-      await inviteProvider(job.id, body.inviteProviderId, user.firstName);
+    if (body.direct && directProvider) {
+      // Private request: exactly one person hears about it, and the copy
+      // says what confirming will do — book the job and hold the money.
+      await notify({
+        userId: directProvider.id,
+        type: "DIRECT_REQUEST",
+        title: `Booking request: ${formatPhp(budgetCents)} 📩`,
+        body: `Gusto kang i-book ni ${user.firstName} para sa "${job.title}". Kapag kinumpirma mo, booked na ito agad.`,
+        href: `/jobs/${job.id}`,
+        jobId: job.id,
+      });
+      notified = 1;
+    } else {
+      if (body.inviteProviderId) {
+        await inviteProvider(job.id, body.inviteProviderId, user.firstName);
+      }
+      const result = await broadcastNewJob(job.id);
+      notified = result.notified;
     }
-    const result = await broadcastNewJob(job.id);
-    notified = result.notified;
   } catch (e) {
     console.error("job broadcast failed", job.id, e);
   }

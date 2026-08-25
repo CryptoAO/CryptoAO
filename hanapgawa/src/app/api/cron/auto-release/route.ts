@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import { sweepAutoRelease } from "@/lib/autorelease";
 import { purgeOldPhotos } from "@/lib/photos";
+import { expireDirectRequests } from "@/lib/direct";
 import { captureError } from "@/lib/monitoring";
 
 export const dynamic = "force-dynamic";
@@ -51,7 +52,15 @@ async function run(req: NextRequest) {
     } catch (e) {
       await captureError(e, { route: "cron/auto-release", extra: { step: "purgeOldPhotos" } });
     }
-    return NextResponse.json({ ...result, photos }, { headers: { "Cache-Control": "no-store" } });
+    // Direct requests nobody answered: close them so the client stops
+    // waiting on someone who will never reply. Same best-effort posture.
+    let directRequests = null;
+    try {
+      directRequests = await expireDirectRequests();
+    } catch (e) {
+      await captureError(e, { route: "cron/auto-release", extra: { step: "expireDirectRequests" } });
+    }
+    return NextResponse.json({ ...result, photos, directRequests }, { headers: { "Cache-Control": "no-store" } });
   } catch (e) {
     await captureError(e, { route: "cron/auto-release", method: "POST" });
     return NextResponse.json({ error: "Sweep failed" }, { status: 500 });

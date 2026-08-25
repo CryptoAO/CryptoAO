@@ -63,6 +63,9 @@ export const jobCreateSchema = z.object({
   flexible: z.boolean().default(true),
   // Set when a client rebooks someone they've worked with before.
   inviteProviderId: z.string().min(1).max(64).optional(),
+  // True = a private request-to-book aimed at inviteProviderId: never listed,
+  // never broadcast; the provider's confirmation books it and holds escrow.
+  direct: z.boolean().optional(),
 });
 
 export const offerCreateSchema = z.object({

@@ -68,6 +68,9 @@ export function jobView(job: Job & { client?: User; provider?: User | null }, vi
     // Both parties should see the same deadline. Hiding it from the client
     // would make an automatic payout feel like it came out of nowhere, and
     // hiding it from the provider is the anxiety the clock exists to remove.
+    visibility: job.visibility,
+    directProviderId:
+      viewerIsAdmin || isParty || viewerId === job.directProviderId ? job.directProviderId : undefined,
     autoReleaseAt: isParty || viewerIsAdmin ? job.autoReleaseAt : undefined,
     autoReleased: isParty || viewerIsAdmin ? job.autoReleased : undefined,
     createdAt: job.createdAt,

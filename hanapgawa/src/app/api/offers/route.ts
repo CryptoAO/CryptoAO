@@ -16,6 +16,10 @@ export const POST = api(async (req) => {
 
   const job = await db.job.findUnique({ where: { id: body.jobId }, include: { category: true } });
   if (!job || job.status !== "OPEN") throw new ApiError(404, "This job is not open anymore");
+  // A direct request has exactly one intended provider and one answer
+  // (confirm/decline) — competing offers on it would be offers on a job the
+  // rest of the market was never supposed to see.
+  if (job.visibility === "DIRECT") throw new ApiError(404, "This job is not open anymore");
   if (job.clientId === provider.id) throw new ApiError(400, "You can't offer on your own job");
   if (priceCents < job.category.minPriceCents) {
     throw new ApiError(400, `Minimum price for this category is ₱${job.category.minPriceCents / 100}`);
