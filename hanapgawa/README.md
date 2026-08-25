@@ -24,7 +24,9 @@ npm run dev          # http://localhost:3000
 In dev, OTP codes print to the server console and wallet top-ups are instant. Production adapters (Semaphore SMS, PayMongo GCash/Maya) are behind interfaces in `src/lib/sms.ts` and `src/lib/payments.ts`.
 
 ```bash
-npm test             # 23 unit tests: commission math, contact masking, state machine, phone normalization
+npm test             # 100 unit tests: commission math, contact masking, lifecycle, matching,
+                     # auto-release windows, pricing percentiles, provider readiness,
+                     # account-closure rules, magic-byte sniffing, error scrubbing, rate limits
 npm run build        # production build
 ```
 
@@ -35,6 +37,11 @@ npm run build        # production build
 | `src/lib/jobs.ts` | Job lifecycle state machine + escrow transactions (single source of truth) |
 | `src/lib/wallet.ts` | Append-only money ledger: hold / release+commission / refund |
 | `src/lib/safety.ts` | Anti-disintermediation: contact masking (incl. Tagalog spelled-out digits), leak hints, strikes |
+| `src/lib/autorelease.ts` | The clock that releases escrow when a client goes quiet; a dispute stops it |
+| `src/lib/matching.ts` | Job broadcast to matching providers, reliability stats, rebook |
+| `src/lib/pricing.ts` | What a job is worth: real completed-job percentiles, falling back to a labelled estimate |
+| `src/lib/readiness.ts` | What still stands between a provider and being reachable by the broadcast |
+| `src/lib/account.ts` | RA 10173 in code: data export, and closure that anonymises in place |
 | `src/lib/psgc.ts` | 17 regions + 130 cities with coordinates; haversine distance sort |
 | `src/lib/serialize.ts` | The PII boundary — what each viewer may see |
 | `src/app/api/*` | ~25 route groups: auth/OTP, jobs, offers, chat, reviews, wallet, KYC, admin |
@@ -54,6 +61,9 @@ npm run build        # production build
 ## Production posture (read before launching)
 
 1. Postgres via `DATABASE_URL`, strong `SESSION_SECRET` (boot fails without it), `SMS_PROVIDER=semaphore`, `PAYMENTS_PROVIDER=paymongo`.
-2. Money is held by the licensed payment aggregator, not the company — see LEGAL.md §2.
-3. The KYC flow ships as declaration + manual review; wire PSA eVerify + document upload before public launch.
-4. Independent penetration test + the SECURITY.md §9 gap list.
+2. **`CRON_SECRET` is required** or escrow never auto-releases — `/api/cron/auto-release` returns 503 until it is set, on purpose. Schedule it hourly; `vercel.json` already does on Vercel, which passes the secret automatically.
+3. Set `REDIS_URL` (and `npm i ioredis`) the moment there is more than one app instance, or every rate limit is silently multiplied by the instance count.
+4. Money is held by the licensed payment aggregator, not the company — see LEGAL.md §2.
+5. Fill in the company name and Data Protection Officer details in `/terms` and `/privacy` — they ship as bracketed placeholders.
+6. The KYC ladder accepts and stores documents but the match is still a human reading a scan; wire PSA eVerify before public launch.
+7. Independent penetration test + the SECURITY.md §9 gap list.
