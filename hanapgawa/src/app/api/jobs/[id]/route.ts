@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { getSessionUser } from "@/lib/session";
 import { jobView, offerView } from "@/lib/serialize";
 import { providerStats } from "@/lib/matching";
+import { checkProviderAvailability } from "@/lib/availability";
 
 export const GET = api(async (_req, { params }) => {
   const { id } = await params;
@@ -31,12 +32,29 @@ export const GET = api(async (_req, { params }) => {
   );
   const statsById = new Map(offerStats);
 
+  // Whether each bidder is actually free then. A clash is refused at accept
+  // time anyway; showing it here means the client finds out while choosing
+  // rather than after pressing the button.
+  const availability = new Map<string, { clash: boolean; outsideStatedHours: boolean }>();
+  if (job.scheduledAt && (isOwner || isAdmin)) {
+    const checks = await Promise.all(
+      offers.map(async (o) =>
+        [o.id, await checkProviderAvailability(o.providerId, job.scheduledAt, job.durationMin, job.id)] as const,
+      ),
+    );
+    for (const [id, check] of checks) availability.set(id, check);
+  }
+
   return ok({
     job: {
       ...jobView(job, viewer?.id, isAdmin),
       category: { id: job.category.id, slug: job.category.slug, name: job.category.name, nameTl: job.category.nameTl, icon: job.category.icon },
     },
-    offers: offers.map((o) => ({ ...offerView(o), providerStats: statsById.get(o.id) })),
+    offers: offers.map((o) => ({
+      ...offerView(o),
+      providerStats: statsById.get(o.id),
+      availability: availability.get(o.id),
+    })),
     viewerRole: isAdmin ? "admin" : isOwner ? "owner" : isAssigned ? "provider" : "visitor",
   });
 });

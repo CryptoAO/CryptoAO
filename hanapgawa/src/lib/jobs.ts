@@ -7,6 +7,7 @@ import {
   notifyAutoReleased,
 } from "./notify";
 import { releaseDeadline } from "./autorelease";
+import { DEFAULT_DURATION_MIN, clashingBookings } from "./availability";
 
 // Job lifecycle (single source of truth):
 //
@@ -72,6 +73,29 @@ export async function acceptOffer(jobId: string, offerId: string, clientId: stri
     const provider = await tx.user.findUnique({ where: { id: offer.providerId } });
     if (!provider || provider.status !== "ACTIVE" || !provider.isProvider) {
       throw new ApiError(409, "This provider is no longer available");
+    }
+
+    // Nobody can be in two houses at once. Checked inside the transaction so
+    // two clients accepting the same provider for the same hour cannot both
+    // win the race — the second one sees the first one's booking.
+    //
+    // Only a hard clash blocks. Booking outside the provider's stated hours
+    // is surfaced in the UI as a warning instead: people take work outside
+    // their usual hours all the time, and refusing a job both sides agreed
+    // to would just lose everyone money.
+    if (job.scheduledAt) {
+      const committed = await tx.job.findMany({
+        where: {
+          assignedProviderId: offer.providerId,
+          status: { in: ["BOOKED", "IN_PROGRESS", "DONE_BY_PROVIDER", "DISPUTED"] },
+          scheduledAt: { not: null },
+          id: { not: jobId },
+        },
+        select: { id: true, scheduledAt: true, durationMin: true },
+      });
+      if (clashingBookings(committed, job.scheduledAt, job.durationMin ?? DEFAULT_DURATION_MIN).length > 0) {
+        throw new ApiError(409, "May booking na si provider sa oras na iyan. Pumili ng ibang oras o ibang provider.");
+      }
     }
 
     // Atomic gates: under concurrent accepts only one request wins each flip.

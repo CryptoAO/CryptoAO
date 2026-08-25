@@ -43,9 +43,22 @@ The original brief was strong. Here it is restated as the sharpened one-page PRD
 | Payments | Wallet ledger, dev top-up, escrow hold/release/refund, 12% commission engine, payout requests, admin payout ops | PayMongo/Xendit live rails, webhooks, cash-mode with debt cap, booking fees | Loyalty (declining repeat-pair take rate), insurance attach, BIR withholding + 2307 generation |
 | Reviews | Two-way, completed-jobs-only, rating aggregates | Photo reviews | Badges from streaks |
 | Trust ops | Reports, disputes (freeze/resolve refund-pay-split) with evidence photos in the operator console, strikes → flag → suspend, audit log | Structured dispute intake, SLA timers | ML risk scoring |
-| Provider tools | Profile, categories with rates/units, weekly availability grid | Calendar sync, portfolio photos | Earnings analytics, SSS/Pag-IBIG remittance rail |
+| Provider tools | Profile, categories with rates/units, weekly availability grid that is actually enforced at booking | Calendar sync, portfolio photos | Earnings analytics, SSS/Pag-IBIG remittance rail |
 | Admin | Overview KPIs (GMV, earnings), KYC/dispute/payout/report queues | Category & take-rate console, city dashboards | Fraud graph tooling |
 | Localization | Taglish UI throughout | Cebuano/Bisaya support scripts | Regional ad kits |
+
+### Availability that means something
+
+Providers could always set weekly hours and the system always ignored them. A promise the UI makes and the code does not keep is worse than no promise at all: the provider believes they are protected from 6am bookings, the client believes the grid means something, and the first person to learn otherwise is whoever gets stood up.
+
+Two rules now, deliberately different in strength:
+
+- **Hard — nobody can be in two houses at once.** A booking whose window overlaps one the provider has already committed to is refused at accept time, checked inside the same transaction that books the job so two clients racing for the same hour cannot both win. This is physics, not preference.
+- **Soft — outside stated hours warns, never blocks.** People take work outside their usual hours all the time, and a marketplace that refuses a job both sides agreed to is only losing them money. The client sees the flag next to the offer, with a nudge to message first.
+
+The client sees both while choosing rather than after pressing the button: a clash greys out the accept button, an out-of-hours offer shows an amber note.
+
+Two judgment calls worth stating. A provider who never opened the availability screen has no constraint rather than no availability — the alternative would break the app for most new providers. And an untimed job occupies a default two hours on the calendar rather than zero minutes, or every "flexible, whenever" booking would silently become an instant nothing could clash with. Genuinely flexible jobs — those with no scheduled time at all — never clash and are never flagged, because "whenever" is not a claim on a particular hour.
 
 ### Provider activation
 

@@ -22,7 +22,8 @@ interface JobDetail {
   category: { id: string; name: string; nameTl: string; icon: string };
 }
 interface ProviderStats { completedJobs: number; reliabilityPct: number | null; repeatClients: number }
-interface OfferRow { id: string; providerId: string; priceCents: number; message: string; status: string; createdAt: string; provider?: PublicUser; providerStats?: ProviderStats }
+interface OfferAvailability { clash: boolean; outsideStatedHours: boolean }
+interface OfferRow { id: string; providerId: string; priceCents: number; message: string; status: string; createdAt: string; provider?: PublicUser; providerStats?: ProviderStats; availability?: OfferAvailability }
 interface Me { user: { id: string; isProvider: boolean; kycLevel: number } | null }
 
 const STATUS_LABEL: Record<string, { label: string; tone: "gray" | "green" | "amber" | "red" | "brand" }> = {
@@ -284,9 +285,23 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                     )}
                   </div>
                 )}
+                {o.availability?.clash ? (
+                  <p className="mt-2 rounded-lg bg-red-50 p-2 text-xs text-red-800">
+                    ⛔ May ibang booking na siya sa oras na iyan. Kailangang baguhin ang oras o pumili ng iba.
+                  </p>
+                ) : o.availability?.outsideStatedHours ? (
+                  <p className="mt-2 rounded-lg bg-amber-50 p-2 text-xs text-amber-900">
+                    ⚠️ Nasa labas ito ng oras na nilagay niyang available siya. Pwede pa ring tanggapin — kausapin
+                    lang muna siya para sigurado.
+                  </p>
+                ) : null}
                 <p className="mt-1 text-sm text-gray-600">{o.message}</p>
                 <div className="mt-2 flex gap-2">
-                  <Button disabled={busy} onClick={() => acceptOffer(o.id)} className="min-h-10 px-4 py-2 text-sm">
+                  <Button
+                    disabled={busy || o.availability?.clash}
+                    onClick={() => acceptOffer(o.id)}
+                    className="min-h-10 px-4 py-2 text-sm"
+                  >
                     ✔ Tanggapin (i-hold ang {pesos(o.priceCents)})
                   </Button>
                   <Button
