@@ -108,6 +108,14 @@ Say the quiet part to yourself honestly: the commission is why the platform can 
 
 ---
 
+## 6b. Profile photo takedowns
+
+Photos are only visible to signed-in users, which keeps the blast radius small, but people will still occasionally upload something that has to go: a photo of someone else, a group shot where the provider is not identifiable, or something plainly inappropriate.
+
+You can remove any user's photo from the admin side. It is deleted from storage, not hidden, and the takedown is audit-logged against your account.
+
+Remove without hesitating when the photo shows a different person, more than one person with no clear subject, or anything sexual or violent. Message rather than remove when it is merely a bad photo — dark, blurry, a logo instead of a face. Losing a usable photo costs the provider bookings.
+
 ## 7. Incidents
 
 **A data breach that likely affects users must be reported to the National Privacy Commission and to those users within 72 hours.** That clock starts when you become aware, not when you finish investigating. The privacy notice already commits to this.

@@ -19,7 +19,10 @@ model User {
   passwordHash String
   firstName    String
   lastName     String
-  photoUrl     String?
+  // Storage key, not a URL — the image is served through an authenticated
+  // route so a face is never a publicly addressable object.
+  photoKey     String?
+  photoMime    String?
   bio          String?
 
   // Location (PSGC codes; barangay free text for MVP)

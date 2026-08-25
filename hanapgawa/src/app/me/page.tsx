@@ -3,6 +3,7 @@
 import { Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { AvatarUploader } from "@/components/avatar";
 import { PrivacyControls } from "@/components/privacy-controls";
 import { ReadinessCard } from "@/components/readiness";
 import { fetchJson, pesos, timeAgo } from "@/lib/client";
@@ -12,7 +13,8 @@ import { TrustedContacts } from "@/components/safety";
 interface Me {
   user: {
     id: string; firstName: string; lastName: string; phone: string; kycLevel: number;
-    isProvider: boolean; isAdmin: boolean; bio?: string | null; strikeCount: number; status: string;
+    isProvider: boolean; isAdmin: boolean; bio?: string | null; photoUrl?: string | null;
+    strikeCount: number; status: string;
   } | null;
   balanceCents: number;
 }
@@ -87,7 +89,7 @@ function MeDashboard() {
 
       {tab === "activity" && <ActivityTab meId={u.id} />}
       {tab === "wallet" && <WalletTab onChange={load} />}
-      {tab === "provider" && <ProviderTab meId={u.id} isProvider={u.isProvider} bio={u.bio ?? ""} onSaved={load} />}
+      {tab === "provider" && <ProviderTab meId={u.id} isProvider={u.isProvider} bio={u.bio ?? ""} photoUrl={u.photoUrl} firstName={u.firstName} onSaved={load} />}
       {tab === "kyc" && <KycTab kycLevel={u.kycLevel} />}
       {tab === "safety" && <TrustedContacts />}
 
@@ -303,7 +305,7 @@ function WalletTab({ onChange }: { onChange: () => void }) {
 
 interface CatRow { categoryId: string; headline?: string; ratePhp?: number; rateUnit?: "PER_HOUR" | "PER_JOB" | "PER_KILO" | "PER_DAY"; yearsExp?: number }
 
-function ProviderTab({ meId, isProvider, bio: initialBio, onSaved }: { meId: string; isProvider: boolean; bio: string; onSaved: () => void }) {
+function ProviderTab({ meId, isProvider, bio: initialBio, photoUrl, firstName, onSaved }: { meId: string; isProvider: boolean; bio: string; photoUrl?: string | null; firstName: string; onSaved: () => void }) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [bio, setBio] = useState(initialBio);
   const [rows, setRows] = useState<CatRow[]>([]);
@@ -381,6 +383,8 @@ function ProviderTab({ meId, isProvider, bio: initialBio, onSaved }: { meId: str
           Piliin ang mga kaya mong serbisyo, lagyan ng presyo, at sabihin kung kailan ka available.
         </p>
       </div>
+
+      <AvatarUploader photoUrl={photoUrl} firstName={firstName} onChange={onSaved} />
 
       <Field label="Maikling intro tungkol sa'yo">
         <TextArea value={bio} onChange={(e) => setBio(e.target.value)} maxLength={1000} placeholder="Hal. 10 taon na akong labandera, maingat sa damit, may sariling plantsa…" />

@@ -236,3 +236,21 @@ A dispute over a cleaning job is otherwise one person's word against another's, 
 Verified end to end: anonymous list 401 and anonymous read 401; an uninvolved provider got 404 on both; an SVG and a PDF each renamed `.png` were refused; uploads to an `OPEN` job and by a non-party were refused with a reason; client, booked provider and admin all read the image at 200 while the outsider got 404; the response carried `default-src 'none'; sandbox` while `/jobs` kept the ordinary app CSP; the ninth photo from one uploader returned 409 while the counterparty still had their own quota; a non-owner delete returned 403 and the owner's succeeded; and after back-dating the settled job past the retention window the sweep purged all nine files, leaving the rows with no URL and nothing on disk.
 
 **One defect this work surfaced.** Account closure deleted `KycSubmission` rows but not their stored images. A decided submission has its image purged already, but a **pending** one was still on disk — so closing an account could orphan a scan of somebody's licence in the store forever, which is the exact opposite of what closing an account means. Closure now removes those bytes first, deliberately before the transaction: file deletes cannot be rolled back, so the ordering that fails safe is bytes-then-row (a crash between them leaves a row pointing at a missing file, which reads as already-purged; the reverse leaves a file nothing points at). Verified: uploading an ID to a pending submission and then closing the account left zero files in the store.
+
+### Profile photos
+
+A face is the strongest trust signal in a marketplace where you let a stranger into your home, so this is worth having. It is also a photograph of a real person, usually a low-income worker, so it is handled like every other image here rather than like web content.
+
+| Risk | Control |
+|---|---|
+| A scrapeable face database | The image is **served only to signed-in callers**, from an authenticated route resolved by user id. There is no public URL and no bucket |
+| Disguised upload | Magic-byte typing; images only (a PDF avatar is not a thing and a PDF can carry script); 3 MB cap checked before and after buffering |
+| Orphaned bytes on replacement | Replacing a photo deletes the previous object rather than leaving it in the store |
+| A face outliving the account | Closing an account deletes the photo bytes along with any pending identity document, and a non-`ACTIVE`/`FLAGGED` account's photo stops being served immediately |
+| Inappropriate or impersonating photos | Support can take any photo down; the takedown is audit-logged, as is every set and self-removal |
+| A shared phone caching one person's face | `no-store, private`, the same reasoning that keeps the service worker away from personal data |
+| Active content | Served under `default-src 'none'; sandbox` by the same middleware that protects identity documents and evidence photos |
+
+**The trade being made, stated plainly:** anonymous visitors browsing the provider list see initials instead of faces, which costs a little trust at the very top of the funnel. The alternative is a publicly addressable, scrapeable photograph of every worker on the platform, indexed by anyone who wants one. Signing up is one tap; that is the cheaper side of the trade. The `Avatar` component degrades to initials on a brand chip rather than a broken image, so the anonymous view looks deliberate.
+
+Verified: an SVG renamed `.png` was refused; an upload returned a route rather than a key and no payload anywhere contained `photoKey`; a signed-in client read the image at 200 while an anonymous caller got 401; the response carried `default-src 'none'; sandbox` and `no-store`; replacing the photo left exactly one file in the store rather than two; a non-admin takedown returned 403 and an admin's succeeded, leaving zero files; and closing the account removed the photo from disk.

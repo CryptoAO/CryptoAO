@@ -3,9 +3,11 @@
 import { use, useEffect, useState } from "react";
 import { fetchJson, pesos, timeAgo } from "@/lib/client";
 import { Card, ErrorNote, KycBadge, Spinner, Stars } from "@/components/ui";
+import { Avatar } from "@/components/avatar";
 import { getCity, getRegion } from "@/lib/psgc";
 
 interface ProviderDetail {
+  photoUrl?: string | null;
   id: string; firstName: string; lastInitial: string; bio?: string | null;
   cityCode: string; regionCode: string; kycLevel: number; memberSince: string;
   completedJobs: number; ratingAvg: number | null; ratingCount: number;
@@ -43,8 +45,10 @@ export default function ProviderDetailPage({ params }: { params: Promise<{ id: s
   return (
     <div className="mx-auto max-w-2xl space-y-4">
       <Card>
-        <div className="flex items-start justify-between">
-          <div>
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 items-start gap-3">
+            <Avatar photoUrl={p.photoUrl} firstName={p.firstName} lastInitial={p.lastInitial} size={64} />
+            <div className="min-w-0">
             <h1 className="text-2xl font-extrabold">{p.firstName} {p.lastInitial}</h1>
             <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-gray-500">
               <Stars value={p.ratingAvg} />
@@ -55,8 +59,9 @@ export default function ProviderDetailPage({ params }: { params: Promise<{ id: s
               <KycBadge level={p.kycLevel} />
               <span className="text-xs text-gray-500">Member since {new Date(p.memberSince).toLocaleDateString("en-PH", { month: "short", year: "numeric" })}</span>
             </div>
+            </div>
           </div>
-          <div className="rounded-2xl bg-brand-50 px-4 py-3 text-center">
+          <div className="shrink-0 rounded-2xl bg-brand-50 px-4 py-3 text-center">
             <div className="text-2xl font-extrabold text-brand-800">{p.completedJobs}</div>
             <div className="text-xs text-brand-900">tapos na trabaho</div>
           </div>

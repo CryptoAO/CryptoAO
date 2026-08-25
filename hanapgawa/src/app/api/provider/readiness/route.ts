@@ -26,6 +26,7 @@ export const GET = api(async () => {
     categoriesWithRate: categories.filter((c) => c.rateCents != null && c.rateCents > 0).length,
     bioLength: user.bio?.trim().length ?? 0,
     trustedContactCount: trustedContacts,
+    hasPhoto: user.photoKey != null,
   });
 
   return ok({ readiness });

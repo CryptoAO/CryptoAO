@@ -7,6 +7,7 @@ const fresh: ReadinessInput = {
   categoriesWithRate: 0,
   bioLength: 0,
   trustedContactCount: 0,
+  hasPhoto: false,
 };
 
 const complete: ReadinessInput = {
@@ -15,6 +16,7 @@ const complete: ReadinessInput = {
   categoriesWithRate: 2,
   bioLength: 120,
   trustedContactCount: 1,
+  hasPhoto: true,
 };
 
 describe("providerReadiness", () => {
@@ -22,6 +24,15 @@ describe("providerReadiness", () => {
     const r = providerReadiness(fresh);
     expect(r.ready).toBe(false);
     expect(r.percent).toBe(0);
+  });
+
+  it("offers a photo step now that the app can actually set one", () => {
+    // The step was deliberately absent while nothing could complete it.
+    const r = providerReadiness(fresh);
+    const photo = r.steps.find((s) => s.id === "photo");
+    expect(photo).toBeDefined();
+    expect(photo!.blocking).toBe(false);
+    expect(providerReadiness({ ...fresh, hasPhoto: true }).steps.find((s) => s.id === "photo")!.done).toBe(true);
   });
 
   it("names exactly the two things that stop jobs reaching someone", () => {

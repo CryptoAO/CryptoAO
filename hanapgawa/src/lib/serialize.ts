@@ -11,7 +11,9 @@ export function publicUser(u: User) {
     id: u.id,
     firstName: u.firstName,
     lastInitial: u.lastName ? `${u.lastName[0]}.` : "",
-    photoUrl: u.photoUrl,
+    // A route, never the storage key. Null when there is no photo so the UI
+    // renders initials rather than a broken image.
+    photoUrl: u.photoKey ? `/api/users/${u.id}/photo` : null,
     bio: u.bio,
     regionCode: u.regionCode,
     cityCode: u.cityCode,

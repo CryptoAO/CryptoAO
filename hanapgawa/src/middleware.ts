@@ -14,6 +14,7 @@ import { NextRequest, NextResponse } from "next/server";
 const FILE_PATHS = [
   /^\/api\/admin\/kyc\/[^/]+\/document\/?$/,
   /^\/api\/jobs\/[^/]+\/photos\/[^/]+\/?$/,
+  /^\/api\/users\/[^/]+\/photo\/?$/,
 ];
 
 export function middleware(req: NextRequest) {
@@ -28,5 +29,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/api/admin/kyc/:path*/document", "/api/jobs/:id/photos/:photoId"],
+  matcher: ["/api/admin/kyc/:path*/document", "/api/jobs/:id/photos/:photoId", "/api/users/:id/photo"],
 };

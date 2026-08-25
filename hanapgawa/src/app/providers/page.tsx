@@ -4,10 +4,12 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { fetchJson, pesos } from "@/lib/client";
 import { Button, Card, KycBadge, Select, Spinner, Stars } from "@/components/ui";
+import { Avatar } from "@/components/avatar";
 import { REGIONS, citiesOfRegion, getCity } from "@/lib/psgc";
 
 interface Category { id: string; name: string; nameTl: string; icon: string }
 interface ProviderRow {
+  photoUrl?: string | null;
   id: string; firstName: string; lastInitial: string; cityCode: string; kycLevel: number;
   ratingAvg: number | null; ratingCount: number;
   categories: { categoryId: string; nameTl: string; icon: string; headline?: string | null; rateCents?: number | null; rateUnit?: string | null }[];
@@ -75,8 +77,11 @@ export default function ProvidersPage() {
           {providers.map((p) => (
             <Link key={p.id} href={`/providers/${p.id}`}>
               <Card className="h-full transition-shadow hover:shadow-md">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-bold">{p.firstName} {p.lastInitial}</h3>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <Avatar photoUrl={p.photoUrl} firstName={p.firstName} lastInitial={p.lastInitial} size={40} />
+                    <h3 className="truncate font-bold">{p.firstName} {p.lastInitial}</h3>
+                  </div>
                   <KycBadge level={p.kycLevel} />
                 </div>
                 <div className="mt-1 flex items-center gap-2 text-xs text-gray-500">

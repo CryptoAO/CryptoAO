@@ -7,10 +7,11 @@ import { fetchJson, pesos, timeAgo } from "@/lib/client";
 import { Badge, Button, Card, ErrorNote, Field, Input, KycBadge, Spinner, TextArea } from "@/components/ui";
 import { ChatBox } from "@/components/chat";
 import { SafetyPanel } from "@/components/safety";
+import { Avatar } from "@/components/avatar";
 import { JobPhotos } from "@/components/jobphotos";
 import { getCity, getRegion } from "@/lib/psgc";
 
-interface PublicUser { id: string; firstName: string; lastInitial: string; kycLevel: number }
+interface PublicUser { id: string; firstName: string; lastInitial: string; kycLevel: number; photoUrl?: string | null }
 interface JobDetail {
   id: string; title: string; description: string; status: string;
   regionCode: string; cityCode: string; barangay?: string | null; addressNote?: string | null;
@@ -261,6 +262,12 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
               <div key={o.id} className="rounded-xl border border-stone-200 p-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-sm">
+                    <Avatar
+                      photoUrl={o.provider?.photoUrl}
+                      firstName={o.provider?.firstName}
+                      lastInitial={o.provider?.lastInitial}
+                      size={36}
+                    />
                     <Link href={`/providers/${o.providerId}`} className="font-bold underline">
                       {o.provider?.firstName} {o.provider?.lastInitial}
                     </Link>

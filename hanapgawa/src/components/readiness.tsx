@@ -19,6 +19,7 @@ const TAB_FOR: Record<StepId, string> = {
   bio: "provider",
   kyc2: "kyc",
   contact: "safety",
+  photo: "provider",
 };
 
 /**

@@ -20,12 +20,10 @@ export interface ReadinessInput {
   categoriesWithRate: number;
   bioLength: number;
   trustedContactCount: number;
+  hasPhoto: boolean;
 }
 
-// No profile-photo step yet on purpose: nothing in the app can set
-// User.photoUrl, and a checklist item with no way to complete it is worse
-// than no checklist. Add it back together with avatar upload.
-export type StepId = "verify" | "categories" | "rates" | "bio" | "kyc2" | "contact";
+export type StepId = "verify" | "categories" | "rates" | "bio" | "kyc2" | "contact" | "photo";
 
 export interface ReadinessStep {
   id: StepId;
@@ -86,6 +84,14 @@ export function providerReadiness(input: ReadinessInput): {
       title: "I-verify ang valid ID mo",
       why: "Kailangan ito para sa mga trabahong ₱2,000 pataas — doon ang malaking kita.",
       href: "/me?tab=kyc",
+    },
+    {
+      id: "photo",
+      done: input.hasPhoto,
+      blocking: false,
+      title: "Maglagay ng malinaw na profile photo",
+      why: "Papasukin ka ng kliyente sa bahay nila. Mas madalas piliin ang may mukha kaysa sa walang larawan.",
+      href: "/me?tab=provider",
     },
     {
       id: "contact",

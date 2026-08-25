@@ -185,24 +185,28 @@ export interface ClosureResult {
  * "undelete" that would quietly resurrect somebody's name.
  */
 export async function closeAccount(userId: string): Promise<ClosureResult> {
-  // Any identity document still on disk has to go with the account. A
-  // decided submission had its image purged already, but a PENDING one is
-  // still sitting in the store — and deleting only the row would leave a
-  // scan of somebody's licence orphaned there forever, which is the exact
-  // opposite of what closing an account is supposed to mean.
+  // Any image of this person still on disk has to go with the account: a
+  // PENDING identity document (a decided one was purged at decision time)
+  // and their profile photo. Deleting only the rows would leave a scan of
+  // somebody's licence, or a picture of their face, orphaned in the store
+  // forever — the exact opposite of what closing an account means.
   //
   // Done before the transaction on purpose: file deletes cannot be rolled
   // back, so the ordering that fails safe is "bytes first, row second". A
   // crash in between leaves a row pointing at a missing file, which reads as
   // already-purged; the reverse would leave a file nothing points at.
-  const pendingDocs = await db.kycSubmission.findMany({
-    where: { userId, docRef: { not: null }, docPurgedAt: null },
-    select: { docRef: true },
-  });
-  if (pendingDocs.length > 0) {
+  const [pendingDocs, self] = await Promise.all([
+    db.kycSubmission.findMany({
+      where: { userId, docRef: { not: null }, docPurgedAt: null },
+      select: { docRef: true },
+    }),
+    db.user.findUnique({ where: { id: userId }, select: { photoKey: true } }),
+  ]);
+  const orphanKeys = [...pendingDocs.map((d) => d.docRef!), ...(self?.photoKey ? [self.photoKey] : [])];
+  if (orphanKeys.length > 0) {
     const store = objectStore();
-    for (const doc of pendingDocs) {
-      await store.remove(doc.docRef!).catch(() => {
+    for (const key of orphanKeys) {
+      await store.remove(key).catch(() => {
         // A missing file is the desired end state anyway.
       });
     }
@@ -242,7 +246,8 @@ export async function closeAccount(userId: string): Promise<ClosureResult> {
         passwordHash: randomBytes(32).toString("hex"),
         firstName: "Dating",
         lastName: "user",
-        photoUrl: null,
+        photoKey: null,
+        photoMime: null,
         bio: null,
         barangay: null,
         lat: null,
