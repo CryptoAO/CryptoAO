@@ -5,7 +5,7 @@ import { registerSchema } from "@/lib/validation";
 import { normalizePhPhone } from "@/lib/sms";
 import { isValidCityInRegion } from "@/lib/psgc";
 import { rateLimitAsync, LIMITS } from "@/lib/ratelimit";
-import { issueOtp } from "@/lib/otp";
+import { devSmsEcho, issueOtp } from "@/lib/otp";
 import { TERMS_VERSION } from "@/lib/legal";
 
 export const POST = api(async (req) => {
@@ -34,7 +34,8 @@ export const POST = api(async (req) => {
       existing.phoneVerifiedAt == null &&
       (await rateLimitAsync(`otp:${phone}`, LIMITS.otpSend.max, LIMITS.otpSend.windowMs))
     ) {
-      await issueOtp(phone, "REGISTER");
+      const code = await issueOtp(phone, "REGISTER");
+      if (devSmsEcho()) return ok({ next: "verify", phone, devCode: code }, 201);
     }
     return ok({ next: "verify", phone }, 201);
   }
@@ -56,8 +57,8 @@ export const POST = api(async (req) => {
   if (!(await rateLimitAsync(`otp:${phone}`, LIMITS.otpSend.max, LIMITS.otpSend.windowMs))) {
     throw new ApiError(429, "Too many codes sent — wait a few minutes");
   }
-  await issueOtp(phone, "REGISTER");
+  const code = await issueOtp(phone, "REGISTER");
   await audit("user.register", { actorId: user.id, ip });
 
-  return ok({ next: "verify", phone }, 201);
+  return ok({ next: "verify", phone, ...(devSmsEcho() ? { devCode: code } : {}) }, 201);
 });

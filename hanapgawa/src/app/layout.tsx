@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Nav } from "@/components/nav";
+import { DEMO_MODE } from "@/lib/demo";
 import { Pwa } from "@/components/pwa";
 
 export const metadata: Metadata = {
@@ -38,6 +39,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="fil">
       <body className="min-h-screen pb-20 sm:pb-0">
+        {DEMO_MODE && (
+          <div className="bg-amber-100 px-4 py-2 text-center text-xs text-amber-900">
+            🧪 <strong>DEMO</strong> — pansubok lang: peke ang pera, at nagre-reset ang data paminsan-paminsan.
+            Subukan: client <strong>09170000006</strong> · provider <strong>09170000002</strong> · admin{" "}
+            <strong>09170000001</strong> — password <strong>password123</strong>.
+          </div>
+        )}
         <Nav />
         <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>
         <footer className="mt-12 hidden border-t border-stone-200 bg-white py-8 text-center text-xs text-gray-500 sm:block">

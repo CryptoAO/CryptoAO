@@ -4,7 +4,7 @@ import { api, ok, ApiError, parseBody, clientIp, audit } from "@/lib/api";
 import { db } from "@/lib/db";
 import { normalizePhPhone } from "@/lib/sms";
 import { rateLimit, LIMITS } from "@/lib/ratelimit";
-import { issueOtp, verifyOtp } from "@/lib/otp";
+import { devSmsEcho, issueOtp, verifyOtp } from "@/lib/otp";
 import { phoneSchema, passwordSchema, otpVerifySchema } from "@/lib/validation";
 import { setSessionCookie } from "@/lib/session";
 import { selfUser } from "@/lib/serialize";
@@ -39,7 +39,10 @@ export const POST = api(async (req) => {
     }
     const user = await db.user.findUnique({ where: { phone } });
     // Only verified accounts can reset by SMS; response is identical either way.
-    if (user && user.phoneVerifiedAt) await issueOtp(phone, "RESET");
+    if (user && user.phoneVerifiedAt) {
+      const code = await issueOtp(phone, "RESET");
+      if (devSmsEcho()) return ok({ sent: true, devCode: code });
+    }
     return ok({ sent: true });
   }
 

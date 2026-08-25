@@ -1,3 +1,4 @@
+import "./demo"; // demo deployments move private storage under /tmp
 import { createHash, randomBytes } from "crypto";
 import { mkdir, readFile, unlink, writeFile } from "fs/promises";
 import path from "path";

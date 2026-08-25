@@ -14,16 +14,18 @@ export default function ForgotPasswordPage() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [devCode, setDevCode] = useState<string | null>(null);
 
   async function requestCode(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError(null);
     try {
-      await fetchJson("/api/auth/reset", {
+      const d = await fetchJson<{ devCode?: string }>("/api/auth/reset", {
         method: "POST",
         body: JSON.stringify({ step: "request", phone }),
       });
+      if (d.devCode) setDevCode(d.devCode);
       setStep("code");
     } catch (err) {
       setError((err as Error).message);
@@ -82,6 +84,12 @@ export default function ForgotPasswordPage() {
             <p className="text-sm text-gray-700">
               Kung may account sa <strong>{phone}</strong>, may code na naipadala. Ilagay ito at ang bago mong password.
             </p>
+            {devCode && (
+              <p className="rounded-xl bg-amber-50 p-3 text-center text-sm text-amber-900">
+                🧪 Demo lang: walang totoong SMS. Ang code mo ay{" "}
+                <strong className="font-mono text-lg tracking-widest">{devCode}</strong>
+              </p>
+            )}
             <Field label="6-digit code">
               <Input
                 inputMode="numeric"

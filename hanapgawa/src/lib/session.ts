@@ -1,3 +1,4 @@
+import "./demo"; // demo deployments derive SESSION_SECRET — see src/lib/demo.ts
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { db } from "./db";

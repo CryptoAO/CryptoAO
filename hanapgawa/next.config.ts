@@ -26,6 +26,10 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Demo deployments bake a seeded SQLite file into the bundle; the file
+  // tracer cannot see a runtime copyFileSync, so include it explicitly.
+  // Harmless outside demo builds — a missing file is simply not traced.
+  outputFileTracingIncludes: { "/**": ["./prisma/demo-seed.db"] },
   async headers() {
     // Identity-document responses get a stricter policy, applied in
     // src/middleware.ts — a headers() entry here would be overridden by

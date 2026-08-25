@@ -1,4 +1,7 @@
 import { Prisma, PrismaClient } from "@prisma/client";
+// Must run before PrismaClient is constructed: on a demo deployment it
+// copies the bundled seed database to /tmp and points DATABASE_URL at it.
+import "./demo";
 
 // Singleton Prisma client (survives Next.js dev hot-reload).
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };

@@ -22,16 +22,18 @@ export default function RegisterPage() {
   const [wantsProvider, setWantsProvider] = useState(false);
   const [agree, setAgree] = useState(false);
   const [code, setCode] = useState("");
+  const [devCode, setDevCode] = useState<string | null>(null);
 
   async function submitForm(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError(null);
     try {
-      await fetchJson("/api/auth/register", {
+      const d = await fetchJson<{ devCode?: string }>("/api/auth/register", {
         method: "POST",
         body: JSON.stringify({ firstName, lastName, phone, password, regionCode, cityCode, wantsProvider, agree }),
       });
+      if (d.devCode) setDevCode(d.devCode);
       setStep("otp");
     } catch (err) {
       setError((err as Error).message);
@@ -128,6 +130,12 @@ export default function RegisterPage() {
             <p className="text-sm text-gray-700">
               Nagpadala kami ng <strong>6-digit code</strong> sa <strong>{phone}</strong>. Ilagay dito:
             </p>
+            {devCode && (
+              <p className="rounded-xl bg-amber-50 p-3 text-center text-sm text-amber-900">
+                🧪 Demo lang: walang totoong SMS. Ang code mo ay{" "}
+                <strong className="font-mono text-lg tracking-widest">{devCode}</strong>
+              </p>
+            )}
             <Input
               inputMode="numeric"
               maxLength={6}
@@ -144,7 +152,11 @@ export default function RegisterPage() {
             <button
               type="button"
               className="w-full text-center text-sm font-semibold text-brand-800 underline"
-              onClick={() => fetchJson("/api/auth/resend-otp", { method: "POST", body: JSON.stringify({ phone }) }).catch(() => {})}
+              onClick={() =>
+                fetchJson<{ devCode?: string }>("/api/auth/resend-otp", { method: "POST", body: JSON.stringify({ phone }) })
+                  .then((d) => { if (d.devCode) setDevCode(d.devCode); })
+                  .catch(() => {})
+              }
             >
               Hindi dumating? Magpadala ulit ng code
             </button>

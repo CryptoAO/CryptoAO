@@ -7,7 +7,7 @@ import { smsSender } from "./sms";
 const OTP_TTL_MS = 5 * 60_000;
 const MAX_ATTEMPTS = 5;
 
-export async function issueOtp(phone: string, purpose: "REGISTER" | "LOGIN" | "RESET") {
+export async function issueOtp(phone: string, purpose: "REGISTER" | "LOGIN" | "RESET"): Promise<string> {
   const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
   const codeHash = await bcrypt.hash(code, 8);
   await db.otpCode.create({
@@ -17,6 +17,21 @@ export async function issueOtp(phone: string, purpose: "REGISTER" | "LOGIN" | "R
     phone,
     `HanapGawa code: ${code}. Wag ibigay kahit kanino — hindi kami hihingi nito. Valid for 5 mins.`,
   );
+  return code;
+}
+
+/**
+ * True when the dev SMS adapter is active (no real gateway configured). In
+ * that mode OTP routes may echo the code back in the response so a demo or
+ * local tester can complete flows without a server console.
+ *
+ * DELIBERATE TRADE, stated plainly: echoing the code only when one was
+ * actually issued gives up the anti-enumeration property — in dev/demo
+ * mode only. Production sets SMS_PROVIDER=semaphore, this returns false,
+ * and the uniform responses (and their tests) are unchanged.
+ */
+export function devSmsEcho(): boolean {
+  return process.env.SMS_PROVIDER !== "semaphore";
 }
 
 export async function verifyOtp(phone: string, purpose: string, code: string): Promise<void> {
