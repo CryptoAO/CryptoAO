@@ -31,7 +31,9 @@ export type NotificationType =
   | "SOS_RAISED"
   | "SOS_RESOLVED"
   | "CHECKED_IN"
-  | "CHECKED_OUT";
+  | "CHECKED_OUT"
+  | "JOB_NEARBY"
+  | "JOB_INVITE";
 
 interface NotifyInput {
   userId: string;

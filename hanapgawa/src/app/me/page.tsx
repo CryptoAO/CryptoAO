@@ -363,6 +363,8 @@ function ProviderTab({ meId, isProvider, bio: initialBio, onSaved }: { meId: str
 
   return (
     <Card className="space-y-4">
+      {isProvider && <JobAlertToggle />}
+
       <div>
         <h2 className="font-bold">{isProvider ? "I-update ang provider profile mo" : "Maging provider — kumita na! 💪"}</h2>
         <p className="mt-1 text-sm text-gray-600">
@@ -444,6 +446,48 @@ function ProviderTab({ meId, isProvider, bio: initialBio, onSaved }: { meId: str
         {busy ? "Sine-save…" : "I-save ang provider profile"}
       </Button>
     </Card>
+  );
+}
+
+function JobAlertToggle() {
+  const [on, setOn] = useState<boolean | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    fetchJson<{ user: { notifyNewJobs?: boolean } | null }>("/api/me")
+      .then((d) => setOn(d.user?.notifyNewJobs ?? true))
+      .catch(() => setOn(true));
+  }, []);
+
+  if (on === null) return null;
+
+  async function toggle() {
+    const next = !on;
+    setOn(next);
+    setBusy(true);
+    try {
+      await fetchJson("/api/me", { method: "POST", body: JSON.stringify({ notifyNewJobs: next }) });
+    } catch {
+      setOn(!next); // put it back if the save failed
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <label className="flex items-start gap-3 rounded-xl bg-brand-50 p-3">
+      <input
+        type="checkbox"
+        checked={on}
+        onChange={toggle}
+        disabled={busy}
+        className="mt-1 h-5 w-5 accent-brand-700"
+      />
+      <span className="text-sm">
+        <strong>Abisuhan ako ng bagong trabaho sa lugar ko.</strong> Ito ang pinakamabilis na paraan
+        para makakuha ng raket — unahan ang mag-offer.
+      </span>
+    </label>
   );
 }
 

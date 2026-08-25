@@ -34,6 +34,8 @@ const ICONS: Record<string, string> = {
   SOS_RESOLVED: "🤝",
   CHECKED_IN: "📍",
   CHECKED_OUT: "👋",
+  JOB_NEARBY: "🔔",
+  JOB_INVITE: "🌟",
 };
 
 export function NotificationBell() {

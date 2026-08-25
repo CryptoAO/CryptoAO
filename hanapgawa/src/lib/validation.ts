@@ -61,6 +61,8 @@ export const jobCreateSchema = z.object({
   durationMin: z.number().int().min(15).max(24 * 60 * 14).optional(),
   scheduledAt: z.string().datetime().optional(),
   flexible: z.boolean().default(true),
+  // Set when a client rebooks someone they've worked with before.
+  inviteProviderId: z.string().min(1).max(64).optional(),
 });
 
 export const offerCreateSchema = z.object({

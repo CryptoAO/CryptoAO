@@ -39,6 +39,10 @@ model User {
   idVerifiedAt        DateTime?
   clearanceVerifiedAt DateTime?
 
+  // Providers can opt out of "new job near you" alerts without leaving the
+  // platform. Default on: a provider who hears about work comes back.
+  notifyNewJobs Boolean @default(true)
+
   status       String @default("ACTIVE") // ACTIVE | FLAGGED | SUSPENDED | BANNED
   strikeCount  Int    @default(0)
   tokenVersion Int    @default(1) // bump to revoke all sessions

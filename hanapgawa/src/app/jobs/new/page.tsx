@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { fetchJson } from "@/lib/client";
 import { Button, Card, ErrorNote, Field, Input, Select, TextArea } from "@/components/ui";
 import { LocationPicker } from "@/components/locationpicker";
 
 interface Category { id: string; name: string; nameTl: string; icon: string; minPriceCents: number }
 
-export default function NewJobPage() {
+function NewJobForm() {
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
   const [busy, setBusy] = useState(false);
@@ -25,10 +25,42 @@ export default function NewJobPage() {
   const [budget, setBudget] = useState("");
   const [scheduledAt, setScheduledAt] = useState("");
   const [flexible, setFlexible] = useState(true);
+  const [inviteProviderId, setInviteProviderId] = useState<string | null>(null);
+  const [rebookName, setRebookName] = useState<string | null>(null);
+
+  const params = useSearchParams();
+  const rebookId = params.get("rebook");
 
   useEffect(() => {
     fetchJson<{ categories: Category[] }>("/api/categories").then((d) => setCategories(d.categories)).catch(() => {});
   }, []);
+
+  // Rebooking: prefill from the previous job and route the new post
+  // straight to the same provider.
+  useEffect(() => {
+    if (!rebookId) return;
+    fetchJson<{ job: {
+      categoryId: string; title: string; description: string; regionCode: string; cityCode: string;
+      barangay?: string | null; addressNote?: string | null; payType: string;
+      agreedPriceCents?: number | null; budgetCents: number;
+      assignedProviderId?: string | null; provider?: { firstName: string } | null;
+    } }>(`/api/jobs/${rebookId}`)
+      .then((d) => {
+        const j = d.job;
+        setCategoryId(j.categoryId);
+        setTitle(j.title);
+        setDescription(j.description);
+        setRegionCode(j.regionCode);
+        setCityCode(j.cityCode);
+        if (j.barangay) setBarangay(j.barangay);
+        if (j.addressNote) setAddressNote(j.addressNote);
+        setPayType(j.payType === "HOURLY" ? "HOURLY" : "FIXED");
+        setBudget(String((j.agreedPriceCents ?? j.budgetCents) / 100));
+        if (j.assignedProviderId) setInviteProviderId(j.assignedProviderId);
+        if (j.provider?.firstName) setRebookName(j.provider.firstName);
+      })
+      .catch(() => {});
+  }, [rebookId]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -43,6 +75,7 @@ export default function NewJobPage() {
         budgetPhp: Number(budget),
         flexible,
       };
+      if (inviteProviderId) body.inviteProviderId = inviteProviderId;
       if (scheduledAt) body.scheduledAt = new Date(scheduledAt).toISOString();
       const d = await fetchJson<{ job: { id: string } }>("/api/jobs", { method: "POST", body: JSON.stringify(body) });
       router.push(`/jobs/${d.job.id}`);
@@ -60,6 +93,12 @@ export default function NewJobPage() {
   return (
     <div className="mx-auto max-w-lg space-y-4">
       <h1 className="text-2xl font-extrabold">Mag-post ng kailangan ➕</h1>
+      {rebookName && (
+        <div className="rounded-xl bg-brand-50 p-3 text-sm text-brand-900">
+          🔁 Ino-book mo ulit si <strong>{rebookName}</strong>. Ide-derecho namin sa kanya ang post na
+          ito — pwede pa ring mag-offer ang iba.
+        </div>
+      )}
       <p className="text-sm text-gray-600">
         Libre mag-post. Magbabayad ka lang kapag tapos na ang trabaho — at protektado ng escrow ang pera mo.
       </p>
@@ -125,5 +164,14 @@ export default function NewJobPage() {
         </form>
       </Card>
     </div>
+  );
+}
+
+
+export default function NewJobPage() {
+  return (
+    <Suspense fallback={<div className="py-10 text-center text-sm text-gray-500">Loading…</div>}>
+      <NewJobForm />
+    </Suspense>
   );
 }

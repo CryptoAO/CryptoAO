@@ -19,7 +19,8 @@ interface JobDetail {
   client?: PublicUser; provider?: PublicUser;
   category: { id: string; name: string; nameTl: string; icon: string };
 }
-interface OfferRow { id: string; providerId: string; priceCents: number; message: string; status: string; createdAt: string; provider?: PublicUser }
+interface ProviderStats { completedJobs: number; reliabilityPct: number | null; repeatClients: number }
+interface OfferRow { id: string; providerId: string; priceCents: number; message: string; status: string; createdAt: string; provider?: PublicUser; providerStats?: ProviderStats }
 interface Me { user: { id: string; isProvider: boolean; kycLevel: number } | null }
 
 const STATUS_LABEL: Record<string, { label: string; tone: "gray" | "green" | "amber" | "red" | "brand" }> = {
@@ -257,6 +258,23 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                   </div>
                   <div className="text-lg font-extrabold text-brand-800">{pesos(o.priceCents)}</div>
                 </div>
+                {o.providerStats && (o.providerStats.completedJobs > 0 || o.providerStats.repeatClients > 0) && (
+                  <div className="mt-1 flex flex-wrap gap-2 text-[11px] text-gray-600">
+                    <span className="rounded-full bg-stone-100 px-2 py-0.5">
+                      ✔ {o.providerStats.completedJobs} tapos na trabaho
+                    </span>
+                    {o.providerStats.reliabilityPct != null && (
+                      <span className="rounded-full bg-stone-100 px-2 py-0.5">
+                        {o.providerStats.reliabilityPct}% natapos
+                      </span>
+                    )}
+                    {o.providerStats.repeatClients > 0 && (
+                      <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-emerald-800">
+                        🔁 {o.providerStats.repeatClients} paulit-ulit na client
+                      </span>
+                    )}
+                  </div>
+                )}
                 <p className="mt-1 text-sm text-gray-600">{o.message}</p>
                 <div className="mt-2 flex gap-2">
                   <Button disabled={busy} onClick={() => acceptOffer(o.id)} className="min-h-10 px-4 py-2 text-sm">
@@ -354,6 +372,24 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
               <Button type="submit" disabled={busy}>I-submit ang review</Button>
             </form>
           )}
+        </Card>
+      )}
+
+      {/* ===== Completed: book the same provider again ===== */}
+      {isOwner && job.status === "COMPLETED" && job.provider && (
+        <Card className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="font-bold">Maganda ang serbisyo? 🔁</h2>
+            <p className="mt-0.5 text-sm text-gray-600">
+              I-book ulit si {job.provider.firstName} — mapupunta agad sa kanya ang bagong post mo.
+            </p>
+          </div>
+          <Link
+            href={`/jobs/new?rebook=${job.id}`}
+            className="rounded-xl bg-brand-700 px-5 py-3 text-sm font-bold text-white"
+          >
+            I-book ulit
+          </Link>
         </Card>
       )}
 

@@ -7,6 +7,7 @@ import { parsePhpToCents } from "@/lib/money";
 import { jobView } from "@/lib/serialize";
 import { getSessionUser } from "@/lib/session";
 import { distanceKm, getCity, isValidCityInRegion } from "@/lib/psgc";
+import { broadcastNewJob, inviteProvider } from "@/lib/matching";
 
 const PAGE_SIZE = 20;
 
@@ -118,6 +119,26 @@ export const POST = api(async (req: NextRequest) => {
       flexible: body.flexible,
     },
   });
-  await audit("job.create", { actorId: user.id, targetType: "Job", targetId: job.id, ip: clientIp(req) });
-  return ok({ job: jobView(job, user.id) }, 201);
+  // Tell the people who can actually do this work that it exists. Failure
+  // here must never lose the client's post, so it is deliberately outside
+  // the create and swallowed.
+  let notified = 0;
+  try {
+    if (body.inviteProviderId) {
+      await inviteProvider(job.id, body.inviteProviderId, user.firstName);
+    }
+    const result = await broadcastNewJob(job.id);
+    notified = result.notified;
+  } catch (e) {
+    console.error("job broadcast failed", job.id, e);
+  }
+
+  await audit("job.create", {
+    actorId: user.id,
+    targetType: "Job",
+    targetId: job.id,
+    meta: { notified },
+    ip: clientIp(req),
+  });
+  return ok({ job: jobView(job, user.id), providersNotified: notified }, 201);
 });

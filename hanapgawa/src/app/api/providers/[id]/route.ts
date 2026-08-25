@@ -1,6 +1,7 @@
 import { api, ok, ApiError } from "@/lib/api";
 import { db } from "@/lib/db";
 import { publicUser } from "@/lib/serialize";
+import { providerStats } from "@/lib/matching";
 
 export const GET = api(async (_req, { params }) => {
   const { id } = await params;
@@ -13,7 +14,7 @@ export const GET = api(async (_req, { params }) => {
   });
   if (!user || !user.isProvider || user.status === "BANNED") throw new ApiError(404, "Provider not found");
 
-  const [ratings, reviews, completedCount] = await Promise.all([
+  const [ratings, reviews, stats] = await Promise.all([
     db.review.aggregate({ where: { rateeId: id }, _avg: { rating: true }, _count: { rating: true } }),
     db.review.findMany({
       where: { rateeId: id },
@@ -21,7 +22,7 @@ export const GET = api(async (_req, { params }) => {
       orderBy: { createdAt: "desc" },
       take: 20,
     }),
-    db.job.count({ where: { assignedProviderId: id, status: "COMPLETED" } }),
+    providerStats(id),
   ]);
 
   return ok({
@@ -38,7 +39,9 @@ export const GET = api(async (_req, { params }) => {
         yearsExp: pc.yearsExp,
       })),
       availability: user.availability.map((a) => ({ weekday: a.weekday, startMin: a.startMin, endMin: a.endMin })),
-      completedJobs: completedCount,
+      completedJobs: stats.completedJobs,
+      reliabilityPct: stats.reliabilityPct,
+      repeatClients: stats.repeatClients,
       ratingAvg: ratings._avg.rating,
       ratingCount: ratings._count.rating,
     },
