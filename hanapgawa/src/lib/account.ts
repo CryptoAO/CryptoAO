@@ -23,8 +23,11 @@
 // to keep it" means in practice, and it is what the notice already says.
 
 import { randomBytes } from "node:crypto";
-import { db } from "./db";
+import { Prisma } from "@prisma/client";
+import { db, moneyTxOptions } from "./db";
 import { walletBalanceCents } from "./wallet";
+
+type Tx = Prisma.TransactionClient | typeof db;
 
 /** Job states where somebody is still owed work, money, or an answer. */
 export const OPEN_COMMITMENT_STATES = ["OPEN", "BOOKED", "IN_PROGRESS", "DONE_BY_PROVIDER", "DISPUTED"];
@@ -81,12 +84,12 @@ export function closureBlockers(facts: ClosureFacts): ClosureCheck {
   return { canClose: blockers.length === 0, blockers };
 }
 
-export async function checkClosure(userId: string): Promise<ClosureCheck> {
+export async function checkClosure(userId: string, tx: Tx = db): Promise<ClosureCheck> {
   const [activeAsClient, activeAsProvider, balanceCents, pendingPayouts] = await Promise.all([
-    db.job.count({ where: { clientId: userId, status: { in: OPEN_COMMITMENT_STATES } } }),
-    db.job.count({ where: { assignedProviderId: userId, status: { in: OPEN_COMMITMENT_STATES } } }),
-    walletBalanceCents(userId),
-    db.payoutRequest.count({ where: { userId, status: "PENDING" } }),
+    tx.job.count({ where: { clientId: userId, status: { in: OPEN_COMMITMENT_STATES } } }),
+    tx.job.count({ where: { assignedProviderId: userId, status: { in: OPEN_COMMITMENT_STATES } } }),
+    walletBalanceCents(userId, tx),
+    tx.payoutRequest.count({ where: { userId, status: "PENDING" } }),
   ]);
 
   return closureBlockers({
@@ -181,12 +184,17 @@ export interface ClosureResult {
  * "undelete" that would quietly resurrect somebody's name.
  */
 export async function closeAccount(userId: string): Promise<ClosureResult> {
-  const check = await checkClosure(userId);
-  if (!check.canClose) {
-    throw new Error(check.blockers.map((b) => b.message).join(" "));
-  }
-
   return db.$transaction(async (tx) => {
+    // Re-checked INSIDE the transaction, not just before it. Between an
+    // outside check and this write, an offer could be accepted or a cash-out
+    // filed — and closing over a live booking would strand a counterparty
+    // with an anonymous no-show. On Postgres the Serializable isolation in
+    // moneyTxOptions makes that window disappear entirely.
+    const check = await checkClosure(userId, tx);
+    if (!check.canClose) {
+      throw new Error(check.blockers.map((b) => b.message).join(" "));
+    }
+
     // Rows that are purely this person's and serve no one else once they
     // are gone. Trusted contacts in particular are OTHER people's phone
     // numbers, given to us for one purpose that has now ended.
@@ -233,5 +241,5 @@ export async function closeAccount(userId: string): Promise<ClosureResult> {
         availabilitySlots: availability.count,
       },
     };
-  });
+  }, moneyTxOptions);
 }

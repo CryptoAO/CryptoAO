@@ -65,8 +65,13 @@ export function partitionPending<T extends PendingJob>(jobs: T[], now: Date) {
   return { release, warn };
 }
 
+/** One pass reads at most this many jobs; the rest come round next tick. */
+export const SWEEP_BATCH = 500;
+
 export interface SweepResult {
   scanned: number;
+  /** True when the batch cap was hit — a silent cap reads as "all done". */
+  truncated?: boolean;
   released: number;
   warned: number;
   failed: number;
@@ -82,12 +87,18 @@ export async function sweepAutoRelease(now = new Date()): Promise<SweepResult> {
     // DISPUTED is deliberately absent: a dispute freezes the clock.
     where: { status: "DONE_BY_PROVIDER", escrowHeld: true, autoReleaseAt: { not: null } },
     select: { id: true, clientId: true, title: true, autoReleaseAt: true, releaseWarnedAt: true },
+    // Oldest deadline first, so a backlog drains in the order people have
+    // been waiting rather than at random.
     orderBy: { autoReleaseAt: "asc" },
-    take: 500,
+    take: SWEEP_BATCH,
   });
 
   const { release, warn } = partitionPending(pending, now);
   const result: SweepResult = { scanned: pending.length, released: 0, warned: 0, failed: 0 };
+  if (pending.length === SWEEP_BATCH) {
+    result.truncated = true;
+    console.warn(`auto-release: hit the ${SWEEP_BATCH}-job batch cap; more remain for the next sweep`);
+  }
 
   for (const job of release) {
     try {
