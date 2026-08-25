@@ -1,0 +1,350 @@
+<title>HanapGawa Launch Gate</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{
+  --paper:#eef2f1; --surface:#ffffff; --surface-2:#f6f9f8;
+  --ink:#121b19; --muted:#5b6a67; --line:#dae2e0;
+  --accent:#0d7d72; --accent-soft:#e2f0ee;
+  --ok:#2c7a52; --ok-soft:#e3f0e8;
+  --warn:#96680f; --warn-soft:#f6eeda;
+  --gap:#a63a2e; --gap-soft:#f7e6e2;
+  --shadow:0 1px 2px rgba(18,27,25,.05),0 8px 24px rgba(18,27,25,.06);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0d1312; --surface:#151d1c; --surface-2:#1b2423;
+    --ink:#e5ecea; --muted:#94a3a0; --line:#26312f;
+    --accent:#43b5a6; --accent-soft:#122e2b;
+    --ok:#5cb884; --ok-soft:#14261c;
+    --warn:#d6a23f; --warn-soft:#2a2210;
+    --gap:#e0796a; --gap-soft:#2c1713;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0d1312; --surface:#151d1c; --surface-2:#1b2423;
+  --ink:#e5ecea; --muted:#94a3a0; --line:#26312f;
+  --accent:#43b5a6; --accent-soft:#122e2b;
+  --ok:#5cb884; --ok-soft:#14261c;
+  --warn:#d6a23f; --warn-soft:#2a2210;
+  --gap:#e0796a; --gap-soft:#2c1713;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:"Source Serif 4",Georgia,serif; font-size:17px; line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:960px;margin:0 auto;padding:0 20px 60px}
+h1,h2,h3{font-family:Archivo,"Helvetica Neue",Arial,sans-serif;text-wrap:balance;margin:0}
+h1{font-size:clamp(2rem,5vw,2.9rem);line-height:1.05;font-weight:700;letter-spacing:-.02em}
+h2{font-size:clamp(1.35rem,3vw,1.7rem);font-weight:700;letter-spacing:-.015em}
+h3{font-size:1.02rem;font-weight:600}
+p{margin:0}
+a{color:var(--accent)}
+.eyebrow{
+  font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.68rem;font-weight:600;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+}
+.mast{border-bottom:1px solid var(--line);background:var(--surface)}
+.mast-in{display:flex;flex-direction:column;gap:18px;padding:44px 20px 36px;max-width:960px;margin:0 auto}
+.verdict{font-size:clamp(1.02rem,2.2vw,1.22rem);color:var(--muted);max-width:60ch}
+.verdict strong{color:var(--ink);font-weight:600}
+section{margin-top:44px}
+.sec-head{display:flex;flex-direction:column;gap:6px;margin-bottom:18px}
+.lede{color:var(--muted);max-width:65ch}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.rows{display:flex;flex-direction:column}
+.row{display:grid;grid-template-columns:1fr;gap:8px;padding:14px 18px;border-top:1px solid var(--line)}
+.row:first-child{border-top:0}
+@media(min-width:680px){.row{grid-template-columns:6.5rem 1fr;align-items:start;gap:18px}}
+.chip{
+  font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.66rem;font-weight:600;
+  letter-spacing:.08em;border-radius:6px;padding:3px 8px;white-space:nowrap;
+  justify-self:start;margin-top:3px;
+}
+.c-done{background:var(--ok-soft);color:var(--ok)}
+.c-you{background:var(--warn-soft);color:var(--warn)}
+.c-gap{background:var(--gap-soft);color:var(--gap)}
+.c-part{background:var(--accent-soft);color:var(--accent)}
+.row-body{max-width:62ch}
+.row-body strong{font-family:Archivo,sans-serif;font-size:.95rem}
+.row-body .why{display:block;margin-top:3px;color:var(--muted);font-size:.92rem}
+.thesis{padding:20px;display:flex;flex-direction:column;gap:8px}
+.thesis + .thesis{border-top:1px solid var(--line)}
+.thesis .tag{
+  font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.66rem;font-weight:600;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--accent);
+}
+.thesis p{color:var(--muted);max-width:65ch;font-size:.97rem}
+.thesis p strong{color:var(--ink)}
+.seq{counter-reset:step;display:flex;flex-direction:column;gap:0;list-style:none;margin:0;padding:0}
+.seq li{display:grid;grid-template-columns:2.4rem 1fr;gap:14px;padding:14px 18px;border-top:1px solid var(--line)}
+.seq li:first-child{border-top:0}
+.seq li::before{
+  counter-increment:step;content:counter(step);
+  font-family:Archivo,sans-serif;font-weight:700;font-size:1.15rem;color:var(--accent);
+}
+.seq li p{max-width:60ch}
+.seq li .why{color:var(--muted);font-size:.92rem}
+.note{background:var(--accent-soft);border-radius:14px;padding:18px 20px;margin-top:18px}
+.note p{max-width:65ch;font-size:.95rem}
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+footer{margin-top:56px;color:var(--muted);font-size:.85rem}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+</style>
+
+<header class="mast"><div class="mast-in">
+  <span class="eyebrow">Launch gate · 25 August 2026 · pairs with the Build Review</span>
+  <h1>What must be true before real money moves</h1>
+  <p class="verdict"><strong>The code is no longer the risk.</strong> Twenty-one feature passes in, the remaining
+  launch risk lives in three places: founder actions no code can do, two legal questions that need Philippine
+  counsel, and the moat — the reasons this beats the free alternative, which are now built and need to be told.
+  This page is the working checklist for all three.</p>
+  <div class="legend">
+    <span class="chip c-done">DONE</span>
+    <span class="chip c-part">BUILT · NEEDS WIRING</span>
+    <span class="chip c-you">FOUNDER / COUNSEL</span>
+    <span class="chip c-gap">NOT DONE</span>
+  </div>
+</div></header>
+
+<div class="wrap">
+
+<section>
+  <div class="sec-head">
+    <span class="eyebrow">Perspective sweep · regulatory</span>
+    <h2>The Philippine regulatory picture</h2>
+    <p class="lede">Ordered by how badly each bites. This is preparation <em>for</em> counsel, not a substitute
+    for counsel — confirm each with a Philippine lawyer and accountant before the first real peso.</p>
+  </div>
+  <div class="card rows">
+    <div class="row"><span class="chip c-you">FOUNDER</span><div class="row-body">
+      <strong>Business registration</strong>
+      <span class="why">DTI/SEC, Mayor's permit, BIR 2303. Nothing operates lawfully or issues a receipt without it.</span>
+    </div></div>
+    <div class="row"><span class="chip c-you">COUNSEL</span><div class="row-body">
+      <strong>The wallet-versus-e-money question — the most dangerous item on this page</strong>
+      <span class="why">Stored value users top up and hold is e-money under BSP rules unless the funds sit with a
+      licensed EMI. The design already keeps funds with the aggregator; the product's "wallet" framing must match
+      the legal structure. Two clean paths: contract so the aggregator legally holds the stored value, or drop
+      stored value for authorize-and-capture per booking. Decide with counsel before launch — this choice shapes
+      the payment integration.</span>
+    </div></div>
+    <div class="row"><span class="chip c-you">FOUNDER</span><div class="row-body">
+      <strong>NPC registration</strong>
+      <span class="why">Appoint the Data Protection Officer and register the processing systems with the National
+      Privacy Commission (Circular 2022-04). Government IDs and precise locations at scale make this mandatory,
+      and the DPO's name fills the placeholder in the privacy notice.</span>
+    </div></div>
+    <div class="row"><span class="chip c-you">COUNSEL</span><div class="row-body">
+      <strong>Internet Transactions Act (RA 11967)</strong>
+      <span class="why">E-marketplace obligations and DTI E-Commerce Bureau registration. A services marketplace
+      should assume it is in scope until counsel says otherwise.</span>
+    </div></div>
+    <div class="row"><span class="chip c-gap">NOT DONE</span><div class="row-body">
+      <strong>BIR withholding on payouts (RR 16-2023)</strong>
+      <span class="why">Platforms withhold 1% on one-half of gross remittances to sellers above de-minimis
+      thresholds — the rule that made Shopee sellers register with BIR, and it covers services. Build the
+      withholding and Form 2307 pipeline before payout volume is real.</span>
+    </div></div>
+    <div class="row"><span class="chip c-part">WITH SMS SETUP</span><div class="row-body">
+      <strong>SMS sender-ID registration</strong>
+      <span class="why">Telcos drop unregistered A2P SMS since the SIM Registration Act, and an OTP that does not
+      arrive is a dead app. The aggregator handles registration — with lead time, so start it the day the SMS
+      account opens.</span>
+    </div></div>
+    <div class="row"><span class="chip c-done">DESIGNED · WATCH</span><div class="row-body">
+      <strong>Worker classification</strong>
+      <span class="why">Providers are independent contractors, and the product keeps the employer firewall: no
+      imposed schedules, no exclusivity, providers set rates. Watch the pending platform-worker bills — a
+      misclassification finding converts every provider into an employee retroactively.</span>
+    </div></div>
+    <div class="row"><span class="chip c-done">DONE</span><div class="row-body">
+      <strong>RA 10173 operations</strong>
+      <span class="why">Consent recorded with version, data export and account closure self-service, the 72-hour
+      breach clock in the runbook.</span>
+    </div></div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <span class="eyebrow">Perspective sweep · the people</span>
+    <h2>Provider, client, security, ease of use</h2>
+  </div>
+  <div class="card rows">
+    <div class="row"><span class="chip c-done">PROVIDER</span><div class="row-body">
+      <strong>Built: the reasons to stay</strong>
+      <span class="why">Guaranteed payment with auto-release, SOS and check-ins, proof of income, suki fee cuts,
+      the activation checklist, availability that is actually enforced.</span>
+    </div></div>
+    <div class="row"><span class="chip c-gap">PROVIDER</span><div class="row-body">
+      <strong>Missing: SMS fallback and an appeal path</strong>
+      <span class="why">A provider off data for a day must still learn they won a booking — wire booking-won and
+      SOS to SMS once the account is live. And a flagged provider needs a way to tell their side without hunting
+      for a support email. Same-day cash-out becomes real only with live payout rails; it is the number providers
+      quote to each other.</span>
+    </div></div>
+    <div class="row"><span class="chip c-gap">CLIENT</span><div class="row-body">
+      <strong>Cash-in friction is the #1 conversion killer</strong>
+      <span class="why">Requiring a funded wallet before booking loses the client with ₱500 in GCash and zero in
+      the app. Per-booking GCash payment must be the first live-rails milestone — it also softens the e-money
+      question. Cebuano before expanding past Tagalog-region cities.</span>
+    </div></div>
+    <div class="row"><span class="chip c-gap">SECURITY</span><div class="row-body">
+      <strong>The one thing worth paying for: an independent penetration test</strong>
+      <span class="why">Two adversarial review rounds ran and their findings are fixed, admin logins now take a
+      second factor — but a platform whose promise is "hindi ka maloloko dito" does not launch on self-review.
+      Budget ₱150–400k, before marketing, after live rails.</span>
+    </div></div>
+    <div class="row"><span class="chip c-gap">EASE</span><div class="row-body">
+      <strong>Twenty real people in one city, on their own phones</strong>
+      <span class="why">Still the most important unbuilt thing. Every assumption — escrow tolerance, masked chat,
+      badge trust — is untested against a real labandera. Expect assisted sign-ups (the kapatid model) and watch
+      for them.</span>
+    </div></div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <span class="eyebrow">Always-on invariants</span>
+    <h2>What must be checked, and stay true, at all times</h2>
+    <p class="lede">The launch checklist every app needs, sized for one founder. These are never allowed to
+    silently stop being true.</p>
+  </div>
+  <div class="card rows">
+    <div class="row"><span class="chip c-gap">HIGHEST RISK</span><div class="row-body">
+      <strong>Backups that restore</strong>
+      <span class="why">Automated database backups plus a practiced restore. A backup you have never restored is
+      a hope, not a backup — and losing the ledger loses the business. Cheapest fix on this page: an afternoon of
+      configuration in the hosting account.</span>
+    </div></div>
+    <div class="row"><span class="chip c-part">EMITS · UNWIRED</span><div class="row-body">
+      <strong>Monitoring that pages a human</strong>
+      <span class="why">The app ships a health probe and scrubbed error reporting; nothing receives them yet.
+      An external uptime check on /api/health plus a live error DSN closes it.</span>
+    </div></div>
+    <div class="row"><span class="chip c-gap">SMALL</span><div class="row-body">
+      <strong>A support channel users can find</strong>
+      <span class="why">Even just a monitored inbox linked from the safety page. A trust platform with no way to
+      reach a human is a contradiction users will notice first.</span>
+    </div></div>
+    <div class="row"><span class="chip c-part">RUNBOOK</span><div class="row-body">
+      <strong>Daily money reconciliation</strong>
+      <span class="why">Ledger totals against the aggregator statement, every day, from day one. The append-only
+      ledger makes it a query; the habit has to exist before the discrepancy does.</span>
+    </div></div>
+    <div class="row"><span class="chip c-part">PLACEHOLDERS</span><div class="row-body">
+      <strong>Accurate legal pages</strong>
+      <span class="why">Terms and privacy notice are live and consent is recorded — but the bracketed company
+      name and DPO must be filled before a single real user.</span>
+    </div></div>
+    <div class="row"><span class="chip c-done">DONE</span><div class="row-body">
+      <strong>Incident and breach plan · CI · weekly dependency audit</strong>
+      <span class="why">The runbook covers the 2am SOS call, dispute defaults, and the 72-hour NPC clock. CI
+      gates every push; a weekly audit catches vulnerable dependencies without reddening PRs.</span>
+    </div></div>
+    <div class="row"><span class="chip c-gap">LATER</span><div class="row-body">
+      <strong>Kill switches and a staging environment</strong>
+      <span class="why">Pausing sign-ups or bookings without a deploy, and somewhere to deploy that is not
+      production. Acceptable gaps at pilot scale where a deploy takes minutes; close both before marketing
+      spend.</span>
+    </div></div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <span class="eyebrow">The moat</span>
+    <h2>How a non-novel idea becomes a novel business</h2>
+    <p class="lede">Escrow, KYC and masked chat are table stakes — nobody wins by having them, they only lose by
+    lacking them. The novelty comes from what Facebook groups structurally cannot do. Four theses, in conviction
+    order.</p>
+  </div>
+  <div class="card">
+    <div class="thesis">
+      <span class="tag">Thesis 1 · shipped</span>
+      <h3>Patunay ng Kita — the platform as a credit history</h3>
+      <p>An informal worker's deepest unmet need is not finding work; Facebook finds work. It is that ten years
+      of real income leaves <strong>no record a bank will accept</strong>. Every completed job here is an escrow
+      ledger row, and the platform now turns that ledger into a verifiable earnings statement a loan officer
+      checks in ten seconds. The pitch flips from "maghanap ka ng trabaho dito" to
+      <strong>"bawat trabaho mo ay pumapasok sa record na tatanggapin ng bangko."</strong> Facebook can never
+      offer this. Long game: banks accept the statement formally, then lenders underwrite against it — at which
+      point leaving the platform costs a provider their credit history.</p>
+    </div>
+    <div class="thesis">
+      <span class="tag">Thesis 2 · the wedge to build next</span>
+      <h3>The OFW wedge — paying from abroad for care at home</h3>
+      <p>An OFW in Dubai books and pays for aircon cleaning at their parents' house in Iloilo. The payer has
+      digital money and cannot be scammed by a stranger at their mother's door — exactly what escrow, vetted IDs,
+      evidence photos and check-ins were built for. Two million deployed OFWs remitting ~$37B a year, digitally
+      paying-capable and trust-motivated. Needs only international cards (the aggregator has them), a
+      "book for someone else" field, and marketing in OFW communities. <strong>"Alaga mo sila, kahit malayo
+      ka."</strong> No incumbent owns this.</p>
+    </div>
+    <div class="thesis">
+      <span class="tag">Thesis 3 · shipped</span>
+      <h3>Suki economics</h3>
+      <p>Western marketplaces fight the repeat relationship; here it is the culturally strongest force in service
+      commerce, so the platform rewards it — the take rate falls 12% → 10% → 8% as a pair completes jobs
+      together, cutting the fee exactly when leak risk peaks. With Thesis 1, staying pays twice: cheaper fees and
+      a growing credit record. <strong>A switching cost that compounds with every completed job.</strong></p>
+    </div>
+    <div class="thesis">
+      <span class="tag">Thesis 4 · shipped, needs telling</span>
+      <h3>Safety as the brand</h3>
+      <p>No incumbent leads with worker safety. SOS that writes first and asks questions never, trusted contacts,
+      check-ins, evidence photos, a runbook whose first rule is call the person before the money.
+      <strong>"Ang app na may kasamang bantay"</strong> — a marketing asset as much as a feature; providers
+      recruit providers on it.</p>
+    </div>
+  </div>
+  <div class="note">
+    <p><strong>The growth road, as requested:</strong> direct request-to-book and browse-by-availability shipped
+    this pass. <strong>Instant book</strong> (provider opt-in, skips confirmation inside stated hours) follows
+    once real-user testing shows confirmation friction costs bookings — the rails already exist.
+    <strong>Organization accounts</strong> — agencies posting and serving as businesses — are next on the
+    roadmap and deliberately not bolted on: they change the trust model (DTI/SEC verification instead of a
+    personal ID, per-worker vetting so a badge still refers to the human who shows up, dispatch, org-level
+    reputation, different BIR treatment). The clean entry: pilot with two or three real cleaning teams in one
+    city as design partners before generalizing.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <span class="eyebrow">Sequence</span>
+    <h2>The order of operations</h2>
+    <p class="lede">Each step is worth little until the one before it is done.</p>
+  </div>
+  <ol class="card seq">
+    <li><div><p><strong>Founder, this week:</strong> backups, a support inbox, the legal-page placeholders, and
+      start business + NPC registration.</p><p class="why">All paperwork and configuration; no code is
+      waiting on any of it.</p></div></li>
+    <li><div><p><strong>The wallet decision, with counsel.</strong></p><p class="why">It shapes the payment
+      integration, so it precedes it.</p></div></li>
+    <li><div><p><strong>Wire live rails:</strong> SMS with sender-ID registration, then PayMongo.</p>
+      <p class="why">Cash-in friction, same-day payouts, and SMS fallbacks all unblock at once.</p></div></li>
+    <li><div><p><strong>Twenty real users in one city.</strong></p><p class="why">Before more code. Every further
+      build decision should be downstream of what they do.</p></div></li>
+    <li><div><p><strong>Independent penetration test.</strong></p><p class="why">After rails are live, before
+      marketing spend.</p></div></li>
+    <li><div><p><strong>RR 16-2023 withholding pipeline.</strong></p><p class="why">Before payout volume makes it
+      a compliance debt.</p></div></li>
+  </ol>
+</section>
+
+<footer>
+  <p>Repo copies: <span style="font-family:'JetBrains Mono',monospace">docs/LAUNCH.md</span> ·
+  <span style="font-family:'JetBrains Mono',monospace">docs/MOAT.md</span> · branch
+  <span style="font-family:'JetBrains Mono',monospace">claude/ph-gig-services-app-86ujez</span> · PR #2.
+  Regulatory items are preparation for counsel, not legal advice.</p>
+</footer>
+
+</div>

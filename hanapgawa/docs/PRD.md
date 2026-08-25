@@ -34,10 +34,10 @@ The original brief was strong. Here it is restated as the sharpened one-page PRD
 
 | Area | MVP (✅ shipped) | Phase 2 | Phase 3 |
 |---|---|---|---|
-| Accounts | Phone+OTP registration, login, roles (client/provider/both), PSGC location | Password reset, Cebuano locale | GCash mini-program |
+| Accounts | Phone+OTP registration, login, roles (client/provider/both), PSGC location, recorded 18+/ToS consent, admin 2FA | Organization accounts (agencies as businesses — see MOAT.md), Cebuano locale | GCash mini-program |
 | KYC | 3-level ladder, last-4-only capture, admin review queue | Doc upload + PSA eVerify face match | Continuous re-verification, selfie-at-job-start |
 | Jobs | Post (category, budget, schedule, private address), geo feed (region/city/category/search/distance), lifecycle state machine, price guidance while posting, nearby-city fallback on an empty feed | Recurring jobs, multi-day | Instant-book from provider rate cards |
-| Offers | Provider offers with price+message; accept/decline/withdraw; ₱2,000+ jobs require L2 provider | Counter-offers | Auto-match suggestions |
+| Offers | Provider offers with price+message; accept/decline/withdraw; ₱2,000+ jobs require L2 provider; direct request-to-book one provider with one-tap confirmation and 48h expiry; browse providers by who is free at a chosen hour | Instant book (provider opt-in), counter-offers | Auto-match suggestions |
 | Chat | Per-job masked chat, strikes, Taglish warnings | Voice notes | — |
 | Evidence | Before/after/issue photos on a booking, visible to both parties and support, purged 90 days after settlement | Photo annotation, automatic before/after pairing | Damage detection from images |
 | Payments | Wallet ledger, dev top-up, escrow hold/release/refund, 12% commission engine, payout requests, admin payout ops | PayMongo/Xendit live rails, webhooks, cash-mode with debt cap, booking fees | Loyalty (declining repeat-pair take rate), insurance attach, BIR withholding + 2307 generation |
