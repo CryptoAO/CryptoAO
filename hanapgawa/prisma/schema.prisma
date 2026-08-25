@@ -89,15 +89,23 @@ model OtpCode {
 }
 
 model Category {
-  id                 String  @id @default(cuid())
-  slug               String  @unique
+  id                 String @id @default(cuid())
+  slug               String @unique
   name               String
   nameTl             String // Taglish/Tagalog label shown in UI
   icon               String // emoji for zero-asset MVP
-  defaultTakeRateBps Int     @default(1200) // platform commission, basis points
-  minPriceCents      Int     @default(5000) // floor to keep pricing sane (PHP 50)
-  sort               Int     @default(100)
-  active             Boolean @default(true)
+  defaultTakeRateBps Int    @default(1200) // platform commission, basis points
+  minPriceCents      Int    @default(5000) // floor to keep pricing sane (PHP 50)
+
+  // Starting price guidance, shown to clients who have no idea what a task
+  // is worth. These are estimates, not measured data — src/lib/pricing.ts
+  // prefers real completed-job percentiles as soon as there are enough of
+  // them, and only falls back to these.
+  typicalLowCents  Int?
+  typicalHighCents Int?
+  priceNote        String? // e.g. "kada 8 kilo" — what the range is FOR
+  sort             Int     @default(100)
+  active           Boolean @default(true)
 
   jobs               Job[]
   providerCategories ProviderCategory[]

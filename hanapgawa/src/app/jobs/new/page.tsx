@@ -5,8 +5,23 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { fetchJson } from "@/lib/client";
 import { Button, Card, ErrorNote, Field, Input, Select, TextArea } from "@/components/ui";
 import { LocationPicker } from "@/components/locationpicker";
+import { getCity } from "@/lib/psgc";
+import { assessBudget } from "@/lib/pricing";
 
 interface Category { id: string; name: string; nameTl: string; icon: string; minPriceCents: number }
+interface Guidance {
+  lowCents: number; highCents: number; source: "city" | "nationwide" | "estimate";
+  sampleSize: number; note: string | null; minCents: number;
+}
+
+const peso = (cents: number) => `₱${Math.round(cents / 100).toLocaleString("en-PH")}`;
+
+function guidanceLine(g: Guidance, cityName: string | null): string {
+  const range = `${peso(g.lowCents)}–${peso(g.highCents)}`;
+  if (g.source === "city" && cityName) return `Karaniwang bayad sa ${cityName}: ${range}`;
+  if (g.source === "nationwide") return `Karaniwang bayad sa buong Pilipinas: ${range}`;
+  return `Tantiyang bayad: ${range}`;
+}
 
 function NewJobForm() {
   const router = useRouter();
@@ -28,12 +43,26 @@ function NewJobForm() {
   const [inviteProviderId, setInviteProviderId] = useState<string | null>(null);
   const [rebookName, setRebookName] = useState<string | null>(null);
 
+  const [guidance, setGuidance] = useState<Guidance | null>(null);
+
   const params = useSearchParams();
   const rebookId = params.get("rebook");
 
   useEffect(() => {
     fetchJson<{ categories: Category[] }>("/api/categories").then((d) => setCategories(d.categories)).catch(() => {});
   }, []);
+
+  // Price guidance follows whatever the client has picked so far. It is
+  // advisory only — a failed fetch just means no hint, never a blocked post.
+  useEffect(() => {
+    if (!categoryId) { setGuidance(null); return; }
+    const qs = new URLSearchParams({ categoryId, ...(cityCode ? { cityCode } : {}) });
+    let stale = false;
+    fetchJson<{ guidance: Guidance | null }>(`/api/pricing?${qs}`)
+      .then((d) => { if (!stale) setGuidance(d.guidance); })
+      .catch(() => { if (!stale) setGuidance(null); });
+    return () => { stale = true; };
+  }, [categoryId, cityCode]);
 
   // Rebooking: prefill from the previous job and route the new post
   // straight to the same provider.
@@ -89,6 +118,8 @@ function NewJobForm() {
   }
 
   const selected = categories.find((c) => c.id === categoryId);
+  const budgetCents = Math.round(Number(budget) * 100);
+  const verdict = guidance && budgetCents > 0 ? assessBudget(budgetCents, guidance) : null;
 
   return (
     <div className="mx-auto max-w-lg space-y-4">
@@ -153,6 +184,30 @@ function NewJobForm() {
               />
             </Field>
           </div>
+          {guidance && (
+            <div className="rounded-xl bg-stone-100 p-3 text-sm">
+              <p className="font-semibold text-gray-800">
+                💡 {guidanceLine(guidance, cityCode ? getCity(cityCode)?.name ?? null : null)}
+                {guidance.note && <span className="font-normal text-gray-600"> ({guidance.note})</span>}
+              </p>
+              <p className="mt-1 text-xs text-gray-500">
+                {guidance.source === "estimate"
+                  ? "Tantiya lang ito — ikaw pa rin ang magdedesisyon."
+                  : `Base sa ${guidance.sampleSize} natapos nang trabaho.`}
+              </p>
+              {verdict === "LOW" && (
+                <p className="mt-2 rounded-lg bg-amber-100 p-2 text-xs text-amber-900">
+                  Mababa ito sa karaniwan. Pwede pa rin i-post, pero mas matagal bago may tumanggap —
+                  at karaniwang mas kaunti ang pagpipilian mong provider.
+                </p>
+              )}
+              {verdict === "GENEROUS" && (
+                <p className="mt-2 rounded-lg bg-emerald-100 p-2 text-xs text-emerald-900">
+                  Mas mataas ito sa karaniwan — asahan mong mabilis mapupuno.
+                </p>
+              )}
+            </div>
+          )}
           <label className="flex items-center gap-3 text-sm">
             <input type="checkbox" checked={flexible} onChange={(e) => setFlexible(e.target.checked)} className="h-5 w-5 accent-brand-700" />
             Flexible ang oras — pwedeng pag-usapan

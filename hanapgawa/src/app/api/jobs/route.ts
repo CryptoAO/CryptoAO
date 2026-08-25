@@ -60,10 +60,18 @@ export const GET = api(async (req: NextRequest) => {
     list = list.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   }
 
+  // An empty feed is a churn moment: a provider who opens the app to
+  // "walang trabaho" and no next step does not open it again. Only when
+  // there is nothing to show do we spend a query working out where the work
+  // actually is, keeping the same category and search but dropping the
+  // location the user picked.
+  const alternatives = total === 0 ? await nearbyWithWork({ categoryId, q, regionCode }) : [];
+
   return ok({
     // "near" sorts within a window of the 200 newest matches — report the
     // window honestly instead of a total the pager can't actually reach.
     total: sort === "near" ? Math.min(total, 200) : total,
+    alternatives,
     windowed: sort === "near" && total > 200 ? true : undefined,
     page,
     pageSize: PAGE_SIZE,
@@ -73,6 +81,43 @@ export const GET = api(async (req: NextRequest) => {
     })),
   });
 });
+
+interface Alternative {
+  cityCode: string;
+  regionCode: string;
+  count: number;
+}
+
+/**
+ * Cities that do have open work right now. Tries the user's own region
+ * first — a job two towns over is worth a bus ride; one on another island
+ * is not — and only widens nationally when the region is genuinely empty.
+ */
+async function nearbyWithWork(filters: {
+  categoryId?: string;
+  q: string;
+  regionCode?: string;
+}): Promise<Alternative[]> {
+  const relaxed = {
+    status: "OPEN",
+    ...(filters.categoryId ? { categoryId: filters.categoryId } : {}),
+    ...(filters.q ? { OR: [{ title: { contains: filters.q } }, { description: { contains: filters.q } }] } : {}),
+  };
+
+  const group = async (where: object) =>
+    db.job.groupBy({
+      by: ["cityCode", "regionCode"],
+      where: where as never,
+      _count: { _all: true },
+      orderBy: { _count: { cityCode: "desc" } },
+      take: 5,
+    });
+
+  let rows = filters.regionCode ? await group({ ...relaxed, regionCode: filters.regionCode }) : [];
+  if (rows.length === 0) rows = await group(relaxed);
+
+  return rows.map((r) => ({ cityCode: r.cityCode, regionCode: r.regionCode, count: r._count._all }));
+}
 
 function jobDistance(job: { lat: number | null; lng: number | null; cityCode: string }, oLat: number, oLng: number) {
   if (job.lat != null && job.lng != null) return distanceKm(oLat, oLng, job.lat, job.lng);

@@ -36,7 +36,7 @@ The original brief was strong. Here it is restated as the sharpened one-page PRD
 |---|---|---|---|
 | Accounts | Phone+OTP registration, login, roles (client/provider/both), PSGC location | Password reset, Cebuano locale | GCash mini-program |
 | KYC | 3-level ladder, last-4-only capture, admin review queue | Doc upload + PSA eVerify face match | Continuous re-verification, selfie-at-job-start |
-| Jobs | Post (category, budget, schedule, private address), geo feed (region/city/category/search/distance), lifecycle state machine | Recurring jobs, multi-day | Instant-book from provider rate cards |
+| Jobs | Post (category, budget, schedule, private address), geo feed (region/city/category/search/distance), lifecycle state machine, price guidance while posting, nearby-city fallback on an empty feed | Recurring jobs, multi-day | Instant-book from provider rate cards |
 | Offers | Provider offers with price+message; accept/decline/withdraw; ₱2,000+ jobs require L2 provider | Counter-offers | Auto-match suggestions |
 | Chat | Per-job masked chat, strikes, Taglish warnings | Voice notes, photos (moderated) | — |
 | Payments | Wallet ledger, dev top-up, escrow hold/release/refund, 12% commission engine, payout requests, admin payout ops | PayMongo/Xendit live rails, webhooks, cash-mode with debt cap, booking fees | Loyalty (declining repeat-pair take rate), insurance attach, BIR withholding + 2307 generation |
@@ -45,6 +45,26 @@ The original brief was strong. Here it is restated as the sharpened one-page PRD
 | Provider tools | Profile, categories with rates/units, weekly availability grid | Calendar sync, portfolio photos | Earnings analytics, SSS/Pag-IBIG remittance rail |
 | Admin | Overview KPIs (GMV, earnings), KYC/dispute/payout/report queues | Category & take-rate console, city dashboards | Fraud graph tooling |
 | Localization | Taglish UI throughout | Cebuano/Bisaya support scripts | Regional ad kits |
+
+### Price guidance
+
+The person this is built for has never hired anyone. Ask them what an afternoon of ironing is worth and they guess — and a job priced at half the going rate simply never gets an offer, which they read as "nobody wants to work" rather than "I underpaid". Both sides then leave.
+
+So the posting form tells them, and says where the number came from:
+
+1. **Their own city**, from the p25–p75 of what people actually paid for that kind of work, once at least 8 jobs have completed there.
+2. **Nationwide**, on the same basis, when the city is too thin.
+3. **A seeded estimate**, labelled as an estimate, when there is no market data at all.
+
+Percentiles are nearest-rank, not interpolated: with a dozen data points an interpolated value is false precision, and a price someone actually paid is easier to defend. Ranges round to the nearest ₱10, because "₱287–₱563" reads as invented.
+
+Guidance is never a rule. A budget meaningfully below the low end (more than 15% under — inside that is haggling distance) gets one sentence about the likely consequence and nothing else. The post always goes through. Nagging people about prices trains them to ignore us, and the client may well know something we do not about their own job.
+
+The seeded estimates are the weakest part of this and should be treated as placeholders: they are reasoned guesses at 2026 Metro Manila rates, not survey data. They matter less over time, since each category escapes them permanently after its eighth completed job.
+
+### Empty search results
+
+A provider who opens the app to "walang trabaho" and no next step does not open it again. When the feed returns nothing, the same query runs again with the location dropped, and the response names the cities that do have open work with counts — their own region first, since a job two towns over is worth a bus ride and one on another island is not. The card also offers to clear the filters, to turn on new-job alerts, and to post a job instead. The extra query only runs when the feed is empty, so the common path pays nothing for it.
 
 ## 3. Critical flows (as built)
 

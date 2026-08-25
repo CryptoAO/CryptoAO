@@ -8,6 +8,7 @@ import { Badge, Button, Card, KycBadge, Select, Spinner } from "@/components/ui"
 import { REGIONS, citiesOfRegion, getCity } from "@/lib/psgc";
 
 interface Category { id: string; name: string; nameTl: string; icon: string }
+interface Alternative { cityCode: string; regionCode: string; count: number }
 interface JobRow {
   id: string; title: string; description: string; cityCode: string; regionCode: string;
   budgetCents: number; payType: string; status: string; createdAt: string;
@@ -20,6 +21,7 @@ function JobsFeed() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [jobs, setJobs] = useState<JobRow[] | null>(null);
   const [total, setTotal] = useState(0);
+  const [alternatives, setAlternatives] = useState<Alternative[]>([]);
   const [page, setPage] = useState(1);
 
   const [region, setRegion] = useState("");
@@ -48,10 +50,11 @@ function JobsFeed() {
       sp.set("lng", String(coords.lng));
     }
     const seq = ++reqSeq.current;
-    const d = await fetchJson<{ jobs: JobRow[]; total: number }>(`/api/jobs?${sp}`);
+    const d = await fetchJson<{ jobs: JobRow[]; total: number; alternatives?: Alternative[] }>(`/api/jobs?${sp}`);
     if (seq !== reqSeq.current) return; // a newer request superseded this one
     setJobs(d.jobs);
     setTotal(d.total);
+    setAlternatives(d.alternatives ?? []);
     setPage(p);
   }, [region, city, category, q, sort, coords]);
 
@@ -120,9 +123,43 @@ function JobsFeed() {
       {jobs === null ? (
         <Spinner />
       ) : jobs.length === 0 ? (
-        <Card className="py-10 text-center text-gray-500">
-          Walang trabaho sa filter na 'yan (sa ngayon!). Subukan palawakin ang region, o{" "}
-          <Link href="/jobs/new" className="font-bold text-brand-800 underline">mag-post ka</Link>.
+        <Card className="space-y-4 py-8 text-center">
+          <p className="text-gray-500">Walang trabaho sa filter na &apos;yan — sa ngayon.</p>
+
+          {alternatives.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-gray-800">May trabaho naman dito:</p>
+              <div className="flex flex-wrap justify-center gap-2">
+                {alternatives.map((a) => (
+                  <button
+                    key={a.cityCode}
+                    onClick={() => { setRegion(a.regionCode); setCity(a.cityCode); }}
+                    className="rounded-full bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-800"
+                  >
+                    📍 {getCity(a.cityCode)?.name ?? a.cityCode}
+                    <span className="ml-1 font-normal text-brand-700">({a.count})</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-wrap justify-center gap-2 text-sm">
+            {(region || city || category || q) && (
+              <button
+                onClick={() => { setRegion(""); setCity(""); setCategory(""); setQ(""); }}
+                className="rounded-full bg-stone-100 px-4 py-2 font-semibold text-gray-700"
+              >
+                Tanggalin ang filters
+              </button>
+            )}
+            <Link href="/me?tab=provider" className="rounded-full bg-stone-100 px-4 py-2 font-semibold text-gray-700">
+              🔔 I-alert ako kapag may bago
+            </Link>
+            <Link href="/jobs/new" className="rounded-full bg-brand-700 px-4 py-2 font-semibold text-white">
+              Mag-post ng trabaho
+            </Link>
+          </div>
         </Card>
       ) : (
         <div className="space-y-3">

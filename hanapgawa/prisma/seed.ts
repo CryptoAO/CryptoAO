@@ -8,22 +8,22 @@ import bcrypt from "bcryptjs";
 const db = new PrismaClient();
 
 const CATEGORIES = [
-  { slug: "laundry", name: "Laundry & Ironing", nameTl: "Labada at Plantsa", icon: "🧺", sort: 10, minPriceCents: 10000 },
-  { slug: "cleaning", name: "House Cleaning", nameTl: "Linis-Bahay", icon: "🧹", sort: 20, minPriceCents: 20000 },
-  { slug: "errands", name: "Errands & Pabili", nameTl: "Utos at Pabili", icon: "🛵", sort: 30, minPriceCents: 5000 },
-  { slug: "padala", name: "Delivery / Padala", nameTl: "Padala", icon: "📦", sort: 40, minPriceCents: 5000 },
-  { slug: "driver", name: "Driver", nameTl: "Drayber / Hatid-Sundo", icon: "🚗", sort: 50, minPriceCents: 30000 },
-  { slug: "petcare", name: "Pet Care & Dog Walking", nameTl: "Alaga ng Pet / Dog Walk", icon: "🐕", sort: 60, minPriceCents: 10000 },
-  { slug: "fitness", name: "Fitness Trainer", nameTl: "Fitness Trainer", icon: "💪", sort: 70, minPriceCents: 30000 },
-  { slug: "tutor", name: "Tutoring", nameTl: "Tutor / Turo", icon: "📚", sort: 80, minPriceCents: 20000 },
-  { slug: "carpentry", name: "Carpentry & Repairs", nameTl: "Karpintero / Ayos-Bahay", icon: "🔨", sort: 90, minPriceCents: 30000 },
-  { slug: "plumbing", name: "Plumbing", nameTl: "Tubero", icon: "🔧", sort: 100, minPriceCents: 30000 },
-  { slug: "electrical", name: "Electrical", nameTl: "Elektrisyan", icon: "💡", sort: 110, minPriceCents: 30000 },
-  { slug: "aircon", name: "Aircon Cleaning", nameTl: "Linis-Aircon", icon: "❄️", sort: 120, minPriceCents: 40000 },
-  { slug: "gardening", name: "Gardening", nameTl: "Hardinero", icon: "🌱", sort: 130, minPriceCents: 20000 },
-  { slug: "beauty", name: "Hair & Beauty (home service)", nameTl: "Gupit / Kulot / Kuko", icon: "💇", sort: 140, minPriceCents: 15000 },
-  { slug: "events", name: "Events Help", nameTl: "Tulong sa Handaan", icon: "🎉", sort: 150, minPriceCents: 30000 },
-  { slug: "care", name: "Elder & Child Care", nameTl: "Alaga (Matanda/Bata)", icon: "🤱", sort: 160, minPriceCents: 30000 },
+  { slug: "laundry", name: "Laundry & Ironing", nameTl: "Labada at Plantsa", icon: "🧺", sort: 10, minPriceCents: 10000, typicalLowCents: 15000, typicalHighCents: 40000, priceNote: "kada 8 kilo, labhan at tupi" },
+  { slug: "cleaning", name: "House Cleaning", nameTl: "Linis-Bahay", icon: "🧹", sort: 20, minPriceCents: 20000, typicalLowCents: 50000, typicalHighCents: 120000, priceNote: "kada 4 oras, isang bahay o condo" },
+  { slug: "errands", name: "Errands & Pabili", nameTl: "Utos at Pabili", icon: "🛵", sort: 30, minPriceCents: 5000, typicalLowCents: 10000, typicalHighCents: 30000, priceNote: "bukod sa halaga ng pabilhin" },
+  { slug: "padala", name: "Delivery / Padala", nameTl: "Padala", icon: "📦", sort: 40, minPriceCents: 5000, typicalLowCents: 12000, typicalHighCents: 35000, priceNote: "loob ng lungsod" },
+  { slug: "driver", name: "Driver", nameTl: "Drayber / Hatid-Sundo", icon: "🚗", sort: 50, minPriceCents: 30000, typicalLowCents: 80000, typicalHighCents: 180000, priceNote: "kada 8 oras, sasakyan ng kliyente" },
+  { slug: "petcare", name: "Pet Care & Dog Walking", nameTl: "Alaga ng Pet / Dog Walk", icon: "🐕", sort: 60, minPriceCents: 10000, typicalLowCents: 20000, typicalHighCents: 50000, priceNote: "kada lakad o kada araw" },
+  { slug: "fitness", name: "Fitness Trainer", nameTl: "Fitness Trainer", icon: "💪", sort: 70, minPriceCents: 30000, typicalLowCents: 50000, typicalHighCents: 120000, priceNote: "kada session" },
+  { slug: "tutor", name: "Tutoring", nameTl: "Tutor / Turo", icon: "📚", sort: 80, minPriceCents: 20000, typicalLowCents: 30000, typicalHighCents: 70000, priceNote: "kada oras" },
+  { slug: "carpentry", name: "Carpentry & Repairs", nameTl: "Karpintero / Ayos-Bahay", icon: "🔨", sort: 90, minPriceCents: 30000, typicalLowCents: 80000, typicalHighCents: 250000, priceNote: "kada araw, walang materyales" },
+  { slug: "plumbing", name: "Plumbing", nameTl: "Tubero", icon: "🔧", sort: 100, minPriceCents: 30000, typicalLowCents: 50000, typicalHighCents: 200000, priceNote: "kada tawag, walang parte" },
+  { slug: "electrical", name: "Electrical", nameTl: "Elektrisyan", icon: "💡", sort: 110, minPriceCents: 30000, typicalLowCents: 60000, typicalHighCents: 250000, priceNote: "kada tawag, walang materyales" },
+  { slug: "aircon", name: "Aircon Cleaning", nameTl: "Linis-Aircon", icon: "❄️", sort: 120, minPriceCents: 40000, typicalLowCents: 50000, typicalHighCents: 120000, priceNote: "kada unit; split-type mas mahal" },
+  { slug: "gardening", name: "Gardening", nameTl: "Hardinero", icon: "🌱", sort: 130, minPriceCents: 20000, typicalLowCents: 50000, typicalHighCents: 120000, priceNote: "kada araw" },
+  { slug: "beauty", name: "Hair & Beauty (home service)", nameTl: "Gupit / Kulot / Kuko", icon: "💇", sort: 140, minPriceCents: 15000, typicalLowCents: 25000, typicalHighCents: 80000, priceNote: "kada serbisyo, home service" },
+  { slug: "events", name: "Events Help", nameTl: "Tulong sa Handaan", icon: "🎉", sort: 150, minPriceCents: 30000, typicalLowCents: 70000, typicalHighCents: 150000, priceNote: "kada tao, kada araw" },
+  { slug: "care", name: "Elder & Child Care", nameTl: "Alaga (Matanda/Bata)", icon: "🤱", sort: 160, minPriceCents: 30000, typicalLowCents: 70000, typicalHighCents: 150000, priceNote: "kada 8 oras" },
 ];
 
 async function main() {
@@ -34,7 +34,10 @@ async function main() {
   for (const c of CATEGORIES) {
     const row = await db.category.upsert({
       where: { slug: c.slug },
-      update: { name: c.name, nameTl: c.nameTl, icon: c.icon, sort: c.sort, minPriceCents: c.minPriceCents },
+      update: {
+        name: c.name, nameTl: c.nameTl, icon: c.icon, sort: c.sort, minPriceCents: c.minPriceCents,
+        typicalLowCents: c.typicalLowCents, typicalHighCents: c.typicalHighCents, priceNote: c.priceNote,
+      },
       create: { ...c },
     });
     cats[c.slug] = row.id;
