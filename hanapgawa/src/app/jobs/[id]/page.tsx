@@ -7,6 +7,7 @@ import { fetchJson, pesos, timeAgo } from "@/lib/client";
 import { Badge, Button, Card, ErrorNote, Field, Input, KycBadge, Spinner, TextArea } from "@/components/ui";
 import { ChatBox } from "@/components/chat";
 import { SafetyPanel } from "@/components/safety";
+import { JobPhotos } from "@/components/jobphotos";
 import { getCity, getRegion } from "@/lib/psgc";
 
 interface PublicUser { id: string; firstName: string; lastInitial: string; kycLevel: number }
@@ -360,6 +361,8 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
               </Button>
             </div>
           )}
+
+          <JobPhotos jobId={job.id} meId={meId} />
 
           <SafetyPanel jobId={job.id} meId={meId} />
 

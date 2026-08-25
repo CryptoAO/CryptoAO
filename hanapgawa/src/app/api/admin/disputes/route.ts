@@ -2,12 +2,24 @@ import { z } from "zod";
 import { api, ok, parseBody, requireAdmin, audit, clientIp } from "@/lib/api";
 import { db } from "@/lib/db";
 import { resolveDispute } from "@/lib/jobs";
+import { photoView } from "@/lib/photos";
 
 export const GET = api(async () => {
   await requireAdmin();
   const disputes = await db.dispute.findMany({
     where: { status: "OPEN" },
-    include: { job: { include: { client: true, provider: true } } },
+    include: {
+      job: {
+        include: {
+          client: true,
+          provider: true,
+          // The whole reason evidence photos exist: an operator deciding who
+          // gets ₱900 should be looking at the room, not at two accounts of
+          // what the room looked like.
+          photos: { where: { purgedAt: null }, orderBy: { createdAt: "asc" } },
+        },
+      },
+    },
     orderBy: { createdAt: "asc" },
     take: 100,
   });
@@ -23,6 +35,7 @@ export const GET = api(async () => {
         agreedPriceCents: d.job.agreedPriceCents,
         clientName: `${d.job.client.firstName} ${d.job.client.lastName}`,
         providerName: d.job.provider ? `${d.job.provider.firstName} ${d.job.provider.lastName}` : null,
+        photos: d.job.photos.map((p) => photoView(p)),
       },
     })),
   });

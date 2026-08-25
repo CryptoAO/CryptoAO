@@ -25,6 +25,7 @@
 import { randomBytes } from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { db, moneyTxOptions } from "./db";
+import { objectStore } from "./storage";
 import { walletBalanceCents } from "./wallet";
 
 type Tx = Prisma.TransactionClient | typeof db;
@@ -184,6 +185,29 @@ export interface ClosureResult {
  * "undelete" that would quietly resurrect somebody's name.
  */
 export async function closeAccount(userId: string): Promise<ClosureResult> {
+  // Any identity document still on disk has to go with the account. A
+  // decided submission had its image purged already, but a PENDING one is
+  // still sitting in the store — and deleting only the row would leave a
+  // scan of somebody's licence orphaned there forever, which is the exact
+  // opposite of what closing an account is supposed to mean.
+  //
+  // Done before the transaction on purpose: file deletes cannot be rolled
+  // back, so the ordering that fails safe is "bytes first, row second". A
+  // crash in between leaves a row pointing at a missing file, which reads as
+  // already-purged; the reverse would leave a file nothing points at.
+  const pendingDocs = await db.kycSubmission.findMany({
+    where: { userId, docRef: { not: null }, docPurgedAt: null },
+    select: { docRef: true },
+  });
+  if (pendingDocs.length > 0) {
+    const store = objectStore();
+    for (const doc of pendingDocs) {
+      await store.remove(doc.docRef!).catch(() => {
+        // A missing file is the desired end state anyway.
+      });
+    }
+  }
+
   return db.$transaction(async (tx) => {
     // Re-checked INSIDE the transaction, not just before it. Between an
     // outside check and this write, an offer could be accepted or a cash-out

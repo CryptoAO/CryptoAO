@@ -68,6 +68,7 @@ model User {
   notifications      Notification[]
   trustedContacts    TrustedContact[]
   checkIns           JobCheckIn[]
+  jobPhotos          JobPhoto[]
   sosRaised          SosAlert[]         @relation("SosRaiser")
   sosResolved        SosAlert[]         @relation("SosResolver")
 
@@ -191,6 +192,7 @@ model Job {
   ledger    LedgerEntry[]
   disputes  Dispute[]
   checkIns  JobCheckIn[]
+  photos    JobPhoto[]
   sosAlerts SosAlert[]
 
   @@index([status, regionCode, cityCode])
@@ -445,4 +447,29 @@ model SosAlert {
 
   @@index([status, createdAt])
   @@index([userId])
+}
+
+/// Evidence photos on a booking. Disputes are otherwise one person's word
+/// against another's — a photo of the room before and after settles most of
+/// them in seconds. Stored exactly like ID documents (private store,
+/// unguessable key, no public URL) because a photo of somebody's home is
+/// personal data even when it is only a pile of laundry.
+model JobPhoto {
+  id         String    @id @default(cuid())
+  jobId      String
+  uploaderId String
+  kind       String // BEFORE | AFTER | ISSUE
+  storageKey String
+  mime       String
+  bytes      Int
+  caption    String?
+  purgedAt   DateTime? // set when the bytes are deleted after the dispute window
+
+  createdAt DateTime @default(now())
+
+  job      Job  @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  uploader User @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@index([uploaderId])
 }

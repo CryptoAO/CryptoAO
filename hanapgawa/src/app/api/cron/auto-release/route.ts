@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import { sweepAutoRelease } from "@/lib/autorelease";
+import { purgeOldPhotos } from "@/lib/photos";
 import { captureError } from "@/lib/monitoring";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Escrow auto-release sweep. Meant to be called every few minutes by a
+ * Escrow auto-release sweep, plus evidence-photo retention. Meant to be
+ * called every few minutes by a
  * scheduler (Vercel Cron, a GitHub Action, systemd timer — anything that can
  * send a header):
  *
@@ -39,7 +41,17 @@ async function run(req: NextRequest) {
 
   try {
     const result = await sweepAutoRelease();
-    return NextResponse.json(result, { headers: { "Cache-Control": "no-store" } });
+    // Retention runs on the same tick rather than as a second scheduled job:
+    // one thing for the operator to configure, one place to look when data
+    // is not being deleted on time. A failure here must not fail the sweep —
+    // money moving is the job, tidying storage is the chore.
+    let photos = null;
+    try {
+      photos = await purgeOldPhotos();
+    } catch (e) {
+      await captureError(e, { route: "cron/auto-release", extra: { step: "purgeOldPhotos" } });
+    }
+    return NextResponse.json({ ...result, photos }, { headers: { "Cache-Control": "no-store" } });
   } catch (e) {
     await captureError(e, { route: "cron/auto-release", method: "POST" });
     return NextResponse.json({ error: "Sweep failed" }, { status: 500 });

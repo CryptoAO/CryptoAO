@@ -214,8 +214,11 @@ function KycQueue({ onChange }: { onChange: () => void }) {
   );
 }
 
+interface DisputePhoto { id: string; kind: string; caption: string | null; url: string | null }
+const PHOTO_LABEL: Record<string, string> = { BEFORE: "Bago", AFTER: "Tapos", ISSUE: "Problema" };
+
 function DisputeQueue({ onChange }: { onChange: () => void }) {
-  const { data, load } = useQueue<{ disputes: { id: string; reason: string; createdAt: string; job: { title: string; agreedPriceCents?: number | null; clientName: string; providerName?: string | null } }[] }>("/api/admin/disputes");
+  const { data, load } = useQueue<{ disputes: { id: string; reason: string; createdAt: string; job: { title: string; agreedPriceCents?: number | null; clientName: string; providerName?: string | null; photos?: DisputePhoto[] } }[] }>("/api/admin/disputes");
   if (!data) return <Spinner />;
   if (data.disputes.length === 0) return <Card className="py-8 text-center text-sm text-gray-500">Walang open disputes. 🎉</Card>;
   return (
@@ -225,6 +228,22 @@ function DisputeQueue({ onChange }: { onChange: () => void }) {
           <div className="text-sm font-bold">{d.job.title} — {d.job.agreedPriceCents != null ? pesos(d.job.agreedPriceCents) : "?"}</div>
           <div className="text-xs text-gray-500">Client: {d.job.clientName} · Provider: {d.job.providerName ?? "?"} · {timeAgo(d.createdAt)}</div>
           <p className="mt-1 text-sm text-gray-700">&ldquo;{d.reason}&rdquo;</p>
+          {d.job.photos && d.job.photos.length > 0 && (
+            <div className="mt-2">
+              <span className="text-xs font-semibold text-gray-600">Evidence ({d.job.photos.length})</span>
+              <div className="mt-1 flex flex-wrap gap-2">
+                {d.job.photos.filter((p) => p.url).map((p) => (
+                  <a key={p.id} href={p.url!} target="_blank" rel="noreferrer" className="relative">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={p.url!} alt={p.caption ?? p.kind} className="h-20 w-20 rounded-lg object-cover" loading="lazy" />
+                    <span className="absolute left-1 top-1 rounded bg-black/60 px-1 py-0.5 text-[10px] font-semibold text-white">
+                      {PHOTO_LABEL[p.kind] ?? p.kind}
+                    </span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="mt-2 flex flex-wrap gap-2">
             {(["REFUND_CLIENT", "PAY_PROVIDER", "SPLIT"] as const).map((r) => (
               <Button key={r} variant="secondary" className="min-h-10 px-3 py-2 text-xs" onClick={async () => { await fetchJson("/api/admin/disputes", { method: "POST", body: JSON.stringify({ disputeId: d.id, resolution: r }) }); load(); onChange(); }}>

@@ -38,10 +38,11 @@ The original brief was strong. Here it is restated as the sharpened one-page PRD
 | KYC | 3-level ladder, last-4-only capture, admin review queue | Doc upload + PSA eVerify face match | Continuous re-verification, selfie-at-job-start |
 | Jobs | Post (category, budget, schedule, private address), geo feed (region/city/category/search/distance), lifecycle state machine, price guidance while posting, nearby-city fallback on an empty feed | Recurring jobs, multi-day | Instant-book from provider rate cards |
 | Offers | Provider offers with price+message; accept/decline/withdraw; ₱2,000+ jobs require L2 provider | Counter-offers | Auto-match suggestions |
-| Chat | Per-job masked chat, strikes, Taglish warnings | Voice notes, photos (moderated) | — |
+| Chat | Per-job masked chat, strikes, Taglish warnings | Voice notes | — |
+| Evidence | Before/after/issue photos on a booking, visible to both parties and support, purged 90 days after settlement | Photo annotation, automatic before/after pairing | Damage detection from images |
 | Payments | Wallet ledger, dev top-up, escrow hold/release/refund, 12% commission engine, payout requests, admin payout ops | PayMongo/Xendit live rails, webhooks, cash-mode with debt cap, booking fees | Loyalty (declining repeat-pair take rate), insurance attach, BIR withholding + 2307 generation |
 | Reviews | Two-way, completed-jobs-only, rating aggregates | Photo reviews | Badges from streaks |
-| Trust ops | Reports, disputes (freeze/resolve refund-pay-split), strikes → flag → suspend, audit log | SOS button, check-in/out with trusted contact | ML risk scoring |
+| Trust ops | Reports, disputes (freeze/resolve refund-pay-split) with evidence photos in the operator console, strikes → flag → suspend, audit log | Structured dispute intake, SLA timers | ML risk scoring |
 | Provider tools | Profile, categories with rates/units, weekly availability grid | Calendar sync, portfolio photos | Earnings analytics, SSS/Pag-IBIG remittance rail |
 | Admin | Overview KPIs (GMV, earnings), KYC/dispute/payout/report queues | Category & take-rate console, city dashboards | Fraud graph tooling |
 | Localization | Taglish UI throughout | Cebuano/Bisaya support scripts | Regional ad kits |
