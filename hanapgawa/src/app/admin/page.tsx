@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { AdminTotp } from "@/components/admintotp";
 import { fetchJson, pesos, timeAgo } from "@/lib/client";
 import { Badge, Button, Card, ErrorNote, Spinner } from "@/components/ui";
 
@@ -76,6 +77,8 @@ export default function AdminPage() {
       {tab === "disputes" && <DisputeQueue onChange={load} />}
       {tab === "payouts" && <PayoutQueue onChange={load} />}
       {tab === "reports" && <ReportQueue onChange={load} />}
+
+      <AdminTotp />
     </div>
   );
 }

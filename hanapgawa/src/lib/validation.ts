@@ -34,11 +34,15 @@ export const registerSchema = z.object({
   regionCode: z.string(),
   cityCode: z.string(),
   wantsProvider: z.boolean().default(false),
+  // Must be literally true: consent is an affirmative act, not a default.
+  // The checkbox copy also affirms the 18+ requirement the Terms state.
+  agree: z.literal(true, { errorMap: () => ({ message: "Kailangan mong tanggapin ang Terms at kumpirmahing 18+ ka" }) }),
 });
 
 export const loginSchema = z.object({
   phone: phoneSchema,
   password: z.string().min(1).max(72),
+  totpCode: z.string().trim().max(10).optional(),
 });
 
 export const otpVerifySchema = z.object({

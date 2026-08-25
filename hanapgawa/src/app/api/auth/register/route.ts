@@ -6,6 +6,7 @@ import { normalizePhPhone } from "@/lib/sms";
 import { isValidCityInRegion } from "@/lib/psgc";
 import { rateLimitAsync, LIMITS } from "@/lib/ratelimit";
 import { issueOtp } from "@/lib/otp";
+import { TERMS_VERSION } from "@/lib/legal";
 
 export const POST = api(async (req) => {
   const ip = clientIp(req);
@@ -47,6 +48,8 @@ export const POST = api(async (req) => {
       regionCode: body.regionCode,
       cityCode: body.cityCode,
       isProvider: body.wantsProvider,
+      termsVersion: TERMS_VERSION,
+      termsAcceptedAt: new Date(),
     },
   });
 

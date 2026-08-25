@@ -1,0 +1,35 @@
+name: HanapGawa dependency audit
+
+# Deliberately NOT part of PR CI: an upstream advisory would redden every PR
+# without a line of the PR being at fault, which trains people to ignore red.
+# Instead the audit runs weekly (and on demand) and fails loudly on its own,
+# where a failure means exactly one thing: a production dependency has a
+# known high-severity vulnerability and needs a bump.
+on:
+  schedule:
+    - cron: "0 22 * * 0" # Monday 06:00 Manila
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: hanapgawa
+
+jobs:
+  audit:
+    name: npm audit (production dependencies)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: hanapgawa/package-lock.json
+      - name: Install
+        run: npm ci
+      - name: Audit production dependencies (high and above fails)
+        run: npm audit --omit=dev --audit-level=high
+      - name: Full report (informational)
+        if: always()
+        run: npm audit || true

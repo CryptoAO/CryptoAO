@@ -248,6 +248,8 @@ export async function closeAccount(userId: string): Promise<ClosureResult> {
         lastName: "user",
         photoKey: null,
         photoMime: null,
+        totpSecret: null,
+        totpEnabledAt: null,
         bio: null,
         barangay: null,
         lat: null,

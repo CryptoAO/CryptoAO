@@ -20,6 +20,7 @@ export default function RegisterPage() {
   const [regionCode, setRegionCode] = useState("");
   const [cityCode, setCityCode] = useState("");
   const [wantsProvider, setWantsProvider] = useState(false);
+  const [agree, setAgree] = useState(false);
   const [code, setCode] = useState("");
 
   async function submitForm(e: React.FormEvent) {
@@ -29,7 +30,7 @@ export default function RegisterPage() {
     try {
       await fetchJson("/api/auth/register", {
         method: "POST",
-        body: JSON.stringify({ firstName, lastName, phone, password, regionCode, cityCode, wantsProvider }),
+        body: JSON.stringify({ firstName, lastName, phone, password, regionCode, cityCode, wantsProvider, agree }),
       });
       setStep("otp");
     } catch (err) {
@@ -102,14 +103,23 @@ export default function RegisterPage() {
               </span>
             </label>
             <ErrorNote message={error} />
-            <Button type="submit" full disabled={busy || !regionCode || !cityCode}>
+            <Button type="submit" full disabled={busy || !regionCode || !cityCode || !agree}>
               {busy ? "Sandali lang…" : "Magpatuloy →"}
             </Button>
-            <p className="text-center text-xs text-gray-500">
-              Sa pag-sign up, sumasang-ayon ka sa aming{" "}
-              <Link href="/terms" className="underline">Terms of Service</Link> at{" "}
-              <Link href="/privacy" className="underline">Privacy Notice</Link>.
-            </p>
+            <label className="flex items-start gap-3 text-xs text-gray-600">
+              <input
+                type="checkbox"
+                checked={agree}
+                onChange={(e) => setAgree(e.target.checked)}
+                required
+                className="mt-0.5 h-5 w-5 shrink-0 accent-brand-700"
+              />
+              <span>
+                <strong>18 taong gulang pataas ako</strong> at sumasang-ayon sa{" "}
+                <Link href="/terms" className="underline">Terms of Service</Link> at{" "}
+                <Link href="/privacy" className="underline">Privacy Notice</Link>.
+              </span>
+            </label>
           </form>
         </Card>
       ) : (

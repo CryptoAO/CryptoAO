@@ -50,6 +50,16 @@ model User {
   strikeCount  Int    @default(0)
   tokenVersion Int    @default(1) // bump to revoke all sessions
 
+  // Two-factor for admin accounts. The console is god mode over everyone's
+  // money and PII; a password alone must not be enough to open it.
+  totpSecret    String?
+  totpEnabledAt DateTime?
+
+  // Which Terms version this account agreed to, and when. Consent you
+  // cannot evidence is consent you do not have.
+  termsVersion    String?
+  termsAcceptedAt DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

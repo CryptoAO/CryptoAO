@@ -254,3 +254,19 @@ A face is the strongest trust signal in a marketplace where you let a stranger i
 **The trade being made, stated plainly:** anonymous visitors browsing the provider list see initials instead of faces, which costs a little trust at the very top of the funnel. The alternative is a publicly addressable, scrapeable photograph of every worker on the platform, indexed by anyone who wants one. Signing up is one tap; that is the cheaper side of the trade. The `Avatar` component degrades to initials on a brand chip rather than a broken image, so the anonymous view looks deliberate.
 
 Verified: an SVG renamed `.png` was refused; an upload returned a route rather than a key and no payload anywhere contained `photoKey`; a signed-in client read the image at 200 while an anonymous caller got 401; the response carried `default-src 'none'; sandbox` and `no-store`; replacing the photo left exactly one file in the store rather than two; a non-admin takedown returned 403 and an admin's succeeded, leaving zero files; and closing the account removed the photo from disk.
+
+### Admin two-factor authentication
+
+The admin console is god mode over everyone's money and PII, so a password alone must not be enough to open it. Admins can enable TOTP (RFC 6238) two-factor: once on, admin login requires the 6-digit code from any authenticator app after the password verifies.
+
+Implementation choices worth recording: the algorithm is implemented directly on `node:crypto` rather than pulled from a package — it is forty lines of HMAC on an auth-critical path where a supply-chain compromise would be catastrophic, and `tests/totp.test.ts` pins it to the published RFC 6238/4226 test vectors, which is a stronger guarantee than any dependency changelog. The code check runs only **after** the password verifies, so the "authenticator code required" response confirms nothing to someone without valid credentials. Enable requires proving the authenticator works first (an untested secret would lock the admin out of their own console); disable requires a current code (a walked-away-from session cannot quietly strip the protection). Code attempts are rate-limited per account, drift tolerance is ±1 step, and the secret crosses the wire exactly once, at setup, to the authenticated admin who asked for it. Enabling and disabling are audit-logged; closure clears the secret.
+
+Verified live: enable with a wrong code 401; enable with the real code succeeded; the next password-only login was refused asking for the code; a wrong code was refused; the right code logged in; and a non-admin login was untouched.
+
+### Recorded consent
+
+Sign-up now requires an explicit checkbox affirming the user is 18+ and accepts the Terms and Privacy Notice — `z.literal(true)`, because consent is an affirmative act, not a default. The accepted `termsVersion` and timestamp are stored on the account: consent you cannot evidence is consent you do not have, and RA 10173 asks for the evidence. Bump `TERMS_VERSION` in `src/lib/legal.ts` whenever the legal pages change materially.
+
+### Dependency auditing
+
+`.github/workflows/hanapgawa-audit.yml` runs `npm audit` weekly against production dependencies, failing on high severity. Deliberately **not** part of PR CI: an upstream advisory would redden every PR without a line of the PR at fault, which trains people to ignore red. On its own schedule, a failure means exactly one thing — a production dependency needs a bump.
