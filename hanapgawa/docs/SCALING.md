@@ -8,7 +8,7 @@ The MVP is deliberately a **modular monolith**: one Next.js app, one Prisma sche
 - Chat polling (5s) is fine at this scale.
 
 ## Stage 1 — City density (10k–100k MAU) · ~₱30–80k/month
-- **Redis** (Upstash/ElastiCache): rate limiting (`src/lib/ratelimit.ts` is interface-compatible — same `rateLimit(key, max, windowMs)` signature, swap the store), session denylist, hot-feed caching (60s TTL per city/category page), OTP state.
+- **Redis** (Upstash/ElastiCache): rate limiting is already wired — set `REDIS_URL`, `npm i ioredis`, and `rateLimitAsync()` moves from per-instance memory to a fleet-wide counter with no code change (it fails open on a store outage, so Redis going down degrades abuse control rather than locking users out). Then: session denylist, hot-feed caching (60s TTL per city/category page), OTP state.
 - **Object storage** (S3/R2) for KYC docs & photos: private buckets, short-lived signed URLs, encrypted at rest.
 - **Postgres indexes** are already declared in the schema (`status+region+city`, `category+status`, ledger by user/time). Add `pg_trgm` GIN index for search (replaces `contains`) and consider PostGIS or a geohash column when distance-sort outgrows the in-memory haversine over a 200-row window.
 - Background jobs (BullMQ or pg-boss): SMS sends, webhook retries, review reminders, escrow auto-release timers (e.g., auto-confirm 72h after DONE_BY_PROVIDER unless disputed).
@@ -20,7 +20,7 @@ The MVP is deliberately a **modular monolith**: one Next.js app, one Prisma sche
 - Money-integrity hardening at concurrency: wrap escrow transactions with `SELECT … FOR UPDATE` on the job row (Prisma `$queryRaw` lock or serializable isolation) — the single-writer SQLite semantics the MVP relies on must become explicit locks on Postgres.
 - Full PSGC import (all ~1,600 cities/municipalities + barangays) into a `locations` table; the `{code, name, regionCode, lat, lng}` interface in `src/lib/psgc.ts` is already the contract.
 - CDN for static assets; image resizing pipeline; WAF/bot management at the edge.
-- Native Android app (<30MB) reusing the same API: push notifications, SMS Retriever OTP autofill, camera KYC.
+- Native Android app (<30MB) reusing the same API: push notifications, SMS Retriever OTP autofill, camera KYC. The installable PWA already covers home-screen launch and offline tolerance, so the native build is justified by push and camera, not by "we need an app" — decide it on retention data, not instinct.
 
 ## Stage 3 — National (500k+ MAU)
 - Extract true service boundaries only where load demands: `payments-ledger` (append-only, strict SLO), `chat`, `search/feed` (denormalized read models, possibly OpenSearch), `trust` (KYC/fraud scoring). Postgres logical replication/CDC feeds read models — the ledger stays the source of truth.

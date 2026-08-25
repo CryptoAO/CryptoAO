@@ -3,7 +3,7 @@ import { api, ok, ApiError, parseBody, clientIp, audit } from "@/lib/api";
 import { db } from "@/lib/db";
 import { loginSchema } from "@/lib/validation";
 import { normalizePhPhone } from "@/lib/sms";
-import { rateLimit, LIMITS } from "@/lib/ratelimit";
+import { rateLimitAsync, LIMITS } from "@/lib/ratelimit";
 import { setSessionCookie } from "@/lib/session";
 import { selfUser } from "@/lib/serialize";
 
@@ -12,7 +12,7 @@ const DUMMY_HASH = "$2b$12$C6UzMDM.H6dfI/f/IKcEeO7ZBpDLhBk1uQZ8y1lQ9XKQO9uW5oyBS
 
 export const POST = api(async (req) => {
   const ip = clientIp(req);
-  if (!rateLimit(`login:${ip}`, LIMITS.login.max, LIMITS.login.windowMs)) {
+  if (!(await rateLimitAsync(`login:${ip}`, LIMITS.login.max, LIMITS.login.windowMs))) {
     throw new ApiError(429, "Too many login attempts — wait a few minutes");
   }
 

@@ -153,3 +153,20 @@ Verified live: an SVG renamed `photo.jpg` and an HTML file claiming `image/png` 
 ### Error monitoring
 
 `src/lib/monitoring.ts` reports unexpected errors with a `requestId` that is also returned to the caller and set as `X-Request-Id`, so a user can quote it to support. Reports are **scrubbed before they leave the process**: sensitive keys (`password`, `codeHash`, `token`, `accountRef`, `phone`, `addressNote`, `lat`, `lng`, `idLastFour`, …) are redacted by name, and PH phone numbers and email addresses are stripped from free text anywhere they appear. Only a user *id* is attached, never a name or number. Dev logs structured JSON; production ships to a Sentry-compatible collector with a 3-second timeout so monitoring can never stall a user request. `/api/health` is an intentionally boring liveness probe — database reachability and nothing else, so it cannot double as a reconnaissance endpoint.
+
+### Installed app (PWA) and the offline cache
+
+The app is installable from the browser — no Play Store — which matters for a mostly budget-Android audience, but a service worker is a cache that outlives the session, so it is deliberately kept nearly empty.
+
+| Risk | Control |
+|---|---|
+| Serving one user's data to the next person on a shared phone | The worker **never caches a navigation response and never touches `/api/*`** — it returns early for both. Pages are always fetched from the network |
+| Stale authenticated HTML after logout | Nothing authenticated is ever stored, so there is nothing to invalidate on logout |
+| Cross-origin poisoning | Requests to any other origin, and any non-`GET`, are passed straight through untouched |
+| A stale worker pinning an old build | `install` calls `skipWaiting()` and `activate` deletes every cache whose name is not the current version, then claims open clients |
+
+What the cache *does* hold: fingerprinted `/_next/static/` build output, the launcher icons, and a static `offline.html` card. Verified in a headless browser — after a full page load and reload, the cache contained only those entries, no `/api` and no page responses, and going offline rendered the offline card rather than a browser error. `tests/pwa.test.ts` asserts the same invariants against the worker source so a future edit cannot quietly start caching pages.
+
+### Rate limiting across more than one instance
+
+`rateLimit()` counts in process memory, which is correct for one node and wrong the moment there are two — eight login attempts becomes eight *per server*. `rateLimitAsync()` (used by login, register and OTP send) uses a shared Redis counter when `REDIS_URL` is set and falls back to memory when it is not. It **fails open** on a store error: a Redis outage must degrade abuse control, not lock every user out of their account.

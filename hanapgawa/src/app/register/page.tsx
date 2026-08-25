@@ -106,8 +106,9 @@ export default function RegisterPage() {
               {busy ? "Sandali lang…" : "Magpatuloy →"}
             </Button>
             <p className="text-center text-xs text-gray-500">
-              Sa pag-sign up, sumasang-ayon ka sa aming Terms at{" "}
-              <Link href="/safety" className="underline">Privacy Policy</Link>.
+              Sa pag-sign up, sumasang-ayon ka sa aming{" "}
+              <Link href="/terms" className="underline">Terms of Service</Link> at{" "}
+              <Link href="/privacy" className="underline">Privacy Notice</Link>.
             </p>
           </form>
         </Card>
