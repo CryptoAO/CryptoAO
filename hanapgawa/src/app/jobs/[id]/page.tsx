@@ -19,12 +19,13 @@ interface JobDetail {
   scheduledAt?: string | null; flexible: boolean; createdAt: string;
   clientId: string; assignedProviderId?: string | null;
   autoReleaseAt?: string | null; autoReleased?: boolean;
+  visibility?: string; directProviderId?: string | null;
   client?: PublicUser; provider?: PublicUser;
   category: { id: string; name: string; nameTl: string; icon: string };
 }
 interface ProviderStats { completedJobs: number; reliabilityPct: number | null; repeatClients: number }
 interface OfferAvailability { clash: boolean; outsideStatedHours: boolean }
-interface OfferRow { id: string; providerId: string; priceCents: number; message: string; status: string; createdAt: string; provider?: PublicUser; providerStats?: ProviderStats; availability?: OfferAvailability }
+interface OfferRow { id: string; providerId: string; priceCents: number; message: string; status: string; createdAt: string; provider?: PublicUser; providerStats?: ProviderStats; availability?: OfferAvailability; jobsWithYou?: number; sukiDiscount?: boolean }
 interface Me { user: { id: string; isProvider: boolean; kycLevel: number } | null }
 
 const STATUS_LABEL: Record<string, { label: string; tone: "gray" | "green" | "amber" | "red" | "brand" }> = {
@@ -79,6 +80,8 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
   const { job, offers, viewerRole } = data;
   const meId = me.user?.id;
   const isOwner = viewerRole === "owner";
+  const isDirectTarget = viewerRole === "direct-target";
+  const isDirect = job.visibility === "DIRECT";
   const isAssigned = meId != null && job.assignedProviderId === meId;
   // A withdrawn offer doesn't block a fresh one — treat it as "no offer".
   const myOffer = meId ? offers.find((o) => o.providerId === meId && o.status !== "WITHDRAWN") : undefined;
@@ -200,8 +203,43 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
         </Card>
       )}
 
+      {/* ===== Direct request: the target answers ===== */}
+      {isDirectTarget && job.status === "OPEN" && (
+        <Card className="space-y-3">
+          <h2 className="font-bold">📩 Booking request para sa'yo</h2>
+          <div className="rounded-xl bg-brand-50 p-3 text-sm text-brand-900">
+            Ikaw lang ang inalok ng trabahong ito, sa presyong{" "}
+            <strong>{pesos(job.budgetCents)}</strong>. Kapag kinumpirma mo, <strong>booked na agad</strong> —
+            maho-hold ang bayad sa escrow at asahan ka na ng client.
+          </div>
+          <div className="flex gap-2">
+            <Button full disabled={busy} onClick={() => action("confirm")}>
+              ✔ Kumpirmahin — tanggapin ko
+            </Button>
+            <Button variant="ghost" disabled={busy} onClick={() => action("decline")}>
+              Hindi muna
+            </Button>
+          </div>
+        </Card>
+      )}
+
+      {/* ===== Direct request: the owner waits ===== */}
+      {isOwner && isDirect && job.status === "OPEN" && (
+        <Card className="space-y-3">
+          <h2 className="font-bold">Hinihintay ang sagot 📩</h2>
+          <p className="text-sm text-gray-600">
+            Naipadala na ang booking request mo. Kapag kinumpirma, maho-hold ang{" "}
+            <strong>{pesos(job.budgetCents)}</strong> mula sa wallet mo at booked na agad. Kung walang sagot
+            sa loob ng 48 oras, isasara namin ito para makapag-post ka sa lahat.
+          </p>
+          <Button variant="ghost" disabled={busy} onClick={() => action("cancel")}>
+            Bawiin ang request
+          </Button>
+        </Card>
+      )}
+
       {/* ===== Provider: make an offer ===== */}
-      {meId && !isOwner && job.status === "OPEN" && !myOffer && (
+      {meId && !isOwner && !isDirect && job.status === "OPEN" && !myOffer && (
         <Card>
           <h2 className="font-bold">Gawin ko 'to! 🙋</h2>
           {!me.user?.isProvider ? (
@@ -251,7 +289,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
       )}
 
       {/* ===== Owner: offers list ===== */}
-      {isOwner && job.status === "OPEN" && (
+      {isOwner && !isDirect && job.status === "OPEN" && (
         <Card>
           <h2 className="font-bold">Mga offer ({offers.filter((o) => o.status === "PENDING").length})</h2>
           {offers.filter((o) => o.status === "PENDING").length === 0 && (
@@ -288,6 +326,11 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                     {o.providerStats.repeatClients > 0 && (
                       <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-emerald-800">
                         🔁 {o.providerStats.repeatClients} paulit-ulit na client
+                      </span>
+                    )}
+                    {(o.jobsWithYou ?? 0) >= 3 && (
+                      <span className="rounded-full bg-amber-100 px-2 py-0.5 font-semibold text-amber-900">
+                        ⭐ Suki niyo na ({o.jobsWithYou} trabaho ninyo) — mas mababa ang platform fee
                       </span>
                     )}
                   </div>

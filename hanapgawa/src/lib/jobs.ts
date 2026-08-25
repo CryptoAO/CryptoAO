@@ -8,6 +8,7 @@ import {
 } from "./notify";
 import { releaseDeadline } from "./autorelease";
 import { DEFAULT_DURATION_MIN, clashingBookings } from "./availability";
+import { sukiTakeRateBps } from "./money";
 
 // Job lifecycle (single source of truth):
 //
@@ -98,6 +99,14 @@ export async function acceptOffer(jobId: string, offerId: string, clientId: stri
       }
     }
 
+    // Suki ladder: pairs with real history together get a lower take rate,
+    // frozen on the booking like every other rate. Counted inside this
+    // transaction so the rate matches the history at the moment of booking.
+    const completedTogether = await tx.job.count({
+      where: { clientId: job.clientId, assignedProviderId: offer.providerId, status: "COMPLETED" },
+    });
+    const takeRateBps = sukiTakeRateBps(job.category.defaultTakeRateBps, completedTogether);
+
     // Atomic gates: under concurrent accepts only one request wins each flip.
     const jobFlip = await tx.job.updateMany({
       where: { id: jobId, status: "OPEN" },
@@ -106,7 +115,7 @@ export async function acceptOffer(jobId: string, offerId: string, clientId: stri
         assignedProviderId: offer.providerId,
         acceptedOfferId: offerId,
         agreedPriceCents: offer.priceCents,
-        takeRateBps: job.category.defaultTakeRateBps,
+        takeRateBps,
         escrowHeld: true,
       },
     });

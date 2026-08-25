@@ -4,6 +4,7 @@ import { getSessionUser } from "@/lib/session";
 import { jobView, offerView } from "@/lib/serialize";
 import { providerStats } from "@/lib/matching";
 import { checkProviderAvailability } from "@/lib/availability";
+import { SUKI_TIERS } from "@/lib/money";
 
 export const GET = api(async (_req, { params }) => {
   const { id } = await params;
@@ -17,6 +18,13 @@ export const GET = api(async (_req, { params }) => {
   const isOwner = viewer?.id === job.clientId;
   const isAssigned = viewer != null && viewer.id === job.assignedProviderId;
   const isAdmin = viewer?.isAdmin ?? false;
+  const isDirectTarget = viewer != null && viewer.id === job.directProviderId;
+
+  // A direct request is a private conversation between two people. 404 for
+  // everyone else — that it exists at all is information.
+  if (job.visibility === "DIRECT" && !isOwner && !isAssigned && !isDirectTarget && !isAdmin) {
+    throw new ApiError(404, "Job not found");
+  }
 
   // Offer list is visible to the job owner and admins; a provider sees only
   // their own offer (no undercutting wars, no shill visibility).
@@ -31,6 +39,21 @@ export const GET = api(async (_req, { params }) => {
     offers.map(async (o) => [o.id, await providerStats(o.providerId)] as const),
   );
   const statsById = new Map(offerStats);
+
+  // Suki history: how many jobs each bidder has completed with THIS client.
+  // Shown so the fee discount is a visible reward, not a silent ledger line —
+  // a loyalty program nobody knows about retains nobody.
+  const sukiByOffer = new Map<string, number>();
+  if (isOwner || isAdmin) {
+    const counts = await Promise.all(
+      offers.map(async (o) =>
+        [o.id, await db.job.count({
+          where: { clientId: job.clientId, assignedProviderId: o.providerId, status: "COMPLETED" },
+        })] as const,
+      ),
+    );
+    for (const [oid, n] of counts) sukiByOffer.set(oid, n);
+  }
 
   // Whether each bidder is actually free then. A clash is refused at accept
   // time anyway; showing it here means the client finds out while choosing
@@ -54,7 +77,9 @@ export const GET = api(async (_req, { params }) => {
       ...offerView(o),
       providerStats: statsById.get(o.id),
       availability: availability.get(o.id),
+      jobsWithYou: sukiByOffer.get(o.id),
+      sukiDiscount: (sukiByOffer.get(o.id) ?? 0) >= SUKI_TIERS[SUKI_TIERS.length - 1].jobsTogether,
     })),
-    viewerRole: isAdmin ? "admin" : isOwner ? "owner" : isAssigned ? "provider" : "visitor",
+    viewerRole: isAdmin ? "admin" : isOwner ? "owner" : isAssigned ? "provider" : isDirectTarget ? "direct-target" : "visitor",
   });
 });
