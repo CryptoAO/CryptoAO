@@ -55,25 +55,26 @@ model User {
 
   providerCategories ProviderCategory[]
   availability       AvailabilitySlot[]
-  jobsPosted         Job[]              @relation("JobClient")
-  jobsAssigned       Job[]              @relation("JobProvider")
+  jobsPosted         Job[]               @relation("JobClient")
+  jobsAssigned       Job[]               @relation("JobProvider")
   offers             Offer[]
-  messagesSent       Message[]          @relation("MsgSender")
-  messagesReceived   Message[]          @relation("MsgRecipient")
-  reviewsGiven       Review[]           @relation("ReviewRater")
-  reviewsReceived    Review[]           @relation("ReviewRatee")
+  messagesSent       Message[]           @relation("MsgSender")
+  messagesReceived   Message[]           @relation("MsgRecipient")
+  reviewsGiven       Review[]            @relation("ReviewRater")
+  reviewsReceived    Review[]            @relation("ReviewRatee")
   ledgerEntries      LedgerEntry[]
-  kycSubmissions     KycSubmission[]    @relation("KycOwner")
-  kycReviews         KycSubmission[]    @relation("KycReviewer")
-  reportsMade        Report[]           @relation("ReportReporter")
-  reportsAgainst     Report[]           @relation("ReportTarget")
+  kycSubmissions     KycSubmission[]     @relation("KycOwner")
+  kycReviews         KycSubmission[]     @relation("KycReviewer")
+  reportsMade        Report[]            @relation("ReportReporter")
+  reportsAgainst     Report[]            @relation("ReportTarget")
   payoutRequests     PayoutRequest[]
   notifications      Notification[]
   trustedContacts    TrustedContact[]
   checkIns           JobCheckIn[]
   jobPhotos          JobPhoto[]
-  sosRaised          SosAlert[]         @relation("SosRaiser")
-  sosResolved        SosAlert[]         @relation("SosResolver")
+  earningsStatements EarningsStatement[]
+  sosRaised          SosAlert[]          @relation("SosRaiser")
+  sosResolved        SosAlert[]          @relation("SosResolver")
 
   @@index([regionCode, cityCode])
   @@index([isProvider, status])
@@ -484,4 +485,34 @@ model JobPhoto {
 
   @@index([jobId])
   @@index([uploaderId])
+}
+
+/// A verifiable proof-of-income statement — the "Patunay ng Kita".
+///
+/// The people this platform serves cannot prove income to a bank, a
+/// landlord, or an embassy, which locks them out of loans, leases and visas
+/// no matter how much they actually earn. Every completed job here is a
+/// ledger row; this turns that ledger into a document a loan officer can
+/// verify in ten seconds by entering a code.
+///
+/// Totals are SNAPSHOTTED at generation, not recomputed at verification:
+/// what the provider handed the bank must be exactly what the bank sees,
+/// even if support later adjusts something. The code is unguessable, the
+/// statement expires, and the provider can revoke it.
+model EarningsStatement {
+  id               String    @id @default(cuid())
+  providerId       String
+  code             String    @unique
+  periodFrom       DateTime
+  periodTo         DateTime
+  totalPayoutCents Int
+  jobsCount        Int
+  monthlyJson      String // [{ month: "2026-05", payoutCents, jobs }]
+  createdAt        DateTime  @default(now())
+  expiresAt        DateTime
+  revokedAt        DateTime?
+
+  provider User @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@index([providerId])
 }

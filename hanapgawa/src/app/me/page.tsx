@@ -4,6 +4,7 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AvatarUploader } from "@/components/avatar";
+import { EarningsProof } from "@/components/earnings";
 import { PrivacyControls } from "@/components/privacy-controls";
 import { ReadinessCard } from "@/components/readiness";
 import { fetchJson, pesos, timeAgo } from "@/lib/client";
@@ -88,7 +89,12 @@ function MeDashboard() {
       {u.isProvider && <ReadinessCard key={revision} onGoToTab={setTab} />}
 
       {tab === "activity" && <ActivityTab meId={u.id} />}
-      {tab === "wallet" && <WalletTab onChange={load} />}
+      {tab === "wallet" && (
+        <>
+          <WalletTab onChange={load} />
+          {u.isProvider && <EarningsProof />}
+        </>
+      )}
       {tab === "provider" && <ProviderTab meId={u.id} isProvider={u.isProvider} bio={u.bio ?? ""} photoUrl={u.photoUrl} firstName={u.firstName} onSaved={load} />}
       {tab === "kyc" && <KycTab kycLevel={u.kycLevel} />}
       {tab === "safety" && <TrustedContacts />}
