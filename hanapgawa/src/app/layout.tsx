@@ -13,6 +13,22 @@ export const metadata: Metadata = {
     "Ang marketplace ng serbisyo para sa lahat: labada, linis-bahay, hatid-sundo, padala, personal trainer at iba pa. Ligtas, may escrow, bayad sa app.",
   applicationName: "HanapGawa",
   manifest: "/manifest.webmanifest",
+  openGraph: {
+    title: "HanapGawa — May kailangan? May kaya!",
+    description:
+      "Labada, linis-bahay, hatid-sundo, padala at iba pa — ligtas, may escrow, bayad sa app.",
+    type: "website",
+    siteName: "HanapGawa",
+    locale: "fil_PH",
+    images: [{ url: "/icons/icon-512.png", width: 512, height: 512, alt: "HanapGawa" }],
+  },
+  twitter: {
+    card: "summary",
+    title: "HanapGawa — May kailangan? May kaya!",
+    description:
+      "Labada, linis-bahay, hatid-sundo, padala at iba pa — ligtas, may escrow, bayad sa app.",
+    images: ["/icons/icon-512.png"],
+  },
   icons: {
     icon: [
       { url: "/icons/favicon-32.png", sizes: "32x32", type: "image/png" },
