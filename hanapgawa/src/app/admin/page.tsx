@@ -44,11 +44,11 @@ export default function AdminPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-extrabold">Admin Console 🛠️</h1>
+      <h1 className="text-2xl font-bold">Admin Console</h1>
       <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
         {stats.map((s) => (
           <Card key={s.label} className="p-3 text-center">
-            <div className="text-lg font-extrabold text-brand-800">{s.value}</div>
+            <div className="text-lg font-bold text-brand-800">{s.value}</div>
             <div className="text-[11px] text-gray-500">{s.label}</div>
           </Card>
         ))}
@@ -56,7 +56,7 @@ export default function AdminPage() {
 
       <div className="flex gap-1 overflow-x-auto rounded-2xl bg-stone-100 p-1">
         {([
-          ["sos", overview.openSos > 0 ? `🚨 SOS (${overview.openSos})` : "SOS"],
+          ["sos", overview.openSos > 0 ? `SOS (${overview.openSos})` : "SOS"],
           ["kyc", `KYC (${overview.pendingKyc})`],
           ["disputes", `Disputes (${overview.openDisputes})`],
           ["payouts", `Payouts (${overview.pendingPayouts})`],
@@ -103,7 +103,7 @@ function SosQueue({ onChange }: { onChange: () => void }) {
   const [resolution, setResolution] = useState<Record<string, string>>({});
   if (!data) return <Spinner />;
   if (data.alerts.length === 0) {
-    return <Card className="py-8 text-center text-sm text-gray-500">Walang aktibong SOS. 🕊️</Card>;
+    return <Card className="py-8 text-center text-sm text-gray-500">Walang aktibong SOS.</Card>;
   }
 
   async function act(id: string, status: "ACKNOWLEDGED" | "RESOLVED") {
@@ -121,7 +121,7 @@ function SosQueue({ onChange }: { onChange: () => void }) {
         <Card key={a.id} className="border-red-300 bg-red-50/40">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
-              <div className="text-base font-extrabold text-red-800">🚨 {a.raiser.name}</div>
+              <div className="text-base font-bold text-red-800">{a.raiser.name}</div>
               <a href={`tel:${a.raiser.phone}`} className="text-sm font-bold text-brand-800 underline">
                 {a.raiser.phone}
               </a>
@@ -135,13 +135,13 @@ function SosQueue({ onChange }: { onChange: () => void }) {
           {a.job && (
             <div className="mt-2 rounded-xl bg-white p-3 text-sm">
               <div className="font-semibold">{a.job.title}</div>
-              {a.job.where && <div className="text-gray-600">📍 {a.job.where}</div>}
+              {a.job.where && <div className="text-gray-600">{a.job.where}</div>}
             </div>
           )}
           {a.note && <p className="mt-2 text-sm text-gray-700">&ldquo;{a.note}&rdquo;</p>}
           {a.mapUrl && (
             <a href={a.mapUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm font-bold text-brand-800 underline">
-              🗺️ Buksan ang huling lokasyon
+              Buksan ang huling lokasyon
             </a>
           )}
 
@@ -184,7 +184,7 @@ function SosQueue({ onChange }: { onChange: () => void }) {
 function KycQueue({ onChange }: { onChange: () => void }) {
   const { data, load } = useQueue<{ queue: { id: string; level: number; docType: string; idLastFour?: string | null; hasDocument: boolean; createdAt: string; user: { firstName: string; lastName?: string; phone?: string; kycLevel: number } }[] }>("/api/admin/kyc");
   if (!data) return <Spinner />;
-  if (data.queue.length === 0) return <Card className="py-8 text-center text-sm text-gray-500">Walang pending KYC. 🎉</Card>;
+  if (data.queue.length === 0) return <Card className="py-8 text-center text-sm text-gray-500">Walang pending KYC.</Card>;
   return (
     <div className="space-y-2">
       {data.queue.map((k) => (
@@ -201,10 +201,10 @@ function KycQueue({ onChange }: { onChange: () => void }) {
                 rel="noreferrer"
                 className="mt-1 inline-block text-xs font-bold text-brand-800 underline"
               >
-                📎 Tingnan ang ID (naka-log ang bawat pagtingin)
+                Tingnan ang ID (naka-log ang bawat pagtingin)
               </a>
             ) : (
-              <div className="mt-1 text-xs text-amber-700">⚠️ Walang naka-attach na larawan</div>
+              <div className="mt-1 text-xs text-amber-700">Walang naka-attach na larawan</div>
             )}
           </div>
           <div className="flex gap-2">
@@ -223,7 +223,7 @@ const PHOTO_LABEL: Record<string, string> = { BEFORE: "Bago", AFTER: "Tapos", IS
 function DisputeQueue({ onChange }: { onChange: () => void }) {
   const { data, load } = useQueue<{ disputes: { id: string; reason: string; createdAt: string; job: { title: string; agreedPriceCents?: number | null; clientName: string; providerName?: string | null; photos?: DisputePhoto[] } }[] }>("/api/admin/disputes");
   if (!data) return <Spinner />;
-  if (data.disputes.length === 0) return <Card className="py-8 text-center text-sm text-gray-500">Walang open disputes. 🎉</Card>;
+  if (data.disputes.length === 0) return <Card className="py-8 text-center text-sm text-gray-500">Walang open disputes.</Card>;
   return (
     <div className="space-y-2">
       {data.disputes.map((d) => (
@@ -263,7 +263,7 @@ function DisputeQueue({ onChange }: { onChange: () => void }) {
 function PayoutQueue({ onChange }: { onChange: () => void }) {
   const { data, load } = useQueue<{ payouts: { id: string; amountCents: number; channel: string; accountRef: string; createdAt: string; userName: string; userPhone: string }[] }>("/api/admin/payouts");
   if (!data) return <Spinner />;
-  if (data.payouts.length === 0) return <Card className="py-8 text-center text-sm text-gray-500">Walang pending payouts. 🎉</Card>;
+  if (data.payouts.length === 0) return <Card className="py-8 text-center text-sm text-gray-500">Walang pending payouts.</Card>;
   return (
     <div className="space-y-2">
       {data.payouts.map((p) => (
@@ -292,7 +292,7 @@ function ReportQueue({ onChange }: { onChange: () => void }) {
     <div className="space-y-4">
       {data.flaggedUsers.length > 0 && (
         <Card>
-          <h3 className="text-sm font-bold">🚩 Flagged users (3+ strikes sa chat)</h3>
+          <h3 className="text-sm font-bold">Flagged users (3+ strikes sa chat)</h3>
           <div className="mt-2 space-y-2">
             {data.flaggedUsers.map((u) => (
               <div key={u.id} className="flex items-center justify-between rounded-xl bg-stone-50 p-3 text-sm">
@@ -307,7 +307,7 @@ function ReportQueue({ onChange }: { onChange: () => void }) {
         </Card>
       )}
       {data.reports.length === 0 ? (
-        <Card className="py-8 text-center text-sm text-gray-500">Walang open reports. 🎉</Card>
+        <Card className="py-8 text-center text-sm text-gray-500">Walang open reports.</Card>
       ) : (
         data.reports.map((r) => (
           <Card key={r.id}>

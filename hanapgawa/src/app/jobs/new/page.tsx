@@ -3,10 +3,12 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { fetchJson } from "@/lib/client";
-import { Button, Card, ErrorNote, Field, Input, Select, TextArea } from "@/components/ui";
+import { Button, Card, DateTimeInput, ErrorNote, Field, Input, Select, TextArea } from "@/components/ui";
 import { LocationPicker } from "@/components/locationpicker";
 import { getCity } from "@/lib/psgc";
 import { assessBudget } from "@/lib/pricing";
+import { catName, useLang, useT } from "@/lib/i18n";
+import { IconInfo, IconLock, IconRepeat, IconSend } from "@/components/icons";
 
 interface Category { id: string; name: string; nameTl: string; icon: string; minPriceCents: number }
 interface Guidance {
@@ -16,15 +18,10 @@ interface Guidance {
 
 const peso = (cents: number) => `₱${Math.round(cents / 100).toLocaleString("en-PH")}`;
 
-function guidanceLine(g: Guidance, cityName: string | null): string {
-  const range = `${peso(g.lowCents)}–${peso(g.highCents)}`;
-  if (g.source === "city" && cityName) return `Karaniwang bayad sa ${cityName}: ${range}`;
-  if (g.source === "nationwide") return `Karaniwang bayad sa buong Pilipinas: ${range}`;
-  return `Tantiyang bayad: ${range}`;
-}
-
 function NewJobForm() {
   const router = useRouter();
+  const t = useT();
+  const { lang } = useLang();
   const [categories, setCategories] = useState<Category[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,6 +46,17 @@ function NewJobForm() {
   const rebookId = params.get("rebook");
   const directId = params.get("direct");
   const [directName, setDirectName] = useState<string | null>(null);
+
+  function guidanceLine(g: Guidance, cityName: string | null): string {
+    const range = `${peso(g.lowCents)}–${peso(g.highCents)}`;
+    if (g.source === "city" && cityName) {
+      return t(`Karaniwang bayad sa ${cityName}: ${range}`, `Typical pay in ${cityName}: ${range}`);
+    }
+    if (g.source === "nationwide") {
+      return t(`Karaniwang bayad sa buong Pilipinas: ${range}`, `Typical pay nationwide: ${range}`);
+    }
+    return t(`Tantiyang bayad: ${range}`, `Estimated pay: ${range}`);
+  }
 
   // Direct mode: this form becomes a private request to one provider.
   useEffect(() => {
@@ -144,59 +152,93 @@ function NewJobForm() {
 
   return (
     <div className="mx-auto max-w-lg space-y-4">
-      <h1 className="text-2xl font-extrabold">{directName ? "Direktang booking 📩" : "Mag-post ng kailangan ➕"}</h1>
+      <h1 className="text-2xl font-bold">{directName ? t("Direktang booking", "Direct booking") : t("Mag-post ng kailangan", "Post a job")}</h1>
       {directName && (
-        <div className="rounded-xl bg-brand-50 p-3 text-sm text-brand-900">
-          📩 Booking request para kay <strong>{directName}</strong> lang — hindi ito makikita ng iba.
-          Kapag kinumpirma niya, <strong>booked na agad</strong> at iho-hold ang bayad mula sa wallet mo.
-          Kung hindi siya sumagot sa loob ng 48 oras, isasara namin ang request.
+        <div className="flex items-start gap-2.5 rounded-xl bg-brand-50 p-3 text-sm text-brand-900">
+          <span className="mt-0.5 shrink-0 text-brand-700"><IconSend size={16} /></span>
+          <span>
+            {lang === "en" ? (
+              <>Booking request for <strong>{directName}</strong> only — nobody else sees it. If they confirm,
+              it's <strong>booked immediately</strong> and payment is held from your wallet. If they don't
+              respond within 48 hours, we close the request.</>
+            ) : (
+              <>Booking request para kay <strong>{directName}</strong> lang — hindi ito makikita ng iba.
+              Kapag kinumpirma niya, <strong>booked na agad</strong> at iho-hold ang bayad mula sa wallet mo.
+              Kung hindi siya sumagot sa loob ng 48 oras, isasara namin ang request.</>
+            )}
+          </span>
         </div>
       )}
       {rebookName && !directName && (
-        <div className="rounded-xl bg-brand-50 p-3 text-sm text-brand-900">
-          🔁 Ino-book mo ulit si <strong>{rebookName}</strong>. Ide-derecho namin sa kanya ang post na
-          ito — pwede pa ring mag-offer ang iba.
+        <div className="flex items-start gap-2.5 rounded-xl bg-brand-50 p-3 text-sm text-brand-900">
+          <span className="mt-0.5 shrink-0 text-brand-700"><IconRepeat size={16} /></span>
+          <span>
+            {lang === "en" ? (
+              <>You're rebooking <strong>{rebookName}</strong>. We'll send this post straight to them —
+              others can still make offers.</>
+            ) : (
+              <>Ino-book mo ulit si <strong>{rebookName}</strong>. Ide-derecho namin sa kanya ang post na
+              ito — pwede pa ring mag-offer ang iba.</>
+            )}
+          </span>
         </div>
       )}
       <p className="text-sm text-gray-600">
-        Libre mag-post. Magbabayad ka lang kapag tapos na ang trabaho — at protektado ng escrow ang pera mo.
+        {t(
+          "Libre mag-post. Magbabayad ka lang kapag tapos na ang trabaho — at protektado ng escrow ang pera mo.",
+          "Posting is free. You only pay when the work is done — and escrow protects your money.",
+        )}
       </p>
       <Card>
         <form onSubmit={submit} className="space-y-4">
-          <Field label="Anong klaseng trabaho?">
+          <Field label={t("Anong klaseng trabaho?", "What kind of work?")}>
             <Select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} required>
-              <option value="">Piliin ang kategorya…</option>
+              <option value="">{t("Piliin ang kategorya…", "Choose a category…")}</option>
               {categories.map((c) => (
-                <option key={c.id} value={c.id}>{c.icon} {c.nameTl} ({c.name})</option>
+                <option key={c.id} value={c.id}>{c.icon} {catName(lang, c)}</option>
               ))}
             </Select>
           </Field>
-          <Field label="Maikling title" hint='Hal. "Labada + plantsa, 2 bags, kunin sa bahay"'>
+          <Field
+            label={t("Maikling title", "Short title")}
+            hint={t('Hal. "Labada + plantsa, 2 bags, kunin sa bahay"', 'E.g. "Laundry + ironing, 2 bags, home pickup"')}
+          >
             <Input value={title} onChange={(e) => setTitle(e.target.value)} required minLength={5} maxLength={90} />
           </Field>
-          <Field label="Detalye" hint="Ano ang gagawin, gaano kalaki/karami, ano ang dapat dalhin.">
+          <Field
+            label={t("Detalye", "Details")}
+            hint={t("Ano ang gagawin, gaano kalaki/karami, ano ang dapat dalhin.", "What needs doing, how big or how much, what to bring.")}
+          >
             <TextArea value={description} onChange={(e) => setDescription(e.target.value)} required minLength={10} maxLength={3000} />
           </Field>
           <LocationPicker regionCode={regionCode} cityCode={cityCode} onChange={(r, c) => { setRegionCode(r); setCityCode(c); }} />
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Barangay (optional)">
+            <Field label={t("Barangay (optional)", "Barangay (optional)")}>
               <Input value={barangay} onChange={(e) => setBarangay(e.target.value)} maxLength={80} />
             </Field>
-            <Field label="Kailan? (optional)">
-              <Input type="datetime-local" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} />
+            <Field label={t("Kailan? (optional)", "When? (optional)")}>
+              <DateTimeInput value={scheduledAt} onChange={setScheduledAt} />
             </Field>
           </div>
           <Field
-            label="Exact na address / landmark (optional)"
-            hint="🔒 PRIVATE ito — makikita lang ng provider na na-book mo, hindi ng publiko."
+            label={t("Exact na address / landmark (optional)", "Exact address / landmark (optional)")}
+            hint={t(
+              "PRIVATE ito — makikita lang ng provider na na-book mo, hindi ng publiko.",
+              "This stays PRIVATE — only the provider you book sees it, never the public.",
+            )}
           >
-            <Input value={addressNote} onChange={(e) => setAddressNote(e.target.value)} maxLength={300} placeholder="Blk 5 Lot 3, tapat ng sari-sari store ni Aling Nena" />
+            <Input
+              value={addressNote}
+              onChange={(e) => setAddressNote(e.target.value)}
+              maxLength={300}
+              placeholder={t("Blk 5 Lot 3, tapat ng sari-sari store", "Blk 5 Lot 3, across the corner store")}
+            />
           </Field>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Klase ng bayad">
+            <Field label={t("Klase ng bayad", "Pay type")}>
               <Select value={payType} onChange={(e) => setPayType(e.target.value as "FIXED" | "HOURLY")}>
-                <option value="FIXED">Buong trabaho (fixed)</option>
-                <option value="HOURLY">Per hour</option>
+                <option value="FIXED">{t("Buong trabaho (fixed)", "Whole job (fixed)")}</option>
+                <option value="HOURLY">{t("Per hour", "Per hour")}</option>
               </Select>
             </Field>
             <Field label={`Budget (₱)${selected ? ` — min ₱${selected.minPriceCents / 100}` : ""}`}>
@@ -214,35 +256,44 @@ function NewJobForm() {
           </div>
           {guidance && (
             <div className="rounded-xl bg-stone-100 p-3 text-sm">
-              <p className="font-semibold text-gray-800">
-                💡 {guidanceLine(guidance, cityCode ? getCity(cityCode)?.name ?? null : null)}
-                {guidance.note && <span className="font-normal text-gray-600"> ({guidance.note})</span>}
+              <p className="flex items-start gap-2 font-semibold text-gray-800">
+                <span className="mt-0.5 shrink-0 text-gray-500"><IconInfo size={16} /></span>
+                <span>
+                  {guidanceLine(guidance, cityCode ? getCity(cityCode)?.name ?? null : null)}
+                  {guidance.note && <span className="font-normal text-gray-600"> ({guidance.note})</span>}
+                </span>
               </p>
               <p className="mt-1 text-xs text-gray-500">
                 {guidance.source === "estimate"
-                  ? "Tantiya lang ito — ikaw pa rin ang magdedesisyon."
-                  : `Base sa ${guidance.sampleSize} natapos nang trabaho.`}
+                  ? t("Tantiya lang ito — ikaw pa rin ang magdedesisyon.", "This is an estimate — the decision is yours.")
+                  : t(`Base sa ${guidance.sampleSize} natapos nang trabaho.`, `Based on ${guidance.sampleSize} completed jobs.`)}
               </p>
               {verdict === "LOW" && (
                 <p className="mt-2 rounded-lg bg-amber-100 p-2 text-xs text-amber-900">
-                  Mababa ito sa karaniwan. Pwede pa rin i-post, pero mas matagal bago may tumanggap —
-                  at karaniwang mas kaunti ang pagpipilian mong provider.
+                  {t(
+                    "Mababa ito sa karaniwan. Pwede pa rin i-post, pero mas matagal bago may tumanggap — at karaniwang mas kaunti ang pagpipilian mong provider.",
+                    "This is below the going rate. You can still post it, but expect a slower response and fewer providers to choose from.",
+                  )}
                 </p>
               )}
               {verdict === "GENEROUS" && (
                 <p className="mt-2 rounded-lg bg-emerald-100 p-2 text-xs text-emerald-900">
-                  Mas mataas ito sa karaniwan — asahan mong mabilis mapupuno.
+                  {t("Mas mataas ito sa karaniwan — asahan mong mabilis mapupuno.", "This is above the going rate — expect it to fill fast.")}
                 </p>
               )}
             </div>
           )}
           <label className="flex items-center gap-3 text-sm">
             <input type="checkbox" checked={flexible} onChange={(e) => setFlexible(e.target.checked)} className="h-5 w-5 accent-brand-700" />
-            Flexible ang oras — pwedeng pag-usapan
+            {t("Flexible ang oras — pwedeng pag-usapan", "Flexible timing — open to discussion")}
           </label>
           <ErrorNote message={error} />
           <Button type="submit" full disabled={busy || !categoryId || !regionCode || !cityCode}>
-            {busy ? "Pino-post…" : directName ? "Ipadala ang booking request" : "I-post ang trabaho"}
+            {busy
+              ? t("Pino-post…", "Posting…")
+              : directName
+                ? t("Ipadala ang booking request", "Send booking request")
+                : t("I-post ang trabaho", "Post the job")}
           </Button>
         </form>
       </Card>

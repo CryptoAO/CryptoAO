@@ -30,10 +30,11 @@ export default async function VerifyPage({ params }: { params: Promise<{ code: s
       <div className="mx-auto max-w-lg py-10">
         <div className="rounded-2xl border-2 border-red-200 bg-red-50 p-6 text-center">
           <div className="text-4xl">✕</div>
-          <h1 className="mt-2 text-xl font-extrabold text-red-800">Hindi valid ang code na ito</h1>
+          <h1 className="mt-2 text-xl font-bold text-red-800">This code is not valid</h1>
+          <p className="text-sm font-semibold text-red-800">Hindi valid ang code na ito</p>
           <p className="mt-2 text-sm text-red-900">
-            Walang aktibong Patunay ng Kita sa code na iyan. Maaaring mali ang pagkaka-type, lampas na ang
-            90 araw, o binawi na ito ng may-ari. Hilingin sa nagbigay na gumawa ng bago.
+            No active Patunay ng Kita statement matches that code. It may be mistyped, past its 90-day
+            validity, or revoked by its owner. Ask the person who gave it to you to generate a new one.
           </p>
         </div>
       </div>
@@ -44,36 +45,38 @@ export default async function VerifyPage({ params }: { params: Promise<{ code: s
     <div className="mx-auto max-w-lg space-y-4 py-6 print:py-0">
       <div className="rounded-2xl border-2 border-emerald-300 bg-emerald-50 p-4 text-center">
         <div className="text-3xl">✓</div>
-        <h1 className="text-xl font-extrabold text-emerald-900">Verified na Patunay ng Kita</h1>
+        <h1 className="text-xl font-bold text-emerald-900">Verified Proof of Income</h1>
+        <p className="text-sm font-semibold text-emerald-900">Patunay ng Kita</p>
         <p className="mt-1 text-xs text-emerald-800">
-          Ang dokumentong ito ay galing mismo sa HanapGawa at pinatutunayan ng aming record ng bayaran.
+          This document is issued by HanapGawa and attested by our payment records. Ang dokumentong ito ay
+          galing mismo sa HanapGawa at pinatutunayan ng aming record ng bayaran.
         </p>
       </div>
 
       <div className="rounded-2xl border border-stone-200 bg-white p-5">
         <dl className="space-y-3 text-sm">
           <div className="flex justify-between gap-4">
-            <dt className="text-gray-500">Pangalan</dt>
+            <dt className="text-gray-500">Name / Pangalan</dt>
             <dd className="text-right font-bold">{stmt.providerName}</dd>
           </div>
           <div className="flex justify-between gap-4">
-            <dt className="text-gray-500">Beripikasyon</dt>
+            <dt className="text-gray-500">Verification</dt>
             <dd className="text-right font-semibold">{KYC_LABEL[stmt.kycLevel] ?? "Registered"}</dd>
           </div>
           <div className="flex justify-between gap-4">
-            <dt className="text-gray-500">Miyembro simula</dt>
+            <dt className="text-gray-500">Member since</dt>
             <dd className="text-right">{day(stmt.memberSince)}</dd>
           </div>
           <div className="flex justify-between gap-4">
-            <dt className="text-gray-500">Saklaw na panahon</dt>
+            <dt className="text-gray-500">Period covered</dt>
             <dd className="text-right">{day(stmt.periodFrom)} – {day(stmt.periodTo)}</dd>
           </div>
           <div className="flex justify-between gap-4 border-t border-stone-100 pt-3">
-            <dt className="font-semibold text-gray-700">Kabuuang kita sa platform</dt>
-            <dd className="text-right text-2xl font-extrabold text-brand-800">{peso(stmt.totalPayoutCents)}</dd>
+            <dt className="font-semibold text-gray-700">Total platform earnings / Kabuuang kita</dt>
+            <dd className="text-right text-2xl font-bold text-brand-800">{peso(stmt.totalPayoutCents)}</dd>
           </div>
           <div className="flex justify-between gap-4">
-            <dt className="text-gray-500">Bilang ng natapos na trabaho</dt>
+            <dt className="text-gray-500">Completed jobs / Natapos na trabaho</dt>
             <dd className="text-right font-bold">{stmt.jobsCount}</dd>
           </div>
         </dl>
@@ -81,13 +84,13 @@ export default async function VerifyPage({ params }: { params: Promise<{ code: s
 
       {stmt.monthly.length > 0 && (
         <div className="rounded-2xl border border-stone-200 bg-white p-5">
-          <h2 className="text-sm font-bold text-gray-700">Buwanang detalye</h2>
+          <h2 className="text-sm font-bold text-gray-700">Monthly breakdown / Buwanang detalye</h2>
           <table className="mt-2 w-full text-sm">
             <thead>
               <tr className="text-left text-xs text-gray-500">
-                <th className="py-1 font-semibold">Buwan</th>
-                <th className="py-1 text-right font-semibold">Trabaho</th>
-                <th className="py-1 text-right font-semibold">Kita</th>
+                <th className="py-1 font-semibold">Month</th>
+                <th className="py-1 text-right font-semibold">Jobs</th>
+                <th className="py-1 text-right font-semibold">Earnings</th>
               </tr>
             </thead>
             <tbody>
@@ -105,14 +108,15 @@ export default async function VerifyPage({ params }: { params: Promise<{ code: s
 
       <div className="rounded-2xl bg-stone-100 p-4 text-xs text-gray-600">
         <p>
-          <strong>Paano basahin:</strong> Ang halagang nasa itaas ay ang aktwal na naibayad sa provider sa
-          pamamagitan ng escrow ng HanapGawa para sa mga natapos at kinumpirmang trabaho — hindi tantiya,
-          hindi budget, kundi perang tunay na lumipat. Hindi kasama rito ang kita sa labas ng platform.
+          <strong>How to read this:</strong> The amount above is what was actually paid to the provider
+          through HanapGawa&apos;s escrow for completed, confirmed jobs — not an estimate, not a budget, but money
+          that really moved. Earnings outside the platform are not included. <em>Ang halagang nasa itaas ay ang
+          aktwal na naibayad sa provider para sa mga natapos at kinumpirmang trabaho.</em>
         </p>
         <p className="mt-2">
-          Statement code <span className="font-mono font-bold">{stmt.code}</span> · ginawa {day(stmt.createdAt)} ·
-          valid hanggang {day(stmt.expiresAt)}. Kung kailangan ng kumpirmasyon, buksan ang parehong link na ito —
-          kung lumalabas pa rin ang pahinang ito, valid pa ang dokumento.
+          Statement code <span className="font-mono font-bold">{stmt.code}</span> · issued {day(stmt.createdAt)} ·
+          valid until {day(stmt.expiresAt)}. To re-confirm, open this same link — if this page still appears,
+          the document is still valid.
         </p>
       </div>
     </div>

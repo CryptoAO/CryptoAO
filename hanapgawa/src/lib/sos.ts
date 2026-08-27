@@ -85,7 +85,7 @@ export async function raiseSos(input: RaiseSosInput) {
     await notify({
       userId: counterpartyId,
       type: "SOS_RAISED",
-      title: "🚨 May nag-emergency alert",
+      title: "May nag-emergency alert",
       body: "Nag-SOS ang kasama mo sa trabahong ito. Nakikipag-ugnayan na ang support team.",
       href: jobId ? `/jobs/${jobId}` : undefined,
       jobId,
@@ -98,7 +98,7 @@ export async function raiseSos(input: RaiseSosInput) {
     await notify({
       userId: a.id,
       type: "SOS_RAISED",
-      title: "🚨 SOS — kailangan ng agarang aksyon",
+      title: "SOS — kailangan ng agarang aksyon",
       body: `${user.firstName} ${user.lastName} (${user.phone})${jobTitle ? ` — "${jobTitle}"` : ""}`,
       href: "/admin?tab=sos",
       jobId,
@@ -166,7 +166,7 @@ export async function recordCheckIn(
     await notify({
       userId: other,
       type: kind === "ARRIVED" ? "CHECKED_IN" : "CHECKED_OUT",
-      title: kind === "ARRIVED" ? "Dumating na 📍" : "Umalis na 👋",
+      title: kind === "ARRIVED" ? "Dumating na" : "Umalis na",
       body:
         kind === "ARRIVED"
           ? `Nandiyan na si ${actor?.firstName ?? "ang kasama mo"} para sa "${job.title}".`

@@ -99,7 +99,7 @@ export async function confirmDirectJob(jobId: string, providerId: string) {
         await notify({
           userId: job.clientId,
           type: "DIRECT_CONFIRMED",
-          title: "Kulang ang wallet mo para matuloy 😟",
+          title: "Kulang ang wallet mo para matuloy",
           body: `Gustong tanggapin ang "${job.title}" pero kulang ang laman ng wallet mo. Mag-cash in para ma-book.`,
           href: "/me?tab=wallet",
           jobId,
@@ -112,7 +112,7 @@ export async function confirmDirectJob(jobId: string, providerId: string) {
     await notify({
       userId: job.clientId,
       type: "DIRECT_CONFIRMED",
-      title: "Kinumpirma ang booking mo! ✔",
+      title: "Kinumpirma ang booking mo!",
       body: `Tinanggap ni ${provider.firstName} ang "${job.title}". Naka-hold na ang bayad sa escrow.`,
       href: `/jobs/${jobId}`,
       jobId,

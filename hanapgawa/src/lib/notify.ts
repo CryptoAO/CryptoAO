@@ -85,7 +85,7 @@ export const notifyOfferReceived = (
   notify({
     userId: clientId,
     type: "OFFER_RECEIVED",
-    title: "May bagong offer! 🙋",
+    title: "May bagong offer!",
     body: `${providerName} — ${formatPhp(priceCents)} para sa "${jobTitle}"`,
     href: jobHref(jobId),
     jobId,
@@ -102,7 +102,7 @@ export const notifyOfferAccepted = (
   notify({
     userId: providerId,
     type: "OFFER_ACCEPTED",
-    title: "Tinanggap ang offer mo! 🎉",
+    title: "Tinanggap ang offer mo!",
     body: `"${jobTitle}" — ${formatPhp(priceCents)}. Naka-hold na sa escrow ang bayad. Pwede ka nang magsimula.`,
     href: jobHref(jobId),
     jobId,
@@ -135,7 +135,7 @@ export const notifyJobDone = (clientId: string, jobId: string, jobTitle: string,
   notify({
     userId: clientId,
     type: "JOB_DONE",
-    title: "Tapos na — kailangan ng confirm mo ✔",
+    title: "Tapos na — kailangan ng confirm mo",
     body: `Sabi ni ${providerName}, tapos na ang "${jobTitle}". I-confirm para ma-release ang bayad.`,
     href: jobHref(jobId),
     jobId,
@@ -152,7 +152,7 @@ export const notifyJobCompleted = (
   notify({
     userId: providerId,
     type: "JOB_COMPLETED",
-    title: `Bayad na! ${formatPhp(payoutCents)} 💰`,
+    title: `Bayad na! ${formatPhp(payoutCents)}`,
     body: `Kinumpirma ng client ang "${jobTitle}". Nasa wallet mo na ang bayad.`,
     href: "/me?tab=wallet",
     jobId,
@@ -199,7 +199,7 @@ export const notifyMessage = (recipientId: string, jobId: string, senderName: st
   notify({
     userId: recipientId,
     type: "MESSAGE",
-    title: `Bagong mensahe kay ${senderName} 💬`,
+    title: `Bagong mensahe kay ${senderName}`,
     body: preview.length > 90 ? preview.slice(0, 90) + "…" : preview,
     href: jobHref(jobId),
     jobId,
@@ -210,7 +210,7 @@ export const notifyDisputeOpened = (userId: string, jobId: string, jobTitle: str
   notify({
     userId,
     type: "DISPUTE_OPENED",
-    title: "May dispute sa trabaho ⚖️",
+    title: "May dispute sa trabaho",
     body: `"${jobTitle}" — naka-freeze ang bayad hanggang maayos ito ng support team.`,
     href: jobHref(jobId),
     jobId,
@@ -232,7 +232,7 @@ export const notifyKycDecision = (userId: string, approved: boolean, level: numb
   notify({
     userId,
     type: approved ? "KYC_APPROVED" : "KYC_REJECTED",
-    title: approved ? `Verified na! Level ${level} ✅` : "Hindi na-approve ang verification",
+    title: approved ? `Verified na! Level ${level}` : "Hindi na-approve ang verification",
     body: approved
       ? level >= 3
         ? "Fully Vetted ka na. Mas maraming client ang magtitiwala sa'yo."
@@ -246,7 +246,7 @@ export const notifyPayoutDecision = (userId: string, paid: boolean, amountCents:
   notify({
     userId,
     type: paid ? "PAYOUT_PAID" : "PAYOUT_REJECTED",
-    title: paid ? `Na-send na ang ${formatPhp(amountCents)} 🏧` : "Hindi natuloy ang cash-out",
+    title: paid ? `Na-send na ang ${formatPhp(amountCents)}` : "Hindi natuloy ang cash-out",
     body: paid
       ? "Tingnan ang GCash/Maya account mo. Salamat sa paggamit ng HanapGawa!"
       : `Naibalik sa wallet mo ang ${formatPhp(amountCents)}. Pakisuri ang account details at subukan ulit.`,
@@ -258,7 +258,7 @@ export const notifyPaymentReceived = (userId: string, amountCents: number, tx?: 
   notify({
     userId,
     type: "PAYMENT_RECEIVED",
-    title: `Cash in: ${formatPhp(amountCents)} ✅`,
+    title: `Cash in: ${formatPhp(amountCents)}`,
     body: "Nasa wallet mo na. Pwede ka nang mag-book ng serbisyo.",
     href: "/me?tab=wallet",
     tx,

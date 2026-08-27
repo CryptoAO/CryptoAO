@@ -191,7 +191,7 @@ export const POST = api(async (req: NextRequest) => {
       await notify({
         userId: directProvider.id,
         type: "DIRECT_REQUEST",
-        title: `Booking request: ${formatPhp(budgetCents)} 📩`,
+        title: `Booking request: ${formatPhp(budgetCents)}`,
         body: `Gusto kang i-book ni ${user.firstName} para sa "${job.title}". Kapag kinumpirma mo, booked na ito agad.`,
         href: `/jobs/${job.id}`,
         jobId: job.id,

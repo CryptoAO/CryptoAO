@@ -8,7 +8,8 @@ import { EarningsProof } from "@/components/earnings";
 import { PrivacyControls } from "@/components/privacy-controls";
 import { ReadinessCard } from "@/components/readiness";
 import { fetchJson, pesos, timeAgo } from "@/lib/client";
-import { Badge, Button, Card, ErrorNote, Field, Input, KycBadge, Select, Spinner, TextArea } from "@/components/ui";
+import { Badge, Button, Card, ErrorNote, Field, Input, KycBadge, Select, Spinner, TextArea, TimeSelect } from "@/components/ui";
+import { useLang, useT } from "@/lib/i18n";
 import { TrustedContacts } from "@/components/safety";
 
 interface Me {
@@ -21,10 +22,12 @@ interface Me {
 }
 interface Category { id: string; name: string; nameTl: string; icon: string }
 
-const DAYS = ["Lin", "Lun", "Mar", "Miy", "Huw", "Biy", "Sab"];
+const DAYS_TL = ["Lin", "Lun", "Mar", "Miy", "Huw", "Biy", "Sab"];
+const DAYS_EN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 function MeDashboard() {
   const router = useRouter();
+  const t = useT();
   const params = useSearchParams();
   const [me, setMe] = useState<Me | null>(null);
   const [tab, setTab] = useState(params.get("tab") ?? "activity");
@@ -50,18 +53,18 @@ function MeDashboard() {
   const u = me.user;
 
   const tabs = [
-    { id: "activity", label: "Aktibidad" },
+    { id: "activity", label: t("Aktibidad", "Activity") },
     { id: "wallet", label: "Wallet" },
     { id: "provider", label: "Provider" },
     { id: "kyc", label: "Verification" },
-    { id: "safety", label: "Kaligtasan" },
+    { id: "safety", label: t("Kaligtasan", "Safety") },
   ];
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold">{u.firstName} {u.lastName}</h1>
+          <h1 className="text-2xl font-bold">{u.firstName} {u.lastName}</h1>
           <div className="mt-1 flex items-center gap-2">
             <KycBadge level={u.kycLevel} />
             {u.isProvider && <Badge tone="brand">Provider</Badge>}
@@ -70,7 +73,7 @@ function MeDashboard() {
         </div>
         <div className="text-right">
           <div className="text-xs text-gray-500">Wallet</div>
-          <div className="text-xl font-extrabold text-brand-800">{pesos(me.balanceCents)}</div>
+          <div className="text-xl font-bold text-brand-800">{pesos(me.balanceCents)}</div>
         </div>
       </div>
 
@@ -110,7 +113,7 @@ function MeDashboard() {
             router.refresh();
           }}
         >
-          Mag-logout
+          {t("Mag-logout", "Log out")}
         </button>
       </div>
     </div>
@@ -127,6 +130,7 @@ interface ActivityData {
 
 function ActivityTab({ meId }: { meId: string }) {
   void meId;
+  const t = useT();
   const [data, setData] = useState<ActivityData | null>(null);
   useEffect(() => {
     fetchJson<ActivityData>("/api/my/activity").then(setData).catch(() => {});
@@ -138,13 +142,13 @@ function ActivityTab({ meId }: { meId: string }) {
     <div className="space-y-4">
       {empty && (
         <Card className="py-8 text-center text-sm text-gray-500">
-          Wala ka pang aktibidad. <Link href="/jobs" className="font-bold text-brand-800 underline">Maghanap ng trabaho</Link> o{" "}
-          <Link href="/jobs/new" className="font-bold text-brand-800 underline">mag-post ng kailangan mo</Link>.
+          {t("Wala ka pang aktibidad.", "No activity yet.")} <Link href="/jobs" className="font-bold text-brand-800 underline">{t("Maghanap ng trabaho", "Find work")}</Link> {t("o", "or")}{" "}
+          <Link href="/jobs/new" className="font-bold text-brand-800 underline">{t("mag-post ng kailangan mo", "post what you need")}</Link>.
         </Card>
       )}
       {data.jobsAssigned.length > 0 && (
         <Card>
-          <h2 className="font-bold">Mga trabaho ko (provider)</h2>
+          <h2 className="font-bold">{t("Mga trabaho ko (provider)", "My jobs (provider)")}</h2>
           <div className="mt-2 space-y-2">
             {data.jobsAssigned.map((j) => (
               <Link key={j.id} href={`/jobs/${j.id}`} className="flex items-center justify-between rounded-xl bg-stone-50 p-3 text-sm hover:bg-brand-50">
@@ -160,7 +164,7 @@ function ActivityTab({ meId }: { meId: string }) {
       )}
       {data.jobsPosted.length > 0 && (
         <Card>
-          <h2 className="font-bold">Mga post ko (client)</h2>
+          <h2 className="font-bold">{t("Mga post ko (client)", "My posts (client)")}</h2>
           <div className="mt-2 space-y-2">
             {data.jobsPosted.map((j) => (
               <Link key={j.id} href={`/jobs/${j.id}`} className="flex items-center justify-between rounded-xl bg-stone-50 p-3 text-sm hover:bg-brand-50">
@@ -176,7 +180,7 @@ function ActivityTab({ meId }: { meId: string }) {
       )}
       {data.offersMade.length > 0 && (
         <Card>
-          <h2 className="font-bold">Mga offer ko</h2>
+          <h2 className="font-bold">{t("Mga offer ko", "My offers")}</h2>
           <div className="mt-2 space-y-2">
             {data.offersMade.map((o) => (
               <Link key={o.id} href={`/jobs/${o.job.id}`} className="flex items-center justify-between rounded-xl bg-stone-50 p-3 text-sm hover:bg-brand-50">
@@ -202,16 +206,17 @@ interface WalletData {
   payouts: { id: string; amountCents: number; channel: string; status: string; createdAt: string }[];
 }
 
-const LEDGER_LABEL: Record<string, string> = {
-  TOPUP: "Cash in",
-  ESCROW_HOLD: "Hold para sa booking",
-  ESCROW_RELEASE_PAYOUT: "Bayad sa trabaho 🎉",
-  ESCROW_REFUND: "Refund",
-  PAYOUT_CASHOUT: "Cash out",
-  ADJUSTMENT: "Adjustment",
+const LEDGER_LABEL: Record<string, { tl: string; en: string }> = {
+  TOPUP: { tl: "Cash in", en: "Cash in" },
+  ESCROW_HOLD: { tl: "Hold para sa booking", en: "Hold for booking" },
+  ESCROW_RELEASE_PAYOUT: { tl: "Bayad sa trabaho", en: "Job payout" },
+  ESCROW_REFUND: { tl: "Refund", en: "Refund" },
+  PAYOUT_CASHOUT: { tl: "Cash out", en: "Cash out" },
+  ADJUSTMENT: { tl: "Adjustment", en: "Adjustment" },
 };
 
 function WalletTab({ onChange }: { onChange: () => void }) {
+  const t = useT();
   const [data, setData] = useState<WalletData | null>(null);
   const [amount, setAmount] = useState("");
   const [payoutAmount, setPayoutAmount] = useState("");
@@ -242,12 +247,12 @@ function WalletTab({ onChange }: { onChange: () => void }) {
   return (
     <div className="space-y-4">
       <Card>
-        <div className="text-sm text-gray-500">Balanse</div>
-        <div className="text-3xl font-extrabold text-brand-800">{pesos(data.balanceCents)}</div>
+        <div className="text-sm text-gray-500">{t("Balanse", "Balance")}</div>
+        <div className="text-3xl font-bold text-brand-800">{pesos(data.balanceCents)}</div>
         <ErrorNote message={error} />
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div className="rounded-xl bg-stone-50 p-3">
-            <h3 className="text-sm font-bold">💵 Cash in (GCash/Maya)</h3>
+            <h3 className="text-sm font-bold">Cash in (GCash/Maya)</h3>
             <div className="mt-2 flex gap-2">
               <Input type="number" inputMode="decimal" min={50} placeholder="500" value={amount} onChange={(e) => setAmount(e.target.value)} />
               <Button
@@ -258,10 +263,10 @@ function WalletTab({ onChange }: { onChange: () => void }) {
                 Cash in
               </Button>
             </div>
-            <p className="mt-1 text-xs text-gray-500">Demo mode: instant credit. Production: GCash/Maya via PayMongo.</p>
+            <p className="mt-1 text-xs text-gray-500">{t("Demo mode: instant credit. Production: GCash/Maya via PayMongo.", "Demo mode: instant credit. Production: GCash/Maya via PayMongo.")}</p>
           </div>
           <div className="rounded-xl bg-stone-50 p-3">
-            <h3 className="text-sm font-bold">🏧 Cash out</h3>
+            <h3 className="text-sm font-bold">Cash out</h3>
             <div className="mt-2 space-y-2">
               <div className="grid grid-cols-2 gap-2">
                 <Input type="number" inputMode="decimal" min={100} placeholder="1000" value={payoutAmount} onChange={(e) => setPayoutAmount(e.target.value)} />
@@ -289,14 +294,14 @@ function WalletTab({ onChange }: { onChange: () => void }) {
       <Card>
         <h2 className="font-bold">History</h2>
         <div className="mt-2 space-y-1">
-          {data.entries.length === 0 && <p className="text-sm text-gray-500">Wala pang transaksyon.</p>}
+          {data.entries.length === 0 && <p className="text-sm text-gray-500">{t("Wala pang transaksyon.", "No transactions yet.")}</p>}
           {data.entries.map((e) => (
             <div key={e.id} className="flex items-center justify-between rounded-lg px-3 py-2 text-sm odd:bg-stone-50">
               <div>
-                <div className="font-semibold">{LEDGER_LABEL[e.type] ?? e.type}</div>
+                <div className="font-semibold">{LEDGER_LABEL[e.type] ? t(LEDGER_LABEL[e.type].tl, LEDGER_LABEL[e.type].en) : e.type}</div>
                 <div className="text-xs text-gray-400">{timeAgo(e.createdAt)}{e.note ? ` · ${e.note}` : ""}</div>
               </div>
-              <div className={`font-extrabold ${e.amountCents >= 0 ? "text-emerald-700" : "text-gray-700"}`}>
+              <div className={`font-bold ${e.amountCents >= 0 ? "text-emerald-700" : "text-gray-700"}`}>
                 {e.amountCents >= 0 ? "+" : ""}{pesos(e.amountCents)}
               </div>
             </div>
@@ -312,6 +317,14 @@ function WalletTab({ onChange }: { onChange: () => void }) {
 interface CatRow { categoryId: string; headline?: string; ratePhp?: number; rateUnit?: "PER_HOUR" | "PER_JOB" | "PER_KILO" | "PER_DAY"; yearsExp?: number }
 
 function ProviderTab({ meId, isProvider, bio: initialBio, photoUrl, firstName, onSaved }: { meId: string; isProvider: boolean; bio: string; photoUrl?: string | null; firstName: string; onSaved: () => void }) {
+  const t = useT();
+  const { lang } = useLang();
+  const DAYS = lang === "en" ? DAYS_EN : DAYS_TL;
+  // One daily time range applied to every active day, in 15-minute steps.
+  // The schema stores per-day ranges; today's UI edits them together, which
+  // covers the common case ("weekdays, 8 to 5") without a grid of pickers.
+  const [startMin, setStartMin] = useState(8 * 60);
+  const [endMin, setEndMin] = useState(17 * 60);
   const [categories, setCategories] = useState<Category[]>([]);
   const [bio, setBio] = useState(initialBio);
   const [rows, setRows] = useState<CatRow[]>([]);
@@ -342,6 +355,10 @@ function ProviderTab({ meId, isProvider, bio: initialBio, photoUrl, firstName, o
           yearsExp: c.yearsExp ?? undefined,
         })));
         setAvail(d.provider.availability);
+        if (d.provider.availability[0]) {
+          setStartMin(d.provider.availability[0].startMin);
+          setEndMin(d.provider.availability[0].endMin);
+        }
       })
       .catch(() => {})
       .finally(() => setLoaded(true));
@@ -357,8 +374,14 @@ function ProviderTab({ meId, isProvider, bio: initialBio, photoUrl, firstName, o
     setAvail((a) =>
       a.some((s) => s.weekday === weekday)
         ? a.filter((s) => s.weekday !== weekday)
-        : [...a, { weekday, startMin: 8 * 60, endMin: 17 * 60 }],
+        : [...a, { weekday, startMin, endMin }],
     );
+  }
+
+  function setRange(nextStart: number, nextEnd: number) {
+    setStartMin(nextStart);
+    setEndMin(nextEnd);
+    setAvail((a) => a.map((s) => ({ ...s, startMin: nextStart, endMin: nextEnd })));
   }
 
   async function save() {
@@ -384,20 +407,20 @@ function ProviderTab({ meId, isProvider, bio: initialBio, photoUrl, firstName, o
       {isProvider && <JobAlertToggle />}
 
       <div>
-        <h2 className="font-bold">{isProvider ? "I-update ang provider profile mo" : "Maging provider — kumita na! 💪"}</h2>
+        <h2 className="font-bold">{isProvider ? t("I-update ang provider profile mo", "Update your provider profile") : t("Maging provider — kumita na!", "Become a provider — start earning!")}</h2>
         <p className="mt-1 text-sm text-gray-600">
-          Piliin ang mga kaya mong serbisyo, lagyan ng presyo, at sabihin kung kailan ka available.
+          {t("Piliin ang mga kaya mong serbisyo, lagyan ng presyo, at sabihin kung kailan ka available.", "Pick the services you can do, set your prices, and say when you're available.")}
         </p>
       </div>
 
       <AvatarUploader photoUrl={photoUrl} firstName={firstName} onChange={onSaved} />
 
-      <Field label="Maikling intro tungkol sa'yo">
-        <TextArea value={bio} onChange={(e) => setBio(e.target.value)} maxLength={1000} placeholder="Hal. 10 taon na akong labandera, maingat sa damit, may sariling plantsa…" />
+      <Field label={t("Maikling intro tungkol sa'yo", "A short intro about you")}>
+        <TextArea value={bio} onChange={(e) => setBio(e.target.value)} maxLength={1000} placeholder={t("Hal. 10 taon na akong labandera, maingat sa damit, may sariling plantsa…", "E.g. 10 years doing laundry, careful with clothes, I bring my own iron…")} />
       </Field>
 
       <div>
-        <span className="mb-2 block text-sm font-semibold">Mga serbisyo (piliin lahat ng kaya mo)</span>
+        <span className="mb-2 block text-sm font-semibold">{t("Mga serbisyo (piliin lahat ng kaya mo)", "Services (pick everything you can do)")}</span>
         <div className="grid grid-cols-2 gap-2">
           {categories.map((c) => {
             const active = rows.some((r) => r.categoryId === c.id);
@@ -408,7 +431,7 @@ function ProviderTab({ meId, isProvider, bio: initialBio, photoUrl, firstName, o
                 onClick={() => toggleCategory(c.id)}
                 className={`rounded-xl border-2 p-3 text-left text-sm font-semibold ${active ? "border-brand-700 bg-brand-50 text-brand-900" : "border-stone-200 bg-white text-gray-600"}`}
               >
-                {c.icon} {c.nameTl}
+                {c.icon} {lang === "en" ? c.name : c.nameTl}
               </button>
             );
           })}
@@ -419,7 +442,7 @@ function ProviderTab({ meId, isProvider, bio: initialBio, photoUrl, firstName, o
         const c = categories.find((x) => x.id === r.categoryId);
         return (
           <div key={r.categoryId} className="rounded-xl bg-stone-50 p-3">
-            <div className="text-sm font-bold">{c?.icon} {c?.nameTl} — presyo mo</div>
+            <div className="text-sm font-bold">{c?.icon} {c ? (lang === "en" ? c.name : c.nameTl) : ""} — {t("presyo mo", "your price")}</div>
             <div className="mt-2 grid grid-cols-2 gap-2">
               <Input
                 type="number" inputMode="decimal" placeholder="₱ rate"
@@ -430,7 +453,7 @@ function ProviderTab({ meId, isProvider, bio: initialBio, photoUrl, firstName, o
                 value={r.rateUnit ?? ""}
                 onChange={(e) => setRows((rs) => rs.map((x) => x.categoryId === r.categoryId ? { ...x, rateUnit: (e.target.value || undefined) as CatRow["rateUnit"] } : x))}
               >
-                <option value="">Per ano?</option>
+                <option value="">{t("Per ano?", "Per what?")}</option>
                 <option value="PER_HOUR">Per hour</option>
                 <option value="PER_JOB">Per job</option>
                 <option value="PER_KILO">Per kilo</option>
@@ -442,7 +465,7 @@ function ProviderTab({ meId, isProvider, bio: initialBio, photoUrl, firstName, o
       })}
 
       <div>
-        <span className="mb-2 block text-sm font-semibold">Kailan ka available? (8AM–5PM default, tap para i-toggle)</span>
+        <span className="mb-2 block text-sm font-semibold">{t("Kailan ka available? (tap para i-toggle ang araw)", "When are you available? (tap to toggle a day)")}</span>
         <div className="flex gap-1.5">
           {DAYS.map((d, i) => {
             const active = avail.some((s) => s.weekday === i);
@@ -458,18 +481,31 @@ function ProviderTab({ meId, isProvider, bio: initialBio, photoUrl, firstName, o
             );
           })}
         </div>
+        {avail.length > 0 && (
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold text-gray-600">{t("Mula", "From")}</span>
+              <TimeSelect valueMin={startMin} onChange={(m) => setRange(m, Math.max(endMin, m + 60))} />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold text-gray-600">{t("Hanggang", "Until")}</span>
+              <TimeSelect valueMin={endMin} onChange={(m) => setRange(Math.min(startMin, m - 60), m)} fromMin={6 * 60} toMin={23 * 60} />
+            </label>
+          </div>
+        )}
       </div>
 
       <ErrorNote message={error} />
-      {saved && <div className="rounded-xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">Na-save! Makikita ka na sa provider list. 🎉</div>}
+      {saved && <div className="rounded-xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">{t("Na-save! Makikita ka na sa provider list.", "Saved! You now appear in the provider list.")}</div>}
       <Button full disabled={busy || rows.length === 0} onClick={save}>
-        {busy ? "Sine-save…" : "I-save ang provider profile"}
+        {busy ? t("Sine-save…", "Saving…") : t("I-save ang provider profile", "Save provider profile")}
       </Button>
     </Card>
   );
 }
 
 function JobAlertToggle() {
+  const t = useT();
   const [on, setOn] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -504,8 +540,8 @@ function JobAlertToggle() {
         className="mt-1 h-5 w-5 accent-brand-700"
       />
       <span className="text-sm">
-        <strong>Abisuhan ako ng bagong trabaho sa lugar ko.</strong> Ito ang pinakamabilis na paraan
-        para makakuha ng raket — unahan ang mag-offer.
+        <strong>{t("Abisuhan ako ng bagong trabaho sa lugar ko.", "Alert me about new jobs in my area.")}</strong>{" "}
+        {t("Ito ang pinakamabilis na paraan para makakuha ng raket — unahan ang mag-offer.", "The fastest way to land work — be first to offer.")}
       </span>
     </label>
   );
@@ -516,6 +552,7 @@ function JobAlertToggle() {
 interface KycData { kycLevel: number; submissions: { id: string; level: number; docType: string; status: string; hasDocument: boolean; createdAt: string }[] }
 
 function KycTab({ kycLevel }: { kycLevel: number }) {
+  const t = useT();
   const [data, setData] = useState<KycData | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [docType, setDocType] = useState("PHILSYS");
@@ -580,9 +617,9 @@ function KycTab({ kycLevel }: { kycLevel: number }) {
   const pendingSub = data.submissions.find((s) => s.status === "PENDING");
 
   const steps = [
-    { lvl: 1, name: "Phone verified", desc: "OTP sa cellphone mo", icon: "📱" },
-    { lvl: 2, name: "ID verified", desc: "PhilSys / Driver's License / UMID / Passport", icon: "🪪" },
-    { lvl: 3, name: "Fully vetted", desc: "NBI o Police Clearance", icon: "🛡️" },
+    { lvl: 1, name: "Phone verified", desc: t("OTP sa cellphone mo", "OTP to your mobile") },
+    { lvl: 2, name: "ID verified", desc: t("PhilSys / Driver's License / UMID / Passport", "PhilSys / Driver's License / UMID / Passport") },
+    { lvl: 3, name: "Fully vetted", desc: t("NBI o Police Clearance", "NBI or Police Clearance") },
   ];
 
   return (
@@ -590,18 +627,17 @@ function KycTab({ kycLevel }: { kycLevel: number }) {
       <Card>
         <h2 className="font-bold">Verification ladder</h2>
         <p className="mt-1 text-sm text-gray-600">
-          Habang mas verified ka, mas maraming trabaho ang bukas sa'yo — at mas pinagkakatiwalaan ka ng mga client.
-          Ang jobs na ₱2,000+ ay para sa ID-verified providers.
+          {t("Habang mas verified ka, mas maraming trabaho ang bukas sa'yo — at mas pinagkakatiwalaan ka ng mga client. Ang jobs na ₱2,000+ ay para sa ID-verified providers.", "The more verified you are, the more jobs open up to you — and the more clients trust you. Jobs of ₱2,000+ require ID-verified providers.")}
         </p>
         <div className="mt-4 space-y-2">
           {steps.map((s) => (
             <div key={s.lvl} className={`flex items-center gap-3 rounded-xl p-3 ${level >= s.lvl ? "bg-emerald-50" : "bg-stone-50"}`}>
-              <span className="text-2xl">{s.icon}</span>
+              <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-sm font-bold ${level >= s.lvl ? "bg-emerald-600 text-white" : "bg-stone-200 text-gray-500"}`}>{s.lvl}</span>
               <div className="flex-1">
                 <div className="text-sm font-bold">{s.name}</div>
                 <div className="text-xs text-gray-500">{s.desc}</div>
               </div>
-              {level >= s.lvl ? <Badge tone="green">✔ Done</Badge> : <Badge tone="gray">Level {s.lvl}</Badge>}
+              {level >= s.lvl ? <Badge tone="green">Done</Badge> : <Badge tone="gray">Level {s.lvl}</Badge>}
             </div>
           ))}
         </div>
@@ -609,20 +645,19 @@ function KycTab({ kycLevel }: { kycLevel: number }) {
 
       {nextLevel && (
         <Card>
-          <h2 className="font-bold">{nextLevel === 2 ? "I-verify ang ID mo (Level 2)" : "Maging Fully Vetted (Level 3)"}</h2>
+          <h2 className="font-bold">{nextLevel === 2 ? t("I-verify ang ID mo (Level 2)", "Verify your ID (Level 2)") : t("Maging Fully Vetted (Level 3)", "Become Fully Vetted (Level 3)")}</h2>
           {pending ? (
             <div className="mt-3 space-y-3">
               <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800">
-                ⏳ Nire-review pa ng team ang submission mo (karaniwang 1 araw lang).
+                {t("Nire-review pa ng team ang submission mo (karaniwang 1 araw lang).", "The team is still reviewing your submission (usually within a day).")}
               </p>
               {pendingSub && (
                 <div className="rounded-xl border border-stone-200 p-3">
                   <div className="text-sm font-bold">
-                    {pendingSub.hasDocument ? "📎 May naka-attach nang larawan" : "📷 Mag-attach ng larawan ng ID"}
+                    {pendingSub.hasDocument ? t("May naka-attach nang larawan", "A photo is attached") : t("Mag-attach ng larawan ng ID", "Attach a photo of your ID")}
                   </div>
                   <p className="mt-1 text-xs text-gray-600">
-                    Kunan ng malinaw na litrato ang ID mo. Nakikita lang ito ng verification team, at
-                    binubura namin ito pagkatapos ma-review. JPG/PNG/PDF, hanggang 6MB.
+                    {t("Kunan ng malinaw na litrato ang ID mo. Nakikita lang ito ng verification team, at binubura namin ito pagkatapos ma-review. JPG/PNG/PDF, hanggang 6MB.", "Take a clear photo of your ID. Only the verification team sees it, and we delete it after review. JPG/PNG/PDF, up to 6MB.")}
                   </p>
                   <input
                     type="file"
@@ -635,10 +670,10 @@ function KycTab({ kycLevel }: { kycLevel: number }) {
                     }}
                     className="mt-2 block w-full text-sm file:mr-3 file:min-h-11 file:rounded-xl file:border-0 file:bg-brand-700 file:px-4 file:py-2 file:text-sm file:font-bold file:text-white"
                   />
-                  {uploading && <p className="mt-2 text-xs text-gray-500">Ina-upload…</p>}
+                  {uploading && <p className="mt-2 text-xs text-gray-500">{t("Ina-upload…", "Uploading…")}</p>}
                   {pendingSub.hasDocument && !uploading && (
                     <p className="mt-2 text-xs text-emerald-700">
-                      ✔ Na-attach na. Pwede mo pa itong palitan hangga't hindi pa na-review.
+                      {t("Na-attach na. Pwede mo pa itong palitan hangga't hindi pa na-review.", "Attached. You can still replace it until it's reviewed.")}
                     </p>
                   )}
                 </div>
@@ -647,7 +682,7 @@ function KycTab({ kycLevel }: { kycLevel: number }) {
             </div>
           ) : (
             <div className="mt-3 space-y-3">
-              <Field label="Anong dokumento?">
+              <Field label={t("Anong dokumento?", "Which document?")}>
                 <Select value={docType} onChange={(e) => setDocType(e.target.value)}>
                   {nextLevel === 2 ? (
                     <>
@@ -664,14 +699,14 @@ function KycTab({ kycLevel }: { kycLevel: number }) {
                   )}
                 </Select>
               </Field>
-              <Field label="Last 4 digits ng ID number" hint="Hindi namin sine-save ang buong numero — last 4 lang, para sa data privacy mo.">
+              <Field label={t("Last 4 digits ng ID number", "Last 4 digits of the ID number")} hint={t("Hindi namin sine-save ang buong numero — last 4 lang, para sa data privacy mo.", "We never store the full number — only the last 4, for your privacy.")}>
                 <Input inputMode="numeric" maxLength={4} value={idLastFour} onChange={(e) => setIdLastFour(e.target.value.replace(/\D/g, ""))} placeholder="1234" />
               </Field>
               <p className="text-xs text-gray-500">
-                Sa production: photo upload + selfie check + PSA eVerify. Sa demo: declaration + manual admin review.
+                {t("Sa production: photo upload + selfie check + PSA eVerify. Sa demo: declaration + manual admin review.", "In production: photo upload + selfie check + PSA eVerify. In the demo: declaration + manual admin review.")}
               </p>
               <ErrorNote message={error} />
-              <Button full disabled={busy || idLastFour.length !== 4} onClick={submit}>I-submit para sa review</Button>
+              <Button full disabled={busy || idLastFour.length !== 4} onClick={submit}>{t("I-submit para sa review", "Submit for review")}</Button>
             </div>
           )}
         </Card>

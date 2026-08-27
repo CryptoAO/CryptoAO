@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { fetchJson, pesos } from "@/lib/client";
 import { Button, Card, ErrorNote } from "@/components/ui";
+import { useT } from "@/lib/i18n";
 
 interface Statement {
   id: string;
@@ -26,6 +27,7 @@ interface Statement {
  * that says exactly what this person earned here.
  */
 export function EarningsProof() {
+  const t = useT();
   const [statements, setStatements] = useState<Statement[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -74,17 +76,16 @@ export function EarningsProof() {
   return (
     <Card className="space-y-3">
       <div>
-        <h2 className="font-bold">Patunay ng Kita 📄</h2>
+        <h2 className="font-bold">Patunay ng Kita</h2>
         <p className="mt-1 text-sm text-gray-600">
-          Gumawa ng opisyal na statement ng kinita mo dito — para sa bangko, sa uupahang bahay, o sa
-          visa. May code itong made-verify nila online, walang kailangang tawagan.
+          {t("Gumawa ng opisyal na statement ng kinita mo dito — para sa bangko, sa uupahang bahay, o sa visa. May code itong made-verify nila online, walang kailangang tawagan.", "Generate an official statement of what you earned here — for a bank, a landlord, or a visa. It carries a code they can verify online, no phone calls needed.")}
         </p>
       </div>
 
       <div className="flex flex-wrap gap-2">
         {([3, 6, 12] as const).map((m) => (
           <Button key={m} variant="secondary" disabled={busy} onClick={() => generate(m)} className="min-h-10 px-4 py-2 text-sm">
-            Huling {m} buwan
+            {t(`Huling ${m} buwan`, `Last ${m} months`)}
           </Button>
         ))}
       </div>
@@ -95,21 +96,21 @@ export function EarningsProof() {
             <li key={s.id} className="rounded-xl bg-stone-50 p-3">
               <div className="flex items-baseline justify-between gap-2">
                 <span className="font-mono text-sm font-bold tracking-wide">{s.code}</span>
-                <span className="text-sm font-extrabold text-brand-800">{pesos(s.totalPayoutCents)}</span>
+                <span className="text-sm font-bold text-brand-800">{pesos(s.totalPayoutCents)}</span>
               </div>
               <div className="mt-0.5 text-xs text-gray-500">
-                {s.jobsCount} trabaho · valid hanggang{" "}
+                {s.jobsCount} {t("trabaho", "jobs")} · {t("valid hanggang", "valid until")}{" "}
                 {new Date(s.expiresAt).toLocaleDateString("en-PH", { month: "short", day: "numeric", year: "numeric" })}
               </div>
               <div className="mt-2 flex flex-wrap gap-3 text-xs font-semibold">
                 <a href={s.url!} target="_blank" rel="noreferrer" className="text-brand-800 underline">
-                  Tingnan ang statement
+                  {t("Tingnan ang statement", "View statement")}
                 </a>
                 <button onClick={() => copy(s)} className="text-brand-800 underline">
-                  {copied === s.id ? "Na-copy ✓" : "I-copy ang link"}
+                  {copied === s.id ? t("Na-copy ✓", "Copied ✓") : t("I-copy ang link", "Copy link")}
                 </button>
                 <button onClick={() => revoke(s.id)} className="text-gray-500 underline">
-                  Bawiin
+                  {t("Bawiin", "Revoke")}
                 </button>
               </div>
             </li>
@@ -118,8 +119,7 @@ export function EarningsProof() {
       )}
 
       <p className="text-xs text-gray-500">
-        Makikita ng sinumang may hawak ng code ang pangalan mo at kabuuang kinita — iyan mismo ang silbi
-        niya. Ibigay lang sa pinagkakatiwalaan mo, at pwede mo itong bawiin anumang oras.
+        {t("Makikita ng sinumang may hawak ng code ang pangalan mo at kabuuang kinita — iyan mismo ang silbi niya. Ibigay lang sa pinagkakatiwalaan mo, at pwede mo itong bawiin anumang oras.", "Anyone holding the code sees your name and total earnings — that is exactly its purpose. Share it only with people you trust; you can revoke it anytime.")}
       </p>
       <ErrorNote message={error} />
     </Card>

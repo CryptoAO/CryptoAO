@@ -53,7 +53,7 @@ export function AdminTotp() {
   return (
     <Card className="space-y-3">
       <div className="flex items-baseline justify-between gap-2">
-        <h2 className="font-bold">🔐 Two-factor sa admin login</h2>
+        <h2 className="font-bold">Two-factor sa admin login</h2>
         <span className={`text-xs font-bold ${enabled ? "text-emerald-700" : "text-red-600"}`}>
           {enabled ? "NAKA-ON" : "NAKA-OFF"}
         </span>

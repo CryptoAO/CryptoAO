@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchJson } from "@/lib/client";
 import { ErrorNote } from "@/components/ui";
+import { useT } from "@/lib/i18n";
+import { IconCamera } from "@/components/icons";
 
 interface Photo {
   id: string;
@@ -14,13 +16,11 @@ interface Photo {
   url: string | null;
 }
 
-const KINDS: { id: Photo["kind"]; label: string; hint: string }[] = [
-  { id: "BEFORE", label: "Bago", hint: "Kuha bago simulan" },
-  { id: "AFTER", label: "Pagkatapos", hint: "Kuha kapag tapos na" },
-  { id: "ISSUE", label: "Problema", hint: "Kung may sira o kulang" },
+const KINDS: { id: Photo["kind"]; tl: string; en: string; hintTl: string; hintEn: string }[] = [
+  { id: "BEFORE", tl: "Bago", en: "Before", hintTl: "Kuha bago simulan", hintEn: "Taken before starting" },
+  { id: "AFTER", tl: "Pagkatapos", en: "After", hintTl: "Kuha kapag tapos na", hintEn: "Taken when done" },
+  { id: "ISSUE", tl: "Problema", en: "Issue", hintTl: "Kung may sira o kulang", hintEn: "If something is broken or missing" },
 ];
-
-const KIND_LABEL: Record<string, string> = { BEFORE: "Bago", AFTER: "Pagkatapos", ISSUE: "Problema" };
 
 /**
  * Evidence photos on an active booking.
@@ -31,6 +31,11 @@ const KIND_LABEL: Record<string, string> = { BEFORE: "Bago", AFTER: "Pagkatapos"
  * something a person can look at.
  */
 export function JobPhotos({ jobId, meId }: { jobId: string; meId: string }) {
+  const t = useT();
+  const kindLabel = (k: string) => {
+    const row = KINDS.find((x) => x.id === k);
+    return row ? t(row.tl, row.en) : k;
+  };
   const [photos, setPhotos] = useState<Photo[] | null>(null);
   const [kind, setKind] = useState<Photo["kind"]>("BEFORE");
   const [busy, setBusy] = useState(false);
@@ -81,12 +86,11 @@ export function JobPhotos({ jobId, meId }: { jobId: string; meId: string }) {
   return (
     <div className="rounded-xl border border-stone-200 bg-stone-50 p-3">
       <div className="flex items-baseline justify-between gap-2">
-        <h3 className="text-sm font-bold">Litrato ng trabaho</h3>
-        <span className="text-xs text-gray-500">{mine}/8 sa'yo</span>
+        <h3 className="text-sm font-bold">{t("Litrato ng trabaho", "Job photos")}</h3>
+        <span className="text-xs text-gray-500">{mine}/8 {t("sa'yo", "yours")}</span>
       </div>
       <p className="mt-1 text-xs text-gray-600">
-        Makikita ito ng inyong dalawa at ng support. Ito ang pinakamabilis na paraan para maayos ang
-        anumang di-pagkakaunawaan.
+        {t("Makikita ito ng inyong dalawa at ng support. Ito ang pinakamabilis na paraan para maayos ang anumang di-pagkakaunawaan.", "Both of you and support can see these. The fastest way to settle any disagreement.")}
       </p>
 
       {photos && photos.length > 0 && (
@@ -97,22 +101,22 @@ export function JobPhotos({ jobId, meId }: { jobId: string; meId: string }) {
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
                   src={p.url}
-                  alt={p.caption ?? KIND_LABEL[p.kind] ?? "Litrato"}
+                  alt={p.caption ?? kindLabel(p.kind)}
                   className="h-24 w-full rounded-lg object-cover"
                   loading="lazy"
                 />
               ) : (
                 <div className="grid h-24 w-full place-items-center rounded-lg bg-stone-200 text-center text-[10px] text-gray-500">
-                  Nabura na
+                  {t("Nabura na", "Deleted")}
                 </div>
               )}
               <span className="absolute left-1 top-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-white">
-                {KIND_LABEL[p.kind] ?? p.kind}
+                {kindLabel(p.kind)}
               </span>
               {p.uploaderId === meId && p.available && (
                 <button
                   onClick={() => remove(p.id)}
-                  aria-label="Burahin ang litrato"
+                  aria-label={t("Burahin ang litrato", "Delete photo")}
                   className="absolute right-1 top-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-white"
                 >
                   ✕
@@ -128,18 +132,18 @@ export function JobPhotos({ jobId, meId }: { jobId: string; meId: string }) {
           <button
             key={k.id}
             onClick={() => setKind(k.id)}
-            title={k.hint}
+            title={t(k.hintTl, k.hintEn)}
             className={`rounded-full px-3 py-1 text-xs font-semibold ${
               kind === k.id ? "bg-brand-700 text-white" : "bg-white text-gray-600 ring-1 ring-stone-200"
             }`}
           >
-            {k.label}
+            {t(k.tl, k.en)}
           </button>
         ))}
       </div>
 
       <label className="mt-2 flex min-h-12 cursor-pointer items-center justify-center rounded-xl border border-dashed border-stone-300 bg-white px-4 text-sm font-semibold text-brand-800">
-        {busy ? "Ina-upload…" : `📷 Magdagdag ng litrato (${KIND_LABEL[kind]})`}
+        {busy ? t("Ina-upload…", "Uploading…") : <span className="inline-flex items-center gap-2"><IconCamera size={16} /> {t(`Magdagdag ng litrato (${kindLabel(kind)})`, `Add a photo (${kindLabel(kind)})`)}</span>}
         <input
           ref={fileRef}
           type="file"

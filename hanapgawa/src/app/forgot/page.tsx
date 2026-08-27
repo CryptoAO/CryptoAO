@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { fetchJson } from "@/lib/client";
 import { Button, Card, ErrorNote, Field, Input } from "@/components/ui";
+import { useT } from "@/lib/i18n";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
+  const t = useT();
   const [step, setStep] = useState<"phone" | "code">("phone");
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
@@ -54,15 +56,15 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="mx-auto max-w-md space-y-4">
-      <h1 className="text-2xl font-extrabold">Nakalimutan ang password</h1>
+      <h1 className="text-2xl font-bold">{t("Nakalimutan ang password", "Forgot password")}</h1>
 
       {step === "phone" ? (
         <Card>
           <form onSubmit={requestCode} className="space-y-4">
             <p className="text-sm text-gray-600">
-              Ilagay ang cellphone number mo. Padadalhan ka namin ng 6-digit code para makagawa ng bagong password.
+              {t("Ilagay ang cellphone number mo. Padadalhan ka namin ng 6-digit code para makagawa ng bagong password.", "Enter your mobile number. We'll text you a 6-digit code so you can set a new password.")}
             </p>
-            <Field label="Cellphone number">
+            <Field label={t("Cellphone number", "Mobile number")}>
               <Input
                 type="tel"
                 inputMode="numeric"
@@ -74,7 +76,7 @@ export default function ForgotPasswordPage() {
             </Field>
             <ErrorNote message={error} />
             <Button type="submit" full disabled={busy}>
-              {busy ? "Nagpapadala…" : "Ipadala ang code"}
+              {busy ? t("Nagpapadala…", "Sending…") : t("Ipadala ang code", "Send the code")}
             </Button>
           </form>
         </Card>
@@ -82,11 +84,11 @@ export default function ForgotPasswordPage() {
         <Card>
           <form onSubmit={confirmReset} className="space-y-4">
             <p className="text-sm text-gray-700">
-              Kung may account sa <strong>{phone}</strong>, may code na naipadala. Ilagay ito at ang bago mong password.
+              {t("Kung may account sa", "If an account exists for")} <strong>{phone}</strong>{t(", may code na naipadala. Ilagay ito at ang bago mong password.", ", a code was sent. Enter it with your new password.")}
             </p>
             {devCode && (
               <p className="rounded-xl bg-amber-50 p-3 text-center text-sm text-amber-900">
-                🧪 Demo lang: walang totoong SMS. Ang code mo ay{" "}
+                {t("Demo lang: walang totoong SMS. Ang code mo ay", "Demo only: no real SMS is sent. Your code is")}{" "}
                 <strong className="font-mono text-lg tracking-widest">{devCode}</strong>
               </p>
             )}
@@ -101,7 +103,7 @@ export default function ForgotPasswordPage() {
                 className="w-full min-h-12 rounded-xl border border-stone-300 px-4 py-3 text-center text-2xl tracking-[0.5em]"
               />
             </Field>
-            <Field label="Bagong password" hint="Minimum 8 characters.">
+            <Field label={t("Bagong password", "New password")} hint="Minimum 8 characters.">
               <Input
                 type="password"
                 value={password}
@@ -112,18 +114,18 @@ export default function ForgotPasswordPage() {
               />
             </Field>
             <div className="rounded-xl bg-amber-50 px-4 py-3 text-xs text-amber-800">
-              ⚠️ Kapag napalitan ang password, ma-lo-log out ang lahat ng device na naka-sign in sa account mo.
+              {t("Kapag napalitan ang password, ma-lo-log out ang lahat ng device na naka-sign in sa account mo.", "Changing your password signs out every device signed in to your account.")}
             </div>
             <ErrorNote message={error} />
             <Button type="submit" full disabled={busy || code.length !== 6}>
-              {busy ? "Pinapalitan…" : "Palitan ang password"}
+              {busy ? t("Pinapalitan…", "Updating…") : t("Palitan ang password", "Change password")}
             </Button>
             <button
               type="button"
               className="w-full text-center text-sm font-semibold text-brand-800 underline"
               onClick={() => setStep("phone")}
             >
-              Mali ang number? Bumalik
+              {t("Mali ang number? Bumalik", "Wrong number? Go back")}
             </button>
           </form>
         </Card>
@@ -131,7 +133,7 @@ export default function ForgotPasswordPage() {
 
       <p className="text-center text-sm text-gray-600">
         <Link href="/login" className="font-bold text-brand-800 underline">
-          Bumalik sa login
+          {t("Bumalik sa login", "Back to log in")}
         </Link>
       </p>
     </div>

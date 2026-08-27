@@ -75,7 +75,7 @@ export async function broadcastNewJob(jobId: string): Promise<BroadcastResult> {
     data: shortlist.map((p) => ({
       userId: p.id,
       type: "JOB_NEARBY",
-      title: `Bagong ${job.category.nameTl} sa ${cityName} 🔔`,
+      title: `Bagong ${job.category.nameTl} sa ${cityName}`,
       body: `"${job.title}" — ${formatPhp(job.budgetCents)}${rate}. Mag-offer na bago pa maunahan.`,
       href: `/jobs/${job.id}`,
       jobId: job.id,
@@ -103,7 +103,7 @@ export async function inviteProvider(jobId: string, providerId: string, clientNa
     data: {
       userId: providerId,
       type: "JOB_INVITE",
-      title: `Hinahanap ka ni ${clientName}! 🌟`,
+      title: `Hinahanap ka ni ${clientName}!`,
       body: `Gusto ka niyang i-book ulit para sa "${job.title}" — ${formatPhp(job.budgetCents)}.`,
       href: `/jobs/${job.id}`,
       jobId: job.id,

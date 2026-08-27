@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { fetchJson } from "@/lib/client";
 import { Button, Card, ErrorNote, Field, Input } from "@/components/ui";
+import { useT } from "@/lib/i18n";
 
 export default function LoginPage() {
   const router = useRouter();
+  const t = useT();
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -43,17 +45,17 @@ export default function LoginPage() {
 
   return (
     <div className="mx-auto max-w-md space-y-4">
-      <h1 className="text-2xl font-extrabold">Mag-login</h1>
+      <h1 className="text-2xl font-bold">{t("Mag-login", "Log in")}</h1>
       <Card>
         <form onSubmit={submit} className="space-y-4">
-          <Field label="Cellphone number">
+          <Field label={t("Cellphone number", "Mobile number")}>
             <Input type="tel" inputMode="numeric" value={phone} onChange={(e) => setPhone(e.target.value)} required placeholder="09171234567" />
           </Field>
           <Field label="Password">
             <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           </Field>
           {needsTotp && (
-            <Field label="Authenticator code" hint="Ang 6-digit code mula sa authenticator app mo.">
+            <Field label={t("Authenticator code", "Authenticator code")} hint={t("Ang 6-digit code mula sa authenticator app mo.", "The 6-digit code from your authenticator app.")}>
               <Input
                 inputMode="numeric"
                 maxLength={6}
@@ -66,15 +68,15 @@ export default function LoginPage() {
           )}
           <ErrorNote message={error} />
           <Button type="submit" full disabled={busy}>
-            {busy ? "Sandali lang…" : "Login"}
+            {busy ? t("Sandali lang…", "One moment…") : "Login"}
           </Button>
           <Link href="/forgot" className="block text-center text-sm font-semibold text-brand-800 underline">
-            Nakalimutan ang password?
+            {t("Nakalimutan ang password?", "Forgot your password?")}
           </Link>
         </form>
       </Card>
       <p className="text-center text-sm text-gray-600">
-        Wala ka pang account? <Link href="/register" className="font-bold text-brand-800 underline">Sign up — libre!</Link>
+        {t("Wala ka pang account?", "No account yet?")} <Link href="/register" className="font-bold text-brand-800 underline">{t("Sign up — libre!", "Sign up — it's free!")}</Link>
       </p>
     </div>
   );

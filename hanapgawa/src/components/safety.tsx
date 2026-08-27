@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { fetchJson, timeAgo } from "@/lib/client";
 import { Button, Card } from "@/components/ui";
+import { useT } from "@/lib/i18n";
+import { IconMapPin, IconShield } from "@/components/icons";
 
 /** Best-effort geolocation — never blocks the action it accompanies. */
 function getCoords(timeoutMs = 6000): Promise<{ lat?: number; lng?: number }> {
@@ -41,6 +43,7 @@ interface CheckIn {
  *  - a panic button that texts the user's trusted contacts
  */
 export function SafetyPanel({ jobId, meId }: { jobId: string; meId: string }) {
+  const t = useT();
   const [checkIns, setCheckIns] = useState<CheckIn[]>([]);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -96,8 +99,8 @@ export function SafetyPanel({ jobId, meId }: { jobId: string; meId: string }) {
       setConfirmSos(false);
       setMsg(
         d.contactsReached > 0
-          ? `Naipadala na sa ${d.contactsReached} contact mo at sa support team. Kung delikado, tumawag sa 911.`
-          : "Naitala na ang alert at na-notify ang support team. Wala kang trusted contact — tumawag sa 911 kung delikado.",
+          ? t(`Naipadala na sa ${d.contactsReached} contact mo at sa support team. Kung delikado, tumawag sa 911.`, `Sent to ${d.contactsReached} of your contacts and the support team. If you are in danger, call 911.`)
+          : t("Naitala na ang alert at na-notify ang support team. Wala kang trusted contact — tumawag sa 911 kung delikado.", "The alert is recorded and the support team notified. You have no trusted contact — call 911 if you are in danger."),
       );
     } catch (e) {
       setMsg((e as Error).message);
@@ -109,17 +112,16 @@ export function SafetyPanel({ jobId, meId }: { jobId: string; meId: string }) {
   return (
     <Card className="space-y-3 border-amber-200">
       <div className="flex items-center justify-between">
-        <h2 className="font-bold">🛡️ Kaligtasan</h2>
+        <h2 className="flex items-center gap-2 font-bold"><IconShield size={16} /> {t("Kaligtasan", "Safety")}</h2>
         {contactCount === 0 && (
           <Link href="/me?tab=safety" className="text-xs font-semibold text-brand-800 underline">
-            Magdagdag ng contact
+            {t("Magdagdag ng contact", "Add a contact")}
           </Link>
         )}
       </div>
 
       <p className="text-sm text-gray-600">
-        I-tap ang <strong>Nandito na ako</strong> pagdating mo. May makikita ang kasama mo, at may
-        record kayo pareho kung sakaling may gulo.
+        {t("I-tap ang", "Tap")} <strong>{t("Nandito na ako", "I have arrived")}</strong> {t("pagdating mo. May makikita ang kasama mo, at may record kayo pareho kung sakaling may gulo.", "when you get there. The other person sees it, and you both have a record if anything goes wrong.")}
       </p>
 
       <div className="flex flex-wrap gap-2">
@@ -129,7 +131,7 @@ export function SafetyPanel({ jobId, meId }: { jobId: string; meId: string }) {
           disabled={busy || arrived}
           onClick={() => check("ARRIVED")}
         >
-          {arrived ? "✔ Naka-check in" : "📍 Nandito na ako"}
+          {arrived ? t("Naka-check in", "Checked in") : t("Nandito na ako", "I have arrived")}
         </Button>
         <Button
           variant="secondary"
@@ -137,7 +139,7 @@ export function SafetyPanel({ jobId, meId }: { jobId: string; meId: string }) {
           disabled={busy || !arrived || left}
           onClick={() => check("LEFT")}
         >
-          {left ? "✔ Naka-check out" : "👋 Aalis na ako"}
+          {left ? t("Naka-check out", "Checked out") : t("Aalis na ako", "I am leaving")}
         </Button>
       </div>
 
@@ -145,9 +147,9 @@ export function SafetyPanel({ jobId, meId }: { jobId: string; meId: string }) {
         <ul className="space-y-1 rounded-xl bg-stone-50 p-3 text-xs text-gray-600">
           {checkIns.map((c) => (
             <li key={c.id}>
-              {c.kind === "ARRIVED" ? "📍" : "👋"} <strong>{c.firstName}</strong>{" "}
-              {c.kind === "ARRIVED" ? "dumating" : "umalis"} · {timeAgo(c.createdAt)}
-              {c.hasLocation && " · may lokasyon"}
+              <strong>{c.firstName}</strong>{" "}
+              {c.kind === "ARRIVED" ? t("dumating", "arrived") : t("umalis", "left")} · {timeAgo(c.createdAt)}
+              {c.hasLocation && t(" · may lokasyon", " · with location")}
             </li>
           ))}
         </ul>
@@ -157,21 +159,21 @@ export function SafetyPanel({ jobId, meId }: { jobId: string; meId: string }) {
         {!confirmSos ? (
           <button
             onClick={() => setConfirmSos(true)}
-            className="w-full rounded-xl border-2 border-red-600 py-3 text-base font-extrabold text-red-700 hover:bg-red-50"
+            className="w-full rounded-xl border-2 border-red-600 py-3 text-base font-bold text-red-700 hover:bg-red-50"
           >
-            🚨 SOS — kailangan ko ng tulong
+            {t("SOS — kailangan ko ng tulong", "SOS — I need help")}
           </button>
         ) : (
           <div className="space-y-2 rounded-xl bg-red-50 p-3">
             <p className="text-sm font-semibold text-red-800">
-              Sigurado ka? Ipapadala namin ang alert sa trusted contacts mo at sa support team.
+              {t("Sigurado ka? Ipapadala namin ang alert sa trusted contacts mo at sa support team.", "Are you sure? We will send the alert to your trusted contacts and the support team.")}
             </p>
             <p className="text-xs text-red-700">
-              Kung may agarang panganib, <strong>tumawag muna sa 911</strong>.
+              {t("Kung may agarang panganib,", "If you are in immediate danger,")} <strong>{t("tumawag muna sa 911", "call 911 first")}</strong>.
             </p>
             <div className="flex gap-2">
               <Button variant="danger" className="min-h-11 flex-1 py-2" disabled={busy} onClick={sendSos}>
-                {busy ? "Ipinapadala…" : "Oo, ipadala ang SOS"}
+                {busy ? t("Ipinapadala…", "Sending…") : t("Oo, ipadala ang SOS", "Yes, send the SOS")}
               </Button>
               <Button
                 variant="ghost"
@@ -179,7 +181,7 @@ export function SafetyPanel({ jobId, meId }: { jobId: string; meId: string }) {
                 disabled={busy}
                 onClick={() => setConfirmSos(false)}
               >
-                Hindi
+                {t("Hindi", "No")}
               </Button>
             </div>
           </div>
@@ -201,6 +203,7 @@ interface Contact {
 }
 
 export function TrustedContacts() {
+  const t = useT();
   const [contacts, setContacts] = useState<Contact[] | null>(null);
   const [max, setMax] = useState(3);
   const [name, setName] = useState("");
@@ -260,17 +263,15 @@ export function TrustedContacts() {
   return (
     <Card className="space-y-4">
       <div>
-        <h2 className="font-bold">🛡️ Trusted contacts</h2>
+        <h2 className="flex items-center gap-2 font-bold"><IconShield size={16} /> Trusted contacts</h2>
         <p className="mt-1 text-sm text-gray-600">
-          Kapag nag-SOS ka habang may trabaho, tetext namin ang mga taong ito agad. Pumili ng
-          kapamilya o kaibigan na madaling matawagan.
+          {t("Kapag nag-SOS ka habang may trabaho, tetext namin ang mga taong ito agad. Pumili ng kapamilya o kaibigan na madaling matawagan.", "If you press SOS during a job, we text these people immediately. Pick family or a friend who is easy to reach.")}
         </p>
       </div>
 
       {contacts.length === 0 ? (
         <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">
-          Wala ka pang trusted contact. Sobrang importante nito kung pupunta ka sa bahay ng hindi mo
-          kakilala.
+          {t("Wala ka pang trusted contact. Sobrang importante nito kung pupunta ka sa bahay ng hindi mo kakilala.", "You have no trusted contact yet. This matters most when you are going to a stranger's home.")}
         </p>
       ) : (
         <ul className="space-y-2">
@@ -285,7 +286,7 @@ export function TrustedContacts() {
                 disabled={busy}
                 className="text-xs font-semibold text-red-600 underline"
               >
-                Alisin
+                {t("Alisin", "Remove")}
               </button>
             </li>
           ))}
@@ -297,7 +298,7 @@ export function TrustedContacts() {
           <div className="grid gap-2 sm:grid-cols-3">
             <input
               className="min-h-12 rounded-xl border border-stone-300 px-4 text-base"
-              placeholder="Pangalan"
+              placeholder={t("Pangalan", "Name")}
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
@@ -313,7 +314,7 @@ export function TrustedContacts() {
             />
             <input
               className="min-h-12 rounded-xl border border-stone-300 px-4 text-base"
-              placeholder="Asawa / Kapatid"
+              placeholder={t("Asawa / Kapatid", "Spouse / Sibling")}
               value={relation}
               onChange={(e) => setRelation(e.target.value)}
               maxLength={40}
@@ -321,7 +322,7 @@ export function TrustedContacts() {
           </div>
           {error && <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
           <Button type="submit" disabled={busy || !name || !phone} className="min-h-11 py-2">
-            Idagdag
+            {t("Idagdag", "Add")}
           </Button>
         </form>
       )}

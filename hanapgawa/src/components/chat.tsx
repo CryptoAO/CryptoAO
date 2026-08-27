@@ -3,10 +3,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchJson } from "@/lib/client";
 import { Button } from "@/components/ui";
+import { useT } from "@/lib/i18n";
+import { IconLock } from "@/components/icons";
 
 interface Msg { id: string; senderId: string; body: string; flagged?: boolean; createdAt: string }
 
 export function ChatBox({ jobId, withUserId, meId }: { jobId: string; withUserId: string; meId: string }) {
+  const t = useT();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [text, setText] = useState("");
   const [warning, setWarning] = useState<string | null>(null);
@@ -55,11 +58,11 @@ export function ChatBox({ jobId, withUserId, meId }: { jobId: string; withUserId
 
   return (
     <div className="rounded-2xl border border-stone-200 bg-white">
-      <div className="border-b border-stone-100 px-4 py-2 text-xs font-semibold text-gray-500">
-        💬 Usap dito sa app — para protektado kayo pareho. Bawal magpalitan ng number.
+      <div className="flex items-center gap-1.5 border-b border-stone-100 px-4 py-2 text-xs font-semibold text-gray-500">
+        <IconLock size={12} /> {t("Usap dito sa app — para protektado kayo pareho. Bawal magpalitan ng number.", "Keep the conversation in the app — it protects you both. No sharing numbers.")}
       </div>
       <div ref={listRef} className="max-h-72 space-y-2 overflow-y-auto p-4">
-        {messages.length === 0 && <p className="text-center text-sm text-gray-400">Simulan ang usapan 👋</p>}
+        {messages.length === 0 && <p className="text-center text-sm text-gray-400">{t("Simulan ang usapan", "Start the conversation")}</p>}
         {messages.map((m) => (
           <div key={m.id} className={`flex ${m.senderId === meId ? "justify-end" : "justify-start"}`}>
             <div
@@ -68,7 +71,7 @@ export function ChatBox({ jobId, withUserId, meId }: { jobId: string; withUserId
               }`}
             >
               {m.body}
-              {m.flagged && <div className="mt-1 text-[10px] opacity-75">⚠️ may tinago kaming contact info dito</div>}
+              {m.flagged && <div className="mt-1 text-[10px] opacity-75">{t("May tinago kaming contact info dito", "We masked contact info here")}</div>}
             </div>
           </div>
         ))}
@@ -79,7 +82,7 @@ export function ChatBox({ jobId, withUserId, meId }: { jobId: string; withUserId
           className="min-h-11 flex-1 rounded-xl border border-stone-300 px-4 text-base"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="I-type ang message…"
+          placeholder={t("I-type ang message…", "Type a message…")}
           maxLength={2000}
         />
         <Button type="submit" disabled={busy || !text.trim()} className="min-h-11 px-4 py-2">Send</Button>

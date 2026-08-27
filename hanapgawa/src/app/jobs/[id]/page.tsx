@@ -10,6 +10,8 @@ import { SafetyPanel } from "@/components/safety";
 import { Avatar } from "@/components/avatar";
 import { JobPhotos } from "@/components/jobphotos";
 import { getCity, getRegion } from "@/lib/psgc";
+import { catName, useLang, useT } from "@/lib/i18n";
+import { IconCalendar, IconCheck, IconLock, IconMapPin, IconRepeat, IconSend, IconUser, IconWallet } from "@/components/icons";
 
 interface PublicUser { id: string; firstName: string; lastInitial: string; kycLevel: number; photoUrl?: string | null }
 interface JobDetail {
@@ -28,14 +30,14 @@ interface OfferAvailability { clash: boolean; outsideStatedHours: boolean }
 interface OfferRow { id: string; providerId: string; priceCents: number; message: string; status: string; createdAt: string; provider?: PublicUser; providerStats?: ProviderStats; availability?: OfferAvailability; jobsWithYou?: number; sukiDiscount?: boolean }
 interface Me { user: { id: string; isProvider: boolean; kycLevel: number } | null }
 
-const STATUS_LABEL: Record<string, { label: string; tone: "gray" | "green" | "amber" | "red" | "brand" }> = {
-  OPEN: { label: "Bukas — tumatanggap ng offers", tone: "green" },
-  BOOKED: { label: "Booked — may napili nang provider", tone: "brand" },
-  IN_PROGRESS: { label: "Ginagawa na", tone: "amber" },
-  DONE_BY_PROVIDER: { label: "Tapos na — hinihintay ang confirm", tone: "amber" },
-  COMPLETED: { label: "Kumpleto ✔ Bayad na", tone: "green" },
-  CANCELLED: { label: "Kanselado", tone: "gray" },
-  DISPUTED: { label: "May dispute — inaayos ng support", tone: "red" },
+const STATUS_LABEL: Record<string, { tl: string; en: string; tone: "gray" | "green" | "amber" | "red" | "brand" }> = {
+  OPEN: { tl: "Bukas — tumatanggap ng offers", en: "Open — accepting offers", tone: "green" },
+  BOOKED: { tl: "Booked — may napili nang provider", en: "Booked — provider chosen", tone: "brand" },
+  IN_PROGRESS: { tl: "Ginagawa na", en: "In progress", tone: "amber" },
+  DONE_BY_PROVIDER: { tl: "Tapos na — hinihintay ang confirm", en: "Done — awaiting confirmation", tone: "amber" },
+  COMPLETED: { tl: "Kumpleto — bayad na", en: "Completed — paid", tone: "green" },
+  CANCELLED: { tl: "Kanselado", en: "Cancelled", tone: "gray" },
+  DISPUTED: { tl: "May dispute — inaayos ng support", en: "Disputed — support is on it", tone: "red" },
 };
 
 function releaseWhen(iso: string): string {
@@ -48,6 +50,8 @@ function releaseWhen(iso: string): string {
 export default function JobDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
+  const t = useT();
+  const { lang } = useLang();
   const [data, setData] = useState<{ job: JobDetail; offers: OfferRow[]; viewerRole: string } | null>(null);
   const [me, setMe] = useState<Me | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -85,7 +89,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
   const isAssigned = meId != null && job.assignedProviderId === meId;
   // A withdrawn offer doesn't block a fresh one — treat it as "no offer".
   const myOffer = meId ? offers.find((o) => o.providerId === meId && o.status !== "WITHDRAWN") : undefined;
-  const status = STATUS_LABEL[job.status] ?? { label: job.status, tone: "gray" as const };
+  const status = STATUS_LABEL[job.status] ?? { tl: job.status, en: job.status, tone: "gray" as const };
 
   async function action(name: string, extra: Record<string, unknown> = {}) {
     setBusy(true);
@@ -151,40 +155,40 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
       <Card>
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-3">
-            <span className="text-4xl">{job.category.icon}</span>
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-stone-100 text-3xl">{job.category.icon}</span>
             <div>
-              <h1 className="text-xl font-extrabold leading-snug">{job.title}</h1>
+              <h1 className="text-xl font-bold leading-snug">{job.title}</h1>
               <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">
-                <Badge tone="brand">{job.category.nameTl}</Badge>
-                <Badge tone={status.tone}>{status.label}</Badge>
+                <Badge tone="brand">{catName(lang, job.category)}</Badge>
+                <Badge tone={status.tone}>{t(status.tl, status.en)}</Badge>
                 <span>· {timeAgo(job.createdAt)}</span>
               </div>
             </div>
           </div>
           <div className="shrink-0 text-right">
-            <div className="text-xl font-extrabold text-brand-800">{pesos(job.agreedPriceCents ?? job.budgetCents)}</div>
-            <div className="text-xs text-gray-500">{job.payType === "HOURLY" ? "per hour" : "buong trabaho"}</div>
+            <div className="text-xl font-bold text-brand-800">{pesos(job.agreedPriceCents ?? job.budgetCents)}</div>
+            <div className="text-xs text-gray-500">{job.payType === "HOURLY" ? "per hour" : t("buong trabaho", "whole job")}</div>
           </div>
         </div>
 
         <p className="mt-4 whitespace-pre-wrap text-sm text-gray-700">{job.description}</p>
 
         <div className="mt-4 grid gap-2 rounded-xl bg-stone-50 p-3 text-sm text-gray-700">
-          <div>📍 {job.barangay ? `Brgy. ${job.barangay}, ` : ""}{getCity(job.cityCode)?.name ?? job.cityCode}, {getRegion(job.regionCode)?.short}</div>
-          {job.scheduledAt && <div>🗓️ {new Date(job.scheduledAt).toLocaleString("en-PH", { dateStyle: "medium", timeStyle: "short" })}{job.flexible ? " (flexible)" : ""}</div>}
+          <div className="flex items-center gap-2"><IconMapPin size={15} className="shrink-0 text-gray-400" /> {job.barangay ? `Brgy. ${job.barangay}, ` : ""}{getCity(job.cityCode)?.name ?? job.cityCode}, {getRegion(job.regionCode)?.short}</div>
+          {job.scheduledAt && <div className="flex items-center gap-2"><IconCalendar size={15} className="shrink-0 text-gray-400" /> {new Date(job.scheduledAt).toLocaleString("en-PH", { dateStyle: "medium", timeStyle: "short" })}{job.flexible ? " (flexible)" : ""}</div>}
           {job.addressNote && (
-            <div className="rounded-lg bg-brand-50 p-2 text-brand-900">
-              🔒 <strong>Exact address</strong> (kayo lang nakakakita nito): {job.addressNote}
+            <div className="flex items-start gap-2 rounded-lg bg-brand-50 p-2 text-brand-900">
+              <IconLock size={15} className="mt-0.5 shrink-0" /> <span><strong>Exact address</strong> {t("(kayo lang nakakakita nito):", "(only the two of you see this):")} {job.addressNote}</span>
             </div>
           )}
           {job.client && (
             <div className="flex items-center gap-2">
-              👤 Naka-post: <strong>{job.client.firstName} {job.client.lastInitial}</strong> <KycBadge level={job.client.kycLevel} />
+              <IconUser size={15} className="shrink-0 text-gray-400" /> {t("Naka-post:", "Posted by:")} <strong>{job.client.firstName} {job.client.lastInitial}</strong> <KycBadge level={job.client.kycLevel} />
             </div>
           )}
           {job.provider && (
             <div className="flex items-center gap-2">
-              🧰 Provider: <Link href={`/providers/${job.provider.id}`} className="font-bold underline">{job.provider.firstName} {job.provider.lastInitial}</Link>
+              <IconUser size={15} className="shrink-0 text-gray-400" /> Provider: <Link href={`/providers/${job.provider.id}`} className="font-bold underline">{job.provider.firstName} {job.provider.lastInitial}</Link>
               <KycBadge level={job.provider.kycLevel} />
             </div>
           )}
@@ -196,9 +200,9 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
       {/* ===== Not logged in ===== */}
       {!meId && job.status === "OPEN" && (
         <Card className="text-center">
-          <p className="text-sm text-gray-600">Gusto mo bang gawin ang trabahong ito?</p>
+          <p className="text-sm text-gray-600">{t("Gusto mo bang gawin ang trabahong ito?", "Want to take this job?")}</p>
           <Link href="/register" className="mt-2 inline-block rounded-xl bg-brand-700 px-6 py-3 font-bold text-white">
-            Sign up para mag-offer — libre!
+            {t("Sign up para mag-offer — libre!", "Sign up to make an offer — free!")}
           </Link>
         </Card>
       )}
@@ -206,18 +210,18 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
       {/* ===== Direct request: the target answers ===== */}
       {isDirectTarget && job.status === "OPEN" && (
         <Card className="space-y-3">
-          <h2 className="font-bold">📩 Booking request para sa'yo</h2>
+          <h2 className="flex items-center gap-2 font-bold"><IconSend size={16} /> {t("Booking request para sa'yo", "A booking request for you")}</h2>
           <div className="rounded-xl bg-brand-50 p-3 text-sm text-brand-900">
-            Ikaw lang ang inalok ng trabahong ito, sa presyong{" "}
-            <strong>{pesos(job.budgetCents)}</strong>. Kapag kinumpirma mo, <strong>booked na agad</strong> —
-            maho-hold ang bayad sa escrow at asahan ka na ng client.
+            {t("Ikaw lang ang inalok ng trabahong ito, sa presyong", "This job was offered to you alone, at")}{" "}
+            <strong>{pesos(job.budgetCents)}</strong>. {t("Kapag kinumpirma mo,", "Once you confirm, it's")} <strong>{t("booked na agad", "booked immediately")}</strong> —
+            {t("maho-hold ang bayad sa escrow at asahan ka na ng client.", "payment goes on hold in escrow and the client will be expecting you.")}
           </div>
           <div className="flex gap-2">
             <Button full disabled={busy} onClick={() => action("confirm")}>
-              ✔ Kumpirmahin — tanggapin ko
+              {t("Kumpirmahin — tanggapin ko", "Confirm — I accept")}
             </Button>
             <Button variant="ghost" disabled={busy} onClick={() => action("decline")}>
-              Hindi muna
+              {t("Hindi muna", "Not this time")}
             </Button>
           </div>
         </Card>
@@ -226,14 +230,13 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
       {/* ===== Direct request: the owner waits ===== */}
       {isOwner && isDirect && job.status === "OPEN" && (
         <Card className="space-y-3">
-          <h2 className="font-bold">Hinihintay ang sagot 📩</h2>
+          <h2 className="font-bold">{t("Hinihintay ang sagot", "Waiting for their answer")}</h2>
           <p className="text-sm text-gray-600">
-            Naipadala na ang booking request mo. Kapag kinumpirma, maho-hold ang{" "}
-            <strong>{pesos(job.budgetCents)}</strong> mula sa wallet mo at booked na agad. Kung walang sagot
-            sa loob ng 48 oras, isasara namin ito para makapag-post ka sa lahat.
+            {t("Naipadala na ang booking request mo. Kapag kinumpirma, maho-hold ang", "Your booking request is on its way. Once they confirm,")}{" "}
+            <strong>{pesos(job.budgetCents)}</strong> {t("mula sa wallet mo at booked na agad. Kung walang sagot sa loob ng 48 oras, isasara namin ito para makapag-post ka sa lahat.", "goes on hold from your wallet and it's booked. If there's no answer within 48 hours, we close it so you can post to everyone.")}
           </p>
           <Button variant="ghost" disabled={busy} onClick={() => action("cancel")}>
-            Bawiin ang request
+            {t("Bawiin ang request", "Withdraw the request")}
           </Button>
         </Card>
       )}
@@ -241,21 +244,21 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
       {/* ===== Provider: make an offer ===== */}
       {meId && !isOwner && !isDirect && job.status === "OPEN" && !myOffer && (
         <Card>
-          <h2 className="font-bold">Gawin ko 'to! 🙋</h2>
+          <h2 className="font-bold">{t("Gawin ko 'to!", "I want this job!")}</h2>
           {!me.user?.isProvider ? (
             <p className="mt-2 text-sm text-gray-600">
-              I-set up muna ang provider profile mo (2 minuto lang) sa{" "}
-              <Link href="/me?tab=provider" className="font-bold text-brand-800 underline">Ako → Provider</Link>.
+              {t("I-set up muna ang provider profile mo (2 minuto lang) sa", "First set up your provider profile (2 minutes) under")}{" "}
+              <Link href="/me?tab=provider" className="font-bold text-brand-800 underline">{t("Ako → Provider", "Me → Provider")}</Link>.
             </p>
           ) : (
             <form onSubmit={sendOffer} className="mt-3 space-y-3">
-              <Field label="Presyo mo (₱)" hint={`Budget ng client: ${pesos(job.budgetCents)}`}>
+              <Field label={t("Presyo mo (₱)", "Your price (₱)")} hint={t(`Budget ng client: ${pesos(job.budgetCents)}`, `Client budget: ${pesos(job.budgetCents)}`)}>
                 <Input type="number" inputMode="decimal" min={1} value={offerPrice} onChange={(e) => setOfferPrice(e.target.value)} required />
               </Field>
-              <Field label="Maikling message" hint="Bakit ikaw ang dapat piliin? Kailan ka pwede?">
+              <Field label={t("Maikling message", "Short message")} hint={t("Bakit ikaw ang dapat piliin? Kailan ka pwede?", "Why should they pick you? When are you free?")}>
                 <TextArea value={offerMsg} onChange={(e) => setOfferMsg(e.target.value)} required maxLength={1000} />
               </Field>
-              <Button type="submit" full disabled={busy}>Ipadala ang offer</Button>
+              <Button type="submit" full disabled={busy}>{t("Ipadala ang offer", "Send offer")}</Button>
             </form>
           )}
         </Card>
@@ -264,7 +267,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
       {/* ===== Provider: my offer + chat ===== */}
       {meId && myOffer && !isAssigned && (
         <Card>
-          <h2 className="font-bold">Ang offer mo</h2>
+          <h2 className="font-bold">{t("Ang offer mo", "Your offer")}</h2>
           <div className="mt-2 flex items-center justify-between rounded-xl bg-stone-50 p-3 text-sm">
             <span>{pesos(myOffer.priceCents)} — {myOffer.message}</span>
             <Badge tone={myOffer.status === "PENDING" ? "amber" : myOffer.status === "ACCEPTED" ? "green" : "gray"}>{myOffer.status}</Badge>
@@ -279,7 +282,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                 await load();
               }}
             >
-              Bawiin ang offer
+              {t("Bawiin ang offer", "Withdraw offer")}
             </Button>
           )}
           <div className="mt-3">
@@ -291,9 +294,9 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
       {/* ===== Owner: offers list ===== */}
       {isOwner && !isDirect && job.status === "OPEN" && (
         <Card>
-          <h2 className="font-bold">Mga offer ({offers.filter((o) => o.status === "PENDING").length})</h2>
+          <h2 className="font-bold">{t("Mga offer", "Offers")} ({offers.filter((o) => o.status === "PENDING").length})</h2>
           {offers.filter((o) => o.status === "PENDING").length === 0 && (
-            <p className="mt-2 text-sm text-gray-500">Wala pang offer. Balikan mo mamaya — o i-share ang job link.</p>
+            <p className="mt-2 text-sm text-gray-500">{t("Wala pang offer. Balikan mo mamaya — o i-share ang job link.", "No offers yet. Check back later — or share the job link.")}</p>
           )}
           <div className="mt-3 space-y-3">
             {offers.filter((o) => o.status === "PENDING").map((o) => (
@@ -311,38 +314,37 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                     </Link>
                     {o.provider && <KycBadge level={o.provider.kycLevel} />}
                   </div>
-                  <div className="text-lg font-extrabold text-brand-800">{pesos(o.priceCents)}</div>
+                  <div className="text-lg font-bold text-brand-800">{pesos(o.priceCents)}</div>
                 </div>
                 {o.providerStats && (o.providerStats.completedJobs > 0 || o.providerStats.repeatClients > 0) && (
                   <div className="mt-1 flex flex-wrap gap-2 text-[11px] text-gray-600">
                     <span className="rounded-full bg-stone-100 px-2 py-0.5">
-                      ✔ {o.providerStats.completedJobs} tapos na trabaho
+                      {o.providerStats.completedJobs} {t("tapos na trabaho", "jobs completed")}
                     </span>
                     {o.providerStats.reliabilityPct != null && (
                       <span className="rounded-full bg-stone-100 px-2 py-0.5">
-                        {o.providerStats.reliabilityPct}% natapos
+                        {o.providerStats.reliabilityPct}% {t("natapos", "completion")}
                       </span>
                     )}
                     {o.providerStats.repeatClients > 0 && (
                       <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-emerald-800">
-                        🔁 {o.providerStats.repeatClients} paulit-ulit na client
+                        {o.providerStats.repeatClients} {t("paulit-ulit na client", "repeat clients")}
                       </span>
                     )}
                     {(o.jobsWithYou ?? 0) >= 3 && (
                       <span className="rounded-full bg-amber-100 px-2 py-0.5 font-semibold text-amber-900">
-                        ⭐ Suki niyo na ({o.jobsWithYou} trabaho ninyo) — mas mababa ang platform fee
+                        ★ {t(`Suki niyo na (${o.jobsWithYou} trabaho ninyo) — mas mababa ang platform fee`, `Your regular (${o.jobsWithYou} jobs together) — lower platform fee`)}
                       </span>
                     )}
                   </div>
                 )}
                 {o.availability?.clash ? (
                   <p className="mt-2 rounded-lg bg-red-50 p-2 text-xs text-red-800">
-                    ⛔ May ibang booking na siya sa oras na iyan. Kailangang baguhin ang oras o pumili ng iba.
+                    {t("May ibang booking na siya sa oras na iyan. Kailangang baguhin ang oras o pumili ng iba.", "They already have a booking at that time. Change the schedule or choose someone else.")}
                   </p>
                 ) : o.availability?.outsideStatedHours ? (
                   <p className="mt-2 rounded-lg bg-amber-50 p-2 text-xs text-amber-900">
-                    ⚠️ Nasa labas ito ng oras na nilagay niyang available siya. Pwede pa ring tanggapin — kausapin
-                    lang muna siya para sigurado.
+                    {t("Nasa labas ito ng oras na nilagay niyang available siya. Pwede pa ring tanggapin — kausapin lang muna siya para sigurado.", "This falls outside their stated hours. You can still accept — just check with them first to be sure.")}
                   </p>
                 ) : null}
                 <p className="mt-1 text-sm text-gray-600">{o.message}</p>
@@ -352,7 +354,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                     onClick={() => acceptOffer(o.id)}
                     className="min-h-10 px-4 py-2 text-sm"
                   >
-                    ✔ Tanggapin (i-hold ang {pesos(o.priceCents)})
+                    {t(`Tanggapin (i-hold ang ${pesos(o.priceCents)})`, `Accept (hold ${pesos(o.priceCents)})`)}
                   </Button>
                   <Button
                     variant="ghost"
@@ -363,7 +365,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                       await load();
                     }}
                   >
-                    Hindi muna
+                    {t("Hindi muna", "Pass")}
                   </Button>
                 </div>
                 {meId && <div className="mt-3"><ChatBox jobId={job.id} withUserId={o.providerId} meId={meId} /></div>}
@@ -371,7 +373,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
             ))}
           </div>
           <div className="mt-4 border-t border-stone-100 pt-3">
-            <Button variant="ghost" disabled={busy} onClick={() => action("cancel")}>I-cancel ang job na ito</Button>
+            <Button variant="ghost" disabled={busy} onClick={() => action("cancel")}>{t("I-cancel ang job na ito", "Cancel this job")}</Button>
           </div>
         </Card>
       )}
@@ -379,50 +381,53 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
       {/* ===== Booked / in-progress panel ===== */}
       {meId && (isOwner || isAssigned) && ["BOOKED", "IN_PROGRESS", "DONE_BY_PROVIDER", "DISPUTED"].includes(job.status) && (
         <Card className="space-y-3">
-          <h2 className="font-bold">Status ng trabaho</h2>
-          <div className="rounded-xl bg-brand-50 p-3 text-sm text-brand-900">
-            💰 <strong>{pesos(job.agreedPriceCents ?? 0)}</strong> —{" "}
+          <h2 className="font-bold">{t("Status ng trabaho", "Job status")}</h2>
+          <div className="flex items-start gap-2 rounded-xl bg-brand-50 p-3 text-sm text-brand-900">
+            <IconWallet size={16} className="mt-0.5 shrink-0" />
+            <span>
+            <strong>{pesos(job.agreedPriceCents ?? 0)}</strong> —{" "}
             {job.status === "DISPUTED"
-              ? "naka-freeze sa escrow habang inaayos ng support ang dispute."
+              ? t("naka-freeze sa escrow habang inaayos ng support ang dispute.", "frozen in escrow while support resolves the dispute.")
               : job.status === "DONE_BY_PROVIDER"
-                ? "naka-hold pa rin sa escrow. Ire-release ito kapag kinumpirma ng client — o awtomatiko kapag lumipas ang deadline sa baba."
-                : "naka-hold sa escrow. Ire-release lang kapag kinumpirma ng client na tapos ang trabaho."}
+                ? t("naka-hold pa rin sa escrow. Ire-release ito kapag kinumpirma ng client — o awtomatiko kapag lumipas ang deadline sa baba.", "still held in escrow. It releases when the client confirms — or automatically after the deadline below.")
+                : t("naka-hold sa escrow. Ire-release lang kapag kinumpirma ng client na tapos ang trabaho.", "held in escrow. It only releases once the client confirms the work is done.")}
+            </span>
           </div>
 
           {job.status === "DONE_BY_PROVIDER" && job.autoReleaseAt && (
             <div className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">
-              ⏳ Awtomatikong ire-release ang bayad sa{" "}
+              {t("Awtomatikong ire-release ang bayad sa", "Payment auto-releases on")}{" "}
               <strong>{releaseWhen(job.autoReleaseAt)}</strong>{" "}
               {isOwner
-                ? "kung walang na-report na problema. Hindi mo na kailangang hintayin — pwede mo nang kumpirmahin ngayon."
-                : "kahit hindi pa kumpirmahin ng client — hindi mahihinto ang bayad mo dahil lang nakalimutan nila."}
+                ? t("kung walang na-report na problema. Hindi mo na kailangang hintayin — pwede mo nang kumpirmahin ngayon.", "if no problem is reported. No need to wait — you can confirm now.")
+                : t("kahit hindi pa kumpirmahin ng client — hindi mahihinto ang bayad mo dahil lang nakalimutan nila.", "even if the client forgets to confirm — your pay is not stalled by their silence.")}
             </div>
           )}
 
           {isAssigned && job.status === "BOOKED" && (
-            <Button full disabled={busy} onClick={() => action("start")}>▶ Sisimulan ko na ang trabaho</Button>
+            <Button full disabled={busy} onClick={() => action("start")}>{t("Sisimulan ko na ang trabaho", "Starting the job now")}</Button>
           )}
           {isAssigned && job.status === "IN_PROGRESS" && (
-            <Button full disabled={busy} onClick={() => action("done")}>✔ Tapos na ako</Button>
+            <Button full disabled={busy} onClick={() => action("done")}>{t("Tapos na ako", "Work is done")}</Button>
           )}
           {isOwner && job.status === "DONE_BY_PROVIDER" && (
             <Button full disabled={busy} onClick={() => action("complete")}>
-              ✔ Kumpirmahin — i-release ang bayad
+              {t("Kumpirmahin — i-release ang bayad", "Confirm — release payment")}
             </Button>
           )}
           {isOwner && ["BOOKED"].includes(job.status) && (
-            <Button variant="ghost" disabled={busy} onClick={() => action("cancel")}>I-cancel (ibabalik ang hold)</Button>
+            <Button variant="ghost" disabled={busy} onClick={() => action("cancel")}>{t("I-cancel (ibabalik ang hold)", "Cancel (hold is refunded)")}</Button>
           )}
 
           {job.status === "DISPUTED" ? null : !showDispute ? (
             <button className="text-sm font-semibold text-red-600 underline" onClick={() => setShowDispute(true)}>
-              May problema? Mag-file ng dispute
+              {t("May problema? Mag-file ng dispute", "Something wrong? File a dispute")}
             </button>
           ) : (
             <div className="space-y-2 rounded-xl border border-red-200 bg-red-50 p-3">
-              <TextArea value={disputeReason} onChange={(e) => setDisputeReason(e.target.value)} placeholder="Ikwento kung ano ang nangyari…" />
+              <TextArea value={disputeReason} onChange={(e) => setDisputeReason(e.target.value)} placeholder={t("Ikwento kung ano ang nangyari…", "Tell us what happened…")} />
               <Button variant="danger" disabled={busy || disputeReason.trim().length < 5} onClick={() => action("dispute", { reason: disputeReason })}>
-                I-submit ang dispute
+                {t("I-submit ang dispute", "Submit dispute")}
               </Button>
             </div>
           )}
@@ -438,9 +443,9 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
       {/* ===== Completed: review ===== */}
       {meId && (isOwner || isAssigned) && job.status === "COMPLETED" && (
         <Card>
-          <h2 className="font-bold">Salamat! 🎉 I-rate ang naging karanasan mo</h2>
+          <h2 className="font-bold">{t("Salamat! I-rate ang naging karanasan mo", "Thank you! Rate your experience")}</h2>
           {reviewDone ? (
-            <p className="mt-2 text-sm text-emerald-700">Na-save ang review mo. Salamat!</p>
+            <p className="mt-2 text-sm text-emerald-700">{t("Na-save ang review mo. Salamat!", "Your review is saved. Thank you!")}</p>
           ) : (
             <form onSubmit={submitReview} className="mt-3 space-y-3">
               <div className="flex gap-2">
@@ -456,8 +461,8 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                   </button>
                 ))}
               </div>
-              <TextArea value={reviewComment} onChange={(e) => setReviewComment(e.target.value)} placeholder="Kwento mo… (optional)" maxLength={1000} />
-              <Button type="submit" disabled={busy}>I-submit ang review</Button>
+              <TextArea value={reviewComment} onChange={(e) => setReviewComment(e.target.value)} placeholder={t("Kwento mo… (optional)", "Your story… (optional)")} maxLength={1000} />
+              <Button type="submit" disabled={busy}>{t("I-submit ang review", "Submit review")}</Button>
             </form>
           )}
         </Card>
@@ -467,23 +472,23 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
       {isOwner && job.status === "COMPLETED" && job.provider && (
         <Card className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="font-bold">Maganda ang serbisyo? 🔁</h2>
+            <h2 className="flex items-center gap-2 font-bold"><IconRepeat size={16} /> {t("Maganda ang serbisyo?", "Happy with the service?")}</h2>
             <p className="mt-0.5 text-sm text-gray-600">
-              I-book ulit si {job.provider.firstName} — mapupunta agad sa kanya ang bagong post mo.
+              {t(`I-book ulit si ${job.provider.firstName} — mapupunta agad sa kanya ang bagong post mo.`, `Rebook ${job.provider.firstName} — your new post goes straight to them.`)}
             </p>
           </div>
           <Link
             href={`/jobs/new?rebook=${job.id}`}
             className="rounded-xl bg-brand-700 px-5 py-3 text-sm font-bold text-white"
           >
-            I-book ulit
+            {t("I-book ulit", "Rebook")}
           </Link>
         </Card>
       )}
 
       {job.status === "DISPUTED" && (
         <Card className="border-red-200 bg-red-50 text-sm text-red-800">
-          ⚖️ May open dispute ang trabahong ito. Naka-freeze ang escrow habang inaayos ng support team. Tingnan ang messages mo para sa updates.
+          {t("May open dispute ang trabahong ito. Naka-freeze ang escrow habang inaayos ng support team. Tingnan ang messages mo para sa updates.", "This job has an open dispute. Escrow is frozen while the support team resolves it. Check your messages for updates.")}
         </Card>
       )}
     </div>

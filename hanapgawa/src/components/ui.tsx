@@ -1,4 +1,5 @@
 import { ReactNode, ButtonHTMLAttributes, InputHTMLAttributes, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
+import { IconCheck } from "@/components/icons";
 
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
   return <div className={`rounded-2xl border border-stone-200 bg-white p-4 shadow-sm ${className}`}>{children}</div>;
@@ -49,6 +50,82 @@ export function TextArea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return <textarea className={`${inputClass} min-h-28`} {...props} />;
 }
 
+/** Round a datetime-local value ("YYYY-MM-DDTHH:MM") to the nearest 15 minutes. */
+export function snap15(v: string): string {
+  const m = /^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})/.exec(v);
+  if (!m) return v;
+  const total = Number(m[2]) * 60 + Number(m[3]);
+  const snapped = Math.min(Math.round(total / 15) * 15, 23 * 60 + 45);
+  const hh = String(Math.floor(snapped / 60)).padStart(2, "0");
+  const mm = String(snapped % 60).padStart(2, "0");
+  return `${m[1]}T${hh}:${mm}`;
+}
+
+/**
+ * Date-and-time picker constrained to 15-minute steps. Nobody books a
+ * labandera for 3:07 PM — free-minute precision only adds typing and
+ * mismatched expectations. step=900 nudges native pickers; snapping on
+ * change and blur catches manually typed minutes.
+ */
+export function DateTimeInput({
+  value,
+  onChange,
+  ...props
+}: Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "onChange" | "type" | "step"> & {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <input
+      type="datetime-local"
+      step={900}
+      className={inputClass}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      onBlur={(e) => onChange(snap15(e.target.value))}
+      {...props}
+    />
+  );
+}
+
+const TIME_STEP_MIN = 15;
+
+function fmtTime(min: number): string {
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  const ampm = h >= 12 ? "PM" : "AM";
+  const hh = h % 12 === 0 ? 12 : h % 12;
+  return `${hh}:${String(m).padStart(2, "0")} ${ampm}`;
+}
+
+/** Time-of-day select in 15-minute steps, value in minutes since midnight. */
+export function TimeSelect({
+  valueMin,
+  onChange,
+  fromMin = 5 * 60,
+  toMin = 22 * 60,
+  ...props
+}: Omit<SelectHTMLAttributes<HTMLSelectElement>, "value" | "onChange"> & {
+  valueMin: number;
+  onChange: (min: number) => void;
+  fromMin?: number;
+  toMin?: number;
+}) {
+  const options: number[] = [];
+  for (let m = fromMin; m <= toMin; m += TIME_STEP_MIN) options.push(m);
+  // A stored value outside the visible window (legacy data) must not be
+  // silently re-written by the select — include it so it round-trips.
+  if (!options.includes(valueMin)) options.push(valueMin);
+  options.sort((a, b) => a - b);
+  return (
+    <select className={inputClass} value={valueMin} onChange={(e) => onChange(Number(e.target.value))} {...props}>
+      {options.map((m) => (
+        <option key={m} value={m}>{fmtTime(m)}</option>
+      ))}
+    </select>
+  );
+}
+
 export function Badge({ children, tone = "gray" }: { children: ReactNode; tone?: "gray" | "green" | "amber" | "red" | "brand" }) {
   const tones = {
     gray: "bg-stone-100 text-stone-700",
@@ -61,9 +138,9 @@ export function Badge({ children, tone = "gray" }: { children: ReactNode; tone?:
 }
 
 export function KycBadge({ level }: { level: number }) {
-  if (level >= 3) return <Badge tone="green">✔ Fully Vetted</Badge>;
-  if (level >= 2) return <Badge tone="brand">✔ ID Verified</Badge>;
-  if (level >= 1) return <Badge tone="gray">✔ Phone Verified</Badge>;
+  if (level >= 3) return <Badge tone="green"><IconCheck size={12} strokeWidth={3} /> Fully Vetted</Badge>;
+  if (level >= 2) return <Badge tone="brand"><IconCheck size={12} strokeWidth={3} /> ID Verified</Badge>;
+  if (level >= 1) return <Badge tone="gray"><IconCheck size={12} strokeWidth={3} /> Phone Verified</Badge>;
   return <Badge tone="amber">Unverified</Badge>;
 }
 
@@ -80,8 +157,8 @@ export function ErrorNote({ message }: { message: string | null }) {
   return <div className="rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{message}</div>;
 }
 
-export function Stars({ value }: { value: number | null }) {
-  if (value == null) return <span className="text-xs text-gray-400">No ratings yet</span>;
+export function Stars({ value, emptyLabel = "No ratings yet" }: { value: number | null; emptyLabel?: string }) {
+  if (value == null) return <span className="text-xs text-gray-400">{emptyLabel}</span>;
   return (
     <span className="text-sm font-semibold text-amber-500">
       {"★".repeat(Math.round(value))}

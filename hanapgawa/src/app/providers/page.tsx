@@ -3,21 +3,25 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { fetchJson, pesos } from "@/lib/client";
-import { Button, Card, KycBadge, Select, Spinner, Stars } from "@/components/ui";
+import { Button, Card, DateTimeInput, KycBadge, Select, Spinner, Stars } from "@/components/ui";
 import { Avatar } from "@/components/avatar";
 import { REGIONS, citiesOfRegion, getCity } from "@/lib/psgc";
+import { catName, useLang, useT } from "@/lib/i18n";
+import { IconMapPin } from "@/components/icons";
 
 interface Category { id: string; name: string; nameTl: string; icon: string }
 interface ProviderRow {
   photoUrl?: string | null;
   id: string; firstName: string; lastInitial: string; cityCode: string; kycLevel: number;
   ratingAvg: number | null; ratingCount: number;
-  categories: { categoryId: string; nameTl: string; icon: string; headline?: string | null; rateCents?: number | null; rateUnit?: string | null }[];
+  categories: { categoryId: string; name: string; nameTl: string; icon: string; headline?: string | null; rateCents?: number | null; rateUnit?: string | null }[];
 }
 
 const RATE_UNIT: Record<string, string> = { PER_HOUR: "/hr", PER_JOB: "/job", PER_KILO: "/kilo", PER_DAY: "/day" };
 
 export default function ProvidersPage() {
+  const t = useT();
+  const { lang } = useLang();
   const [categories, setCategories] = useState<Category[]>([]);
   const [providers, setProviders] = useState<ProviderRow[] | null>(null);
   const [region, setRegion] = useState("");
@@ -51,35 +55,33 @@ export default function ProvidersPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-extrabold sm:text-2xl">Mga Service Provider 🧰</h1>
+      <h1 className="text-xl font-bold sm:text-2xl">{t("Mga Service Provider", "Service Providers")}</h1>
       <Card>
         <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 sm:grid-cols-3">
           <Select value={region} onChange={(e) => { setRegion(e.target.value); setCity(""); }}>
-            <option value="">Lahat ng region</option>
+            <option value="">{t("Lahat ng region", "All regions")}</option>
             {REGIONS.map((r) => <option key={r.code} value={r.code}>{r.short}</option>)}
           </Select>
           <Select value={city} onChange={(e) => setCity(e.target.value)} disabled={!region}>
-            <option value="">Lahat ng city</option>
+            <option value="">{t("Lahat ng city", "All cities")}</option>
             {citiesOfRegion(region).map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
           </Select>
           <Select value={category} onChange={(e) => setCategory(e.target.value)}>
-            <option value="">Lahat ng serbisyo</option>
-            {categories.map((c) => <option key={c.id} value={c.id}>{c.icon} {c.nameTl}</option>)}
+            <option value="">{t("Lahat ng serbisyo", "All services")}</option>
+            {categories.map((c) => <option key={c.id} value={c.id}>{c.icon} {catName(lang, c)}</option>)}
           </Select>
         </div>
         <div className="mt-3">
           <label className="block">
-            <span className="mb-1 block text-sm font-semibold text-gray-800">🗓️ Kailan mo kailangan? (optional)</span>
-            <input
-              type="datetime-local"
-              value={needAt}
-              onChange={(e) => setNeedAt(e.target.value)}
-              className="w-full min-h-12 rounded-xl border border-stone-300 bg-white px-4 py-3 text-base focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-200"
-            />
+            <span className="mb-1 block text-sm font-semibold text-gray-800">{t("Kailan mo kailangan? (optional)", "When do you need it? (optional)")}</span>
+            <DateTimeInput value={needAt} onChange={setNeedAt} />
             <span className="mt-1 block text-xs text-gray-500">
               {needAt
-                ? "Ipinapakita lang ang mga bakante sa oras na iyan — walang ibang booking at pasok sa kanilang oras."
-                : "Piliin ang oras para makita kung sino ang bakante noon."}
+                ? t(
+                    "Ipinapakita lang ang mga bakante sa oras na iyan — walang ibang booking at pasok sa kanilang oras.",
+                    "Showing only providers free at that time — no clashing booking, and within their stated hours.",
+                  )
+                : t("Piliin ang oras para makita kung sino ang bakante noon.", "Pick a time to see who's free then.")}
             </span>
           </label>
         </div>
@@ -88,7 +90,9 @@ export default function ProvidersPage() {
       {providers === null ? (
         <Spinner />
       ) : providers.length === 0 ? (
-        <Card className="py-10 text-center text-gray-500">Wala pang provider dito. Ikaw kaya ang mauna? 😉</Card>
+        <Card className="py-10 text-center text-gray-500">
+          {t("Wala pang provider dito. Ikaw kaya ang mauna?", "No providers here yet. Be the first?")}
+        </Card>
       ) : (
         <>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -103,14 +107,14 @@ export default function ProvidersPage() {
                   <KycBadge level={p.kycLevel} />
                 </div>
                 <div className="mt-1 flex items-center gap-2 text-xs text-gray-500">
-                  <Stars value={p.ratingAvg} />
+                  <Stars value={p.ratingAvg} emptyLabel={t("Wala pang rating", "No ratings yet")} />
                   {p.ratingCount > 0 && <span>({p.ratingCount})</span>}
-                  <span>· 📍 {getCity(p.cityCode)?.name ?? p.cityCode}</span>
+                  <span className="inline-flex items-center gap-1">· <IconMapPin size={12} /> {getCity(p.cityCode)?.name ?? p.cityCode}</span>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {p.categories.map((c) => (
                     <span key={c.categoryId} className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-800">
-                      {c.icon} {c.nameTl}
+                      {c.icon} {catName(lang, c)}
                       {c.rateCents ? ` · ${pesos(c.rateCents)}${c.rateUnit ? RATE_UNIT[c.rateUnit] ?? "" : ""}` : ""}
                     </span>
                   ))}

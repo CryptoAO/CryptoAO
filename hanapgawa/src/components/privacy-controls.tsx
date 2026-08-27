@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { fetchJson } from "@/lib/client";
 import { Button, Card, ErrorNote, Input } from "@/components/ui";
+import { useT } from "@/lib/i18n";
 
 interface Blocker { code: string; message: string }
 interface ClosureCheck { canClose: boolean; blockers: Blocker[] }
@@ -19,6 +20,7 @@ interface ClosureCheck { canClose: boolean; blockers: Blocker[] }
  */
 export function PrivacyControls() {
   const router = useRouter();
+  const t = useT();
   const [stage, setStage] = useState<"idle" | "checking" | "blocked" | "confirm" | "closing">("idle");
   const [check, setCheck] = useState<ClosureCheck | null>(null);
   const [password, setPassword] = useState("");
@@ -53,11 +55,9 @@ export function PrivacyControls() {
 
   return (
     <Card className="space-y-3">
-      <h2 className="font-bold">Data at privacy</h2>
+      <h2 className="font-bold">{t("Data at privacy", "Data & privacy")}</h2>
       <p className="text-sm text-gray-600">
-        Sa ilalim ng <Link href="/privacy" className="underline">Data Privacy Act (RA 10173)</Link>,
-        karapatan mong makita, makuha, at ipabura ang data mo. Libre — at hindi mo kailangang mag-email
-        para gawin ito.
+        {t("Sa ilalim ng", "Under the")} <Link href="/privacy" className="underline">Data Privacy Act (RA 10173)</Link>{t(", karapatan mong makita, makuha, at ipabura ang data mo. Libre — at hindi mo kailangang mag-email para gawin ito.", ", you have the right to see, take, and erase your data. Free — and you never have to email anyone to use it.")}
       </p>
 
       <a
@@ -65,30 +65,29 @@ export function PrivacyControls() {
         download
         className="flex min-h-12 w-full items-center justify-center rounded-xl border border-brand-700 bg-white px-5 py-3 text-base font-semibold text-brand-800"
       >
-        ⬇ I-download ang lahat ng data ko
+        {t("I-download ang lahat ng data ko", "Download all my data")}
       </a>
       <p className="text-xs text-gray-500">
-        JSON file — profile, trabaho, offers, mensahe mo, reviews, at buong wallet history. Hindi kasama
-        ang larawan ng ID mo; hindi namin iyon ipinapadala sa kahit anong link.
+        {t("JSON file — profile, trabaho, offers, mensahe mo, reviews, at buong wallet history. Hindi kasama ang larawan ng ID mo; hindi namin iyon ipinapadala sa kahit anong link.", "A JSON file — your profile, jobs, offers, messages, reviews, and full wallet history. Your ID photo is not included; we never send that over any link.")}
       </p>
 
       <div className="border-t border-stone-100 pt-3">
         {stage === "idle" && (
           <button onClick={startClosure} className="text-sm font-semibold text-red-600 underline">
-            Isara ang account ko
+            {t("Isara ang account ko", "Close my account")}
           </button>
         )}
 
-        {stage === "checking" && <p className="text-sm text-gray-500">Chine-check…</p>}
+        {stage === "checking" && <p className="text-sm text-gray-500">{t("Chine-check…", "Checking…")}</p>}
 
         {stage === "blocked" && check && (
           <div className="space-y-2 rounded-xl bg-amber-50 p-3">
-            <p className="text-sm font-semibold text-amber-900">Hindi pa pwedeng isara:</p>
+            <p className="text-sm font-semibold text-amber-900">{t("Hindi pa pwedeng isara:", "Cannot close yet:")}</p>
             <ul className="list-inside list-disc space-y-1 text-sm text-amber-900">
               {check.blockers.map((b) => <li key={b.code}>{b.message}</li>)}
             </ul>
             <button onClick={() => setStage("idle")} className="text-sm font-semibold text-gray-600 underline">
-              Sige, ayusin ko muna
+              {t("Sige, ayusin ko muna", "Okay, I will settle those first")}
             </button>
           </div>
         )}
@@ -96,9 +95,8 @@ export function PrivacyControls() {
         {(stage === "confirm" || stage === "closing") && (
           <div className="space-y-3 rounded-xl border border-red-200 bg-red-50 p-3">
             <p className="text-sm text-red-900">
-              <strong>Hindi na ito maibabalik.</strong> Buburahin namin ang pangalan, number, at profile
-              mo. Mananatili ang record ng bayaran at ang mga review na isinulat mo — bahagi na iyon ng
-              reputasyon ng ibang tao at ng aming libro — pero wala nang pangalan mo.
+              <strong>{t("Hindi na ito maibabalik.", "This cannot be undone.")}</strong>{" "}
+              {t("Buburahin namin ang pangalan, number, at profile mo. Mananatili ang record ng bayaran at ang mga review na isinulat mo — bahagi na iyon ng reputasyon ng ibang tao at ng aming libro — pero wala nang pangalan mo.", "We erase your name, number, and profile. Payment records and the reviews you wrote remain — they are part of other people's reputation and our books — but your name is gone from them.")}
             </p>
             <label className="flex items-start gap-2 text-sm text-red-900">
               <input
@@ -107,13 +105,13 @@ export function PrivacyControls() {
                 onChange={(e) => setUnderstood(e.target.checked)}
                 className="mt-1 h-5 w-5 accent-red-600"
               />
-              Naiintindihan ko at gusto kong ituloy.
+              {t("Naiintindihan ko at gusto kong ituloy.", "I understand and want to continue.")}
             </label>
             <Input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password mo"
+              placeholder={t("Password mo", "Your password")}
               autoComplete="current-password"
             />
             <ErrorNote message={error} />
@@ -123,10 +121,10 @@ export function PrivacyControls() {
                 disabled={stage === "closing" || !understood || password.length === 0}
                 onClick={confirmClosure}
               >
-                {stage === "closing" ? "Isinasara…" : "Isara ang account"}
+                {stage === "closing" ? t("Isinasara…", "Closing…") : t("Isara ang account", "Close account")}
               </Button>
               <Button variant="ghost" disabled={stage === "closing"} onClick={() => setStage("idle")}>
-                Wag na lang
+                {t("Wag na lang", "Never mind")}
               </Button>
             </div>
           </div>

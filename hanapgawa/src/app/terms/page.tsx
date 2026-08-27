@@ -13,7 +13,7 @@ export default function TermsPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-4">
       <div>
-        <h1 className="text-2xl font-extrabold">Terms of Service</h1>
+        <h1 className="text-2xl font-bold">Terms of Service</h1>
         <p className="mt-1 text-sm text-gray-500">Huling update: 25 Agosto 2026</p>
       </div>
 

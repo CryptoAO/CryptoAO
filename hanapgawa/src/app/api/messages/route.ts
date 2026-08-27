@@ -59,7 +59,7 @@ export const GET = api(async (req: NextRequest) => {
 export const POST = api(async (req: NextRequest) => {
   const user = await requireVerifiedUser();
   if (!rateLimit(`msg:${user.id}`, LIMITS.message.max, LIMITS.message.windowMs)) {
-    throw new ApiError(429, "Slow down a little 🙂");
+    throw new ApiError(429, "Slow down a little");
   }
   const body = await parseBody(req, messageCreateSchema);
   if (body.toUserId === user.id) throw new ApiError(400, "You can't message yourself");
