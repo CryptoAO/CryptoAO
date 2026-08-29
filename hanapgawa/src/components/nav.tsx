@@ -13,8 +13,11 @@ interface Me {
   balanceCents?: number;
 }
 
-export function Nav() {
-  const [me, setMe] = useState<Me | null>(null);
+export function Nav({ maybeAuthed = true }: { maybeAuthed?: boolean }) {
+  // With no session cookie, start in the logged-out state so Login/Sign up
+  // are in the server-rendered HTML; with a cookie, stay unknown (null)
+  // until /api/me answers, avoiding a Login flash for signed-in users.
+  const [me, setMe] = useState<Me | null>(maybeAuthed ? null : { user: null });
   const pathname = usePathname();
   const t = useT();
 

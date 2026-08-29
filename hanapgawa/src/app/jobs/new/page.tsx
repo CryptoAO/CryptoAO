@@ -10,7 +10,7 @@ import { assessBudget } from "@/lib/pricing";
 import { catName, useLang, useT } from "@/lib/i18n";
 import { IconInfo, IconLock, IconRepeat, IconSend } from "@/components/icons";
 
-interface Category { id: string; name: string; nameTl: string; icon: string; minPriceCents: number }
+interface Category { id: string; slug?: string; name: string; nameTl: string; icon: string; minPriceCents: number }
 interface Guidance {
   lowCents: number; highCents: number; source: "city" | "nationwide" | "estimate";
   sampleSize: number; note: string | null; minCents: number;
@@ -199,6 +199,22 @@ function NewJobForm() {
               ))}
             </Select>
           </Field>
+          {selected?.slug === "care" && (
+            <p className="rounded-xl bg-amber-50 p-3 text-xs text-amber-900">
+              {t(
+                "Paalala sa alaga ng matanda o bata: hindi lisensyadong caregiver ang mga provider maliban kung napatunayan nila ito sa'yo. Para sa menor de edad, dapat may adult na guardian na abot-tawag sa buong trabaho.",
+                "A note on elder and child care: providers are not licensed caregivers unless they have proven it to you. For minors, an adult guardian must be reachable for the whole job.",
+              )}
+            </p>
+          )}
+          {selected?.slug === "driver" && (
+            <p className="rounded-xl bg-amber-50 p-3 text-xs text-amber-900">
+              {t(
+                "Paalala sa hatid-sundo: pribadong kasunduan ito — hindi bineberipika ng platform ang insurance, OR/CR, o LTFRB authority. Tingnan ang lisensya bago sumakay.",
+                "A note on driving jobs: this is a private arrangement — the platform does not verify insurance, OR/CR, or LTFRB authority. Check the license before you ride.",
+              )}
+            </p>
+          )}
           <Field
             label={t("Maikling title", "Short title")}
             hint={t('Hal. "Labada + plantsa, 2 bags, kunin sa bahay"', 'E.g. "Laundry + ironing, 2 bags, home pickup"')}

@@ -6,8 +6,11 @@ import { DEMO_MODE } from "@/lib/demo";
 import { Pwa } from "@/components/pwa";
 import { LangProvider } from "@/lib/i18n";
 import { LANG_COOKIE, normalizeLang, tr } from "@/lib/i18n-shared";
+import Link from "next/link";
+import { baseUrl } from "@/lib/baseurl";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(baseUrl()),
   title: "HanapGawa — May kailangan? May kaya!",
   description:
     "Ang marketplace ng serbisyo para sa lahat: labada, linis-bahay, hatid-sundo, padala, personal trainer at iba pa. Ligtas, may escrow, bayad sa app.",
@@ -57,34 +60,41 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // Language is resolved server-side from the cookie so the first paint is
   // already in the right language — no flash, and <html lang> is truthful.
-  const lang = normalizeLang((await cookies()).get(LANG_COOKIE)?.value);
+  const store = await cookies();
+  const lang = normalizeLang(store.get(LANG_COOKIE)?.value);
+  // Cookie *presence* only — validation happens per-request in the API. This
+  // lets the header render Login/Sign up in the server HTML for the 99% of
+  // first visits that have no session, instead of a blank corner until JS.
+  const maybeAuthed = store.has("hg_session");
 
   return (
     <html lang={lang === "en" ? "en" : "fil"}>
       <body className="min-h-screen pb-20 sm:pb-0">
         <LangProvider initial={lang}>
           {DEMO_MODE && (
-            <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-center text-xs text-amber-900">
+            <div className="border-b border-amber-200 bg-amber-50 px-4 py-1.5 text-center text-xs text-amber-900">
               <strong>DEMO</strong>
               {" — "}
               {tr(lang,
-                "pansubok lang: peke ang pera, at nagre-reset ang data paminsan-paminsan.",
-                "test environment: money is fake and data resets from time to time.")}
-              {" "}
-              {tr(lang, "Subukan", "Try")}: client <strong>09170000006</strong> · provider <strong>09170000002</strong> · admin{" "}
-              <strong>09170000001</strong> — password <strong>password123</strong>.
+                "pansubok lang: peke ang pera, nagre-reset ang data.",
+                "test build: money is fake, data resets.")}{" "}
+              <Link href="/login" className="font-semibold underline">
+                {tr(lang, "Demo accounts sa Login", "Demo accounts on the Login page")}
+              </Link>
             </div>
           )}
-          <Nav />
+          <Nav maybeAuthed={maybeAuthed} />
           <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>
-          <footer className="mt-12 hidden border-t border-stone-200 bg-white py-8 text-center text-xs text-gray-500 sm:block">
+          <footer className="mt-12 border-t border-stone-200 bg-white py-8 text-center text-xs text-gray-500">
             <p className="font-semibold text-gray-700">HanapGawa</p>
             <p className="mt-1">{tr(lang, "Ligtas na trabaho, ligtas na bayaran.", "Safe work, safe payments.")}</p>
             <p className="mt-2 flex flex-wrap justify-center gap-x-4 gap-y-1">
+              <a href="/jobs" className="underline hover:text-brand-800">{tr(lang, "Hanap Trabaho", "Find Work")}</a>
+              <a href="/providers" className="underline hover:text-brand-800">{tr(lang, "Mga Provider", "Providers")}</a>
               <a href="/help" className="underline hover:text-brand-800">{tr(lang, "Tulong / FAQ", "Help / FAQ")}</a>
               <a href="/safety" className="underline hover:text-brand-800">Safety</a>
-              <a href="/terms" className="underline hover:text-brand-800">Terms of Service</a>
-              <a href="/privacy" className="underline hover:text-brand-800">Privacy Notice</a>
+              <a href="/terms" className="underline hover:text-brand-800">Terms</a>
+              <a href="/privacy" className="underline hover:text-brand-800">Privacy</a>
             </p>
           </footer>
           <Pwa />

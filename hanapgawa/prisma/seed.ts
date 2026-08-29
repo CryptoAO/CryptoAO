@@ -74,10 +74,14 @@ async function main() {
   const mang = await user({ phone: "+639170000003", firstName: "Mang Ben", lastName: "Reyes", regionCode: "13", cityCode: "makati", isProvider: true, kycLevel: 2, bio: "Family driver for 8 years, defensive driving certified. Hatid-sundo, provincial trips OK." });
   const coach = await user({ phone: "+639170000004", firstName: "Coach Migs", lastName: "Dela Cruz", regionCode: "07", cityCode: "cebu-city", isProvider: true, kycLevel: 2, bio: "Certified fitness trainer. Home workouts, sali na sa program!" });
   const rina = await user({ phone: "+639170000005", firstName: "Rina", lastName: "Lopez", regionCode: "11", cityCode: "davao-city", isProvider: true, kycLevel: 1, bio: "Dog walker at pet sitter. Mahal ko ang mga aso 🐶" });
+  const tonyo = await user({ phone: "+639170000009", firstName: "Mang Tonyo", lastName: "Villanueva", regionCode: "13", cityCode: "makati", isProvider: true, kycLevel: 2, bio: "Tubero at elektrisyan, 20 taon sa serbisyo. May sariling gamit, marunong sa condo at bahay." });
+  const grace = await user({ phone: "+639170000010", firstName: "Ate Grace", lastName: "Navarro", regionCode: "13", cityCode: "quezon-city", isProvider: true, kycLevel: 2, bio: "LET passer, 6 na taon nagtuturo. Math at English tutor para sa elementary at junior high." });
+  const marites = await user({ phone: "+639170000011", firstName: "Marites", lastName: "Cruz", regionCode: "07", cityCode: "cebu-city", isProvider: true, kycLevel: 1, bio: "Home service gupit, kulot, at kuko. Dating salon stylist, may kumpletong gamit." });
 
   const carlo = await user({ phone: "+639170000006", firstName: "Carlo", lastName: "Garcia", regionCode: "13", cityCode: "quezon-city", kycLevel: 2 });
   const mia = await user({ phone: "+639170000007", firstName: "Mia", lastName: "Tan", regionCode: "13", cityCode: "makati", kycLevel: 1 });
   const jose = await user({ phone: "+639170000008", firstName: "Jose", lastName: "Ramos", regionCode: "07", cityCode: "cebu-city", kycLevel: 1 });
+  const liza = await user({ phone: "+639170000012", firstName: "Liza", lastName: "Mendoza", regionCode: "11", cityCode: "davao-city", kycLevel: 1 });
 
   // Provider categories + availability
   const pcs: [string, string, { headline?: string; rateCents?: number; rateUnit?: string; yearsExp?: number }][] = [
@@ -87,6 +91,11 @@ async function main() {
     [mang.id, cats.padala, { headline: "Padala within Metro Manila", rateCents: 15000, rateUnit: "PER_JOB" }],
     [coach.id, cats.fitness, { headline: "1-on-1 home workout", rateCents: 50000, rateUnit: "PER_JOB", yearsExp: 5 }],
     [rina.id, cats.petcare, { headline: "Dog walking, 1 hour", rateCents: 15000, rateUnit: "PER_JOB", yearsExp: 3 }],
+    [tonyo.id, cats.plumbing, { headline: "Tubero — tulo, bara, kabit", rateCents: 60000, rateUnit: "PER_JOB", yearsExp: 20 }],
+    [tonyo.id, cats.electrical, { headline: "Elektrisyan — wiring at kabit-ilaw", rateCents: 70000, rateUnit: "PER_JOB", yearsExp: 20 }],
+    [tonyo.id, cats.aircon, { headline: "Linis-aircon, window at split", rateCents: 60000, rateUnit: "PER_JOB", yearsExp: 10 }],
+    [grace.id, cats.tutor, { headline: "Math at English, elem hanggang JHS", rateCents: 35000, rateUnit: "PER_HOUR", yearsExp: 6 }],
+    [marites.id, cats.beauty, { headline: "Gupit, kulot, kuko — home service", rateCents: 30000, rateUnit: "PER_JOB", yearsExp: 8 }],
   ];
   for (const [providerId, categoryId, extra] of pcs) {
     await db.providerCategory.upsert({
@@ -95,7 +104,7 @@ async function main() {
       create: { providerId, categoryId, ...extra },
     });
   }
-  for (const p of [aling, mang, coach, rina]) {
+  for (const p of [aling, mang, coach, rina, tonyo, grace, marites]) {
     const existing = await db.availabilitySlot.count({ where: { providerId: p.id } });
     if (existing === 0) {
       for (const weekday of [1, 2, 3, 4, 5, 6]) {
@@ -104,7 +113,10 @@ async function main() {
     }
   }
 
-  // Open jobs across cities
+  // Open jobs across cities. Each carries real coordinates (city center
+  // plus a small offset) so "Malapit sa'kin" has something to measure, and
+  // a staggered age so "Pinakabago" doesn't show six posts born in the
+  // same second.
   const openJobs = [
     { clientId: carlo.id, categoryId: cats.laundry, title: "Labada 2 bags + plantsa, kunin sa bahay", description: "Dalawang malaking bag ng damit, may kasamang plantsa. Sana makuha bukas ng umaga at maibalik sa loob ng 2 araw.", regionCode: "13", cityCode: "quezon-city", barangay: "Batasan Hills", budgetCents: 60000, payType: "FIXED" },
     { clientId: mia.id, categoryId: cats.cleaning, title: "General cleaning ng 1BR condo bago lumipat", description: "35sqm 1BR condo sa Makati. Deep clean: banyo, kusina, bintana. Dalhin ang sariling cleaning materials kung kaya.", regionCode: "13", cityCode: "makati", budgetCents: 120000, payType: "FIXED" },
@@ -112,10 +124,33 @@ async function main() {
     { clientId: jose.id, categoryId: cats.fitness, title: "Personal trainer, 3x a week, home workout", description: "Beginner ako, gusto ko magpapayat ng 10kg. May dumbbells sa bahay. Per session muna tayo.", regionCode: "07", cityCode: "cebu-city", budgetCents: 40000, payType: "HOURLY" },
     { clientId: carlo.id, categoryId: cats.padala, title: "Padala ng dokumento QC → Ortigas ngayong hapon", description: "Isang envelope lang, pickup sa Batasan area, deliver sa Ortigas Center office bago mag-5PM.", regionCode: "13", cityCode: "quezon-city", budgetCents: 18000, payType: "FIXED" },
     { clientId: jose.id, categoryId: cats.petcare, title: "Dog walk tuwing umaga, 1 week", description: "Golden retriever, mabait. 30-45 mins kada umaga, 7AM. Malapit sa IT Park.", regionCode: "07", cityCode: "cebu-city", budgetCents: 70000, payType: "FIXED" },
+    { clientId: jose.id, categoryId: cats.aircon, title: "Linis ng 2 split-type aircon", description: "Dalawang 1HP split-type sa condo, hindi pa nalilinis ng isang taon. May tubig at kuryente, kailangan lang ng gamit.", regionCode: "07", cityCode: "cebu-city", budgetCents: 120000, payType: "FIXED" },
+    { clientId: carlo.id, categoryId: cats.tutor, title: "Math tutor para sa Grade 6, 2x a week", description: "Anak ko, Grade 6, nahihirapan sa fractions at word problems. Tuwing Martes at Huwebes, 4-6PM, sa bahay sa Batasan.", regionCode: "13", cityCode: "quezon-city", budgetCents: 35000, payType: "HOURLY" },
+    { clientId: liza.id, categoryId: cats.petcare, title: "Pet sitter, 3 araw, dalawang pusa", description: "Uuwi ako ng probinsya, 3 araw. Pakainin at linisan ang litter box ng dalawang pusa, isang dalaw kada araw, Matina area.", regionCode: "11", cityCode: "davao-city", budgetCents: 45000, payType: "FIXED" },
   ];
+  const CITY_COORD: Record<string, { lat: number; lng: number }> = {
+    "quezon-city": { lat: 14.676, lng: 121.0437 },
+    makati: { lat: 14.5547, lng: 121.0244 },
+    "cebu-city": { lat: 10.3157, lng: 123.8854 },
+    "davao-city": { lat: 7.1907, lng: 125.4553 },
+  };
   const jobCount = await db.job.count();
   if (jobCount === 0) {
-    for (const j of openJobs) await db.job.create({ data: { ...j, status: "OPEN" } });
+    for (let i = 0; i < openJobs.length; i++) {
+      const j = openJobs[i];
+      const c = CITY_COORD[j.cityCode];
+      // Deterministic ~±2km scatter around the city center, aged 2h–3d.
+      const jitter = ((i * 37) % 100) / 100 - 0.5;
+      await db.job.create({
+        data: {
+          ...j,
+          status: "OPEN",
+          lat: c ? c.lat + jitter * 0.04 : null,
+          lng: c ? c.lng + jitter * 0.04 : null,
+          createdAt: new Date(Date.now() - (i * 7 + 2) * 60 * 60 * 1000),
+        },
+      });
+    }
 
     // One fully completed job so ratings/wallets have history:
     const done = await db.job.create({
@@ -168,6 +203,7 @@ async function main() {
   console.log("  Admin:    +639170000001 / 09170000001");
   console.log("  Provider: +639170000002 (Aling Nena, QC, fully vetted)");
   console.log("  Client:   +639170000006 (Carlo, QC)");
+  void liza;
   void admin;
 }
 

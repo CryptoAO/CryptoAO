@@ -3,6 +3,9 @@ import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { Card } from "@/components/ui";
 import { LANG_COOKIE, normalizeLang, tr } from "@/lib/i18n-shared";
+import { initialJobs } from "@/lib/landing";
+import { pesos, timeAgo } from "@/lib/format";
+import { getCity } from "@/lib/psgc";
 import { IconChat, IconLock, IconShieldCheck, IconWallet } from "@/components/icons";
 
 export const dynamic = "force-dynamic";
@@ -11,11 +14,12 @@ export default async function Home() {
   const lang = normalizeLang((await cookies()).get(LANG_COOKIE)?.value);
   const t = (tl: string, en: string) => tr(lang, tl, en);
 
-  const [categories, openJobs, providers, completed] = await Promise.all([
+  const [categories, openJobs, providers, completed, latest] = await Promise.all([
     db.category.findMany({ where: { active: true }, orderBy: { sort: "asc" } }),
     db.job.count({ where: { status: "OPEN" } }),
     db.user.count({ where: { isProvider: true, status: "ACTIVE" } }),
     db.job.count({ where: { status: "COMPLETED" } }),
+    initialJobs(3),
   ]);
 
   const trust = [
@@ -100,16 +104,16 @@ export default async function Home() {
         </p>
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">
           <Link
-            href="/jobs"
+            href="/jobs/new"
             className="rounded-xl bg-sun-500 px-6 py-3.5 text-center text-base font-bold text-ink-900 hover:bg-sun-400"
           >
-            {t("Hanap Trabaho / Raket", "Find Work")}
+            {t("May kailangan ako — Mag-post", "I need something done — Post")}
           </Link>
           <Link
-            href="/jobs/new"
+            href="/jobs"
             className="rounded-xl bg-white/10 px-6 py-3.5 text-center text-base font-bold text-white ring-1 ring-white/40 hover:bg-white/20"
           >
-            {t("Mag-post ng Kailangan", "Post a Job")}
+            {t("May kaya ako — Hanap Raket", "I can work — Find Jobs")}
           </Link>
         </div>
         <div className="mt-8 grid grid-cols-3 gap-3 text-center text-sm">
@@ -138,13 +142,47 @@ export default async function Home() {
                 <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-stone-100 text-2xl">{c.icon}</span>
                 <div>
                   <div className="text-sm font-bold">{lang === "en" ? c.name : c.nameTl}</div>
-                  <div className="text-xs text-gray-500">{lang === "en" ? c.nameTl : c.name}</div>
+                  {c.name !== c.nameTl && (
+                    <div className="text-xs text-gray-500">{lang === "en" ? c.nameTl : c.name}</div>
+                  )}
                 </div>
               </Card>
             </Link>
           ))}
         </div>
       </section>
+
+      {/* Latest jobs — real inventory, server-rendered */}
+      {latest.jobs.length > 0 && (
+        <section>
+          <div className="mb-4 flex items-baseline justify-between">
+            <h2 className="text-xl font-bold text-gray-900">{t("Mga bagong trabaho", "Newest jobs")}</h2>
+            <Link href="/jobs" className="text-sm font-bold text-brand-800 underline">
+              {t("Tingnan lahat →", "See all →")}
+            </Link>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {latest.jobs.map((j) => (
+              <Link key={j.id} href={`/jobs/${j.id}`}>
+                <Card className="h-full transition-shadow hover:shadow-md">
+                  <div className="flex items-start gap-3">
+                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-stone-100 text-xl">{j.category.icon}</span>
+                    <div className="min-w-0">
+                      <h3 className="line-clamp-2 text-sm font-bold leading-snug">{j.title}</h3>
+                      <div className="mt-1 text-xs text-gray-500">
+                        {getCity(j.cityCode)?.name ?? j.cityCode} · {timeAgo(j.createdAt)}
+                      </div>
+                      <div className="mt-1 text-sm font-bold text-brand-800">
+                        {pesos(j.budgetCents)}{j.payType === "HOURLY" ? "/hr" : ""}
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* How it works */}
       <section className="grid gap-4 sm:grid-cols-3">

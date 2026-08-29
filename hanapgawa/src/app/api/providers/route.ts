@@ -77,13 +77,21 @@ export const GET = api(async (req: NextRequest) => {
   }
 
   const ids = visible.map((u) => u.id);
-  const ratings = await db.review.groupBy({
-    by: ["rateeId"],
-    where: { rateeId: { in: ids } },
-    _avg: { rating: true },
-    _count: { rating: true },
-  });
+  const [ratings, completedCounts] = await Promise.all([
+    db.review.groupBy({
+      by: ["rateeId"],
+      where: { rateeId: { in: ids } },
+      _avg: { rating: true },
+      _count: { rating: true },
+    }),
+    db.job.groupBy({
+      by: ["assignedProviderId"],
+      where: { assignedProviderId: { in: ids }, status: "COMPLETED" },
+      _count: { _all: true },
+    }),
+  ]);
   const ratingMap = new Map(ratings.map((r) => [r.rateeId, r]));
+  const completedMap = new Map(completedCounts.map((c) => [c.assignedProviderId, c._count._all]));
 
   return ok({
     // With a time filter, total reflects what survived the filter — an
@@ -106,6 +114,7 @@ export const GET = api(async (req: NextRequest) => {
       })),
       ratingAvg: ratingMap.get(u.id)?._avg.rating ?? null,
       ratingCount: ratingMap.get(u.id)?._count.rating ?? 0,
+      completedJobs: completedMap.get(u.id) ?? 0,
     })),
   });
 });

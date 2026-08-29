@@ -18,6 +18,18 @@ const FILE_PATHS = [
 ];
 
 export function middleware(req: NextRequest) {
+  // ?lang=en / ?lang=tl on any page URL persists the choice and redirects to
+  // the clean URL — so a shared "English" link actually arrives in English,
+  // not just for people who find the toggle.
+  const lang = req.nextUrl.searchParams.get("lang");
+  if ((lang === "en" || lang === "tl") && !req.nextUrl.pathname.startsWith("/api")) {
+    const clean = req.nextUrl.clone();
+    clean.searchParams.delete("lang");
+    const redirect = NextResponse.redirect(clean);
+    redirect.cookies.set("hg_lang", lang, { path: "/", maxAge: 31536000, sameSite: "lax" });
+    return redirect;
+  }
+
   const res = NextResponse.next();
   if (FILE_PATHS.some((re) => re.test(req.nextUrl.pathname))) {
     res.headers.set("Content-Security-Policy", "default-src 'none'; img-src 'self'; sandbox");
@@ -29,5 +41,11 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/api/admin/kyc/:path*/document", "/api/jobs/:id/photos/:photoId", "/api/users/:id/photo"],
+  matcher: [
+    "/api/admin/kyc/:path*/document",
+    "/api/jobs/:id/photos/:photoId",
+    "/api/users/:id/photo",
+    // Pages only (static assets and API excluded) — for the ?lang= redirect.
+    "/((?!api|_next|icons|manifest|sw\\.js|favicon).*)",
+  ],
 };

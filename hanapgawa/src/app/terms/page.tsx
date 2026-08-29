@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Card } from "@/components/ui";
 import { PLATFORM_DEFAULT_TAKE_RATE_BPS } from "@/lib/money";
+import { LEGAL_DRAFT } from "@/lib/legal";
 
 export const metadata = {
   title: "Terms of Service — HanapGawa",
@@ -16,6 +17,12 @@ export default function TermsPage() {
         <h1 className="text-2xl font-bold">Terms of Service</h1>
         <p className="mt-1 text-sm text-gray-500">Huling update: 25 Agosto 2026</p>
       </div>
+      {LEGAL_DRAFT && (
+        <div className="rounded-xl border-2 border-dashed border-amber-400 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
+          DRAFT — Wala pang rehistradong kumpanya sa likod ng dokumentong ito. Ang mga nasa [bracket] ay
+          pupunan bago ang totoong launch; hanggang doon, huwag ituring na kasunduan sa isang tunay na entity.
+        </div>
+      )}
 
       <Card className="border-brand-200 bg-brand-50">
         <h2 className="font-bold text-brand-900">Ang maikling bersyon</h2>
@@ -147,7 +154,33 @@ export default function TermsPage() {
       </Card>
 
       <Card>
-        <h2 className="font-bold">8. Pagsasara ng account</h2>
+        <h2 className="font-bold">8. Mga espesyal na kategorya</h2>
+        <ul className="mt-2 list-inside list-disc space-y-2 text-sm text-gray-700">
+          <li>
+            <strong>Alaga ng matanda o bata.</strong> Ang provider ay hindi lisensyadong nars o caregiver
+            maliban kung siya mismo ang nagsabi at pinatunayan ito sa inyo. Para sa alaga ng batang menor de
+            edad, dapat may adult na guardian na abot-tawag sa buong trabaho. Ang anumang medikal na
+            pangangailangan ay responsibilidad ng pamilya, hindi ng platform.
+          </li>
+          <li>
+            <strong>Drayber at hatid-sundo.</strong> Pribadong kasunduan ito sa pagitan ninyo — hindi ito
+            vetted transport service. Hindi bineberipika ng platform ang insurance, OR/CR, o LTFRB
+            authority ng sinuman. Tingnan ang lisensya at pag-usapan ang sasakyan bago sumakay.
+          </li>
+          <li>
+            <strong>Home service na gupit, kulot, at kuko.</strong> Responsibilidad ng provider ang
+            kalinisan ng kanyang mga gamit. Kung may sugat o impeksyon na naidulot ng serbisyo,
+            i-report agad para sa dispute at sa aming aksyon sa provider.
+          </li>
+        </ul>
+        <p className="mt-2 text-xs text-gray-500">
+          Sa lahat ng trabahong nangyayari sa loob ng bahay: ang check-in, SOS, at chat record ay para sa
+          inyong dalawa — gamitin ninyo.
+        </p>
+      </Card>
+
+      <Card>
+        <h2 className="font-bold">9. Pagsasara ng account</h2>
         <p className="mt-2 text-sm text-gray-700">
           Pwede kang umalis anumang oras. Pwede naming suspindihin ang account na lumalabag sa Terms na
           ito, karaniwang may babala muna maliban kung may panganib sa iba. Ang perang nasa wallet mo na
@@ -156,7 +189,7 @@ export default function TermsPage() {
       </Card>
 
       <Card>
-        <h2 className="font-bold">9. Mga pagbabago at batas na sumasakop</h2>
+        <h2 className="font-bold">10. Mga pagbabago at batas na sumasakop</h2>
         <p className="mt-2 text-sm text-gray-700">
           Kapag may mahalagang pagbabago sa Terms na ito, ipapaalam namin sa app bago ito magkabisa.
           Sakop ito ng batas ng Republika ng Pilipinas.

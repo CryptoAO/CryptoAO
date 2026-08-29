@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Card } from "@/components/ui";
+import { LEGAL_DRAFT } from "@/lib/legal";
 
 export const metadata = {
   title: "Privacy Notice — HanapGawa",
@@ -87,6 +88,14 @@ export default function PrivacyPage() {
           Huling update: 25 Agosto 2026 · Sakop ng Data Privacy Act of 2012 (RA 10173)
         </p>
       </div>
+
+      {LEGAL_DRAFT && (
+        <div className="rounded-xl border-2 border-dashed border-amber-400 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
+          DRAFT — Wala pang rehistradong kumpanya sa likod ng dokumentong ito. Ang mga nasa [bracket] ay
+          pupunan bago ang totoong launch; hanggang doon, wala pang personal information controller na
+          maaaring managot sa ilalim ng notice na ito.
+        </div>
+      )}
 
       <Card className="border-brand-200 bg-brand-50">
         <h2 className="font-bold text-brand-900">Ang maikling bersyon</h2>

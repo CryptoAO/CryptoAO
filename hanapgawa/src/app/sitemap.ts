@@ -1,10 +1,14 @@
 import type { MetadataRoute } from "next";
 import { baseUrl } from "@/lib/baseurl";
+import { DEMO_MODE } from "@/lib/demo";
 
 // Public, stable pages only. Jobs and provider profiles are deliberately
 // out: jobs are ephemeral, and indexing people's profiles is a privacy
 // decision to make explicitly at launch, not a sitemap default.
 export default function sitemap(): MetadataRoute.Sitemap {
+  // A demo that tells crawlers "Disallow: /" must not simultaneously hand
+  // them a URL list — an empty sitemap keeps the two files consistent.
+  if (DEMO_MODE) return [];
   const base = baseUrl();
   const page = (path: string, priority: number): MetadataRoute.Sitemap[number] => ({
     url: `${base}${path}`,
