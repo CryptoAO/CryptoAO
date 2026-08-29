@@ -1,0 +1,528 @@
+// HanapGawa data model.
+// Dev runs on SQLite; production targets PostgreSQL — every type below is
+// Postgres-compatible (String status fields instead of enums so the same
+// schema works on both; enforce values with zod at the API boundary).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String  @id @default(cuid())
+  phone        String  @unique // canonical +639XXXXXXXXX
+  email        String? @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  // Storage key, not a URL — the image is served through an authenticated
+  // route so a face is never a publicly addressable object.
+  photoKey     String?
+  photoMime    String?
+  bio          String?
+
+  // Location (PSGC codes; barangay free text for MVP)
+  regionCode String
+  cityCode   String
+  barangay   String?
+  lat        Float?
+  lng        Float?
+
+  isClient   Boolean @default(true)
+  isProvider Boolean @default(false)
+  isAdmin    Boolean @default(false)
+
+  // KYC ladder: 0 registered, 1 phone verified, 2 gov ID verified, 3 clearance verified
+  kycLevel            Int       @default(0)
+  phoneVerifiedAt     DateTime?
+  idVerifiedAt        DateTime?
+  clearanceVerifiedAt DateTime?
+
+  // Providers can opt out of "new job near you" alerts without leaving the
+  // platform. Default on: a provider who hears about work comes back.
+  notifyNewJobs Boolean @default(true)
+
+  status       String @default("ACTIVE") // ACTIVE | FLAGGED | SUSPENDED | BANNED
+  strikeCount  Int    @default(0)
+  tokenVersion Int    @default(1) // bump to revoke all sessions
+
+  // Two-factor for admin accounts. The console is god mode over everyone's
+  // money and PII; a password alone must not be enough to open it.
+  totpSecret    String?
+  totpEnabledAt DateTime?
+
+  // Which Terms version this account agreed to, and when. Consent you
+  // cannot evidence is consent you do not have.
+  termsVersion    String?
+  termsAcceptedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  providerCategories ProviderCategory[]
+  availability       AvailabilitySlot[]
+  jobsPosted         Job[]               @relation("JobClient")
+  jobsAssigned       Job[]               @relation("JobProvider")
+  offers             Offer[]
+  messagesSent       Message[]           @relation("MsgSender")
+  messagesReceived   Message[]           @relation("MsgRecipient")
+  reviewsGiven       Review[]            @relation("ReviewRater")
+  reviewsReceived    Review[]            @relation("ReviewRatee")
+  ledgerEntries      LedgerEntry[]
+  kycSubmissions     KycSubmission[]     @relation("KycOwner")
+  kycReviews         KycSubmission[]     @relation("KycReviewer")
+  reportsMade        Report[]            @relation("ReportReporter")
+  reportsAgainst     Report[]            @relation("ReportTarget")
+  payoutRequests     PayoutRequest[]
+  notifications      Notification[]
+  trustedContacts    TrustedContact[]
+  checkIns           JobCheckIn[]
+  jobPhotos          JobPhoto[]
+  earningsStatements EarningsStatement[]
+  sosRaised          SosAlert[]          @relation("SosRaiser")
+  sosResolved        SosAlert[]          @relation("SosResolver")
+
+  @@index([regionCode, cityCode])
+  @@index([isProvider, status])
+}
+
+model OtpCode {
+  id         String    @id @default(cuid())
+  phone      String
+  codeHash   String
+  purpose    String // REGISTER | LOGIN | RESET
+  expiresAt  DateTime
+  attempts   Int       @default(0)
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([phone, purpose])
+}
+
+model Category {
+  id                 String @id @default(cuid())
+  slug               String @unique
+  name               String
+  nameTl             String // Taglish/Tagalog label shown in UI
+  icon               String // emoji for zero-asset MVP
+  defaultTakeRateBps Int    @default(1200) // platform commission, basis points
+  minPriceCents      Int    @default(5000) // floor to keep pricing sane (PHP 50)
+
+  // Starting price guidance, shown to clients who have no idea what a task
+  // is worth. These are estimates, not measured data — src/lib/pricing.ts
+  // prefers real completed-job percentiles as soon as there are enough of
+  // them, and only falls back to these.
+  typicalLowCents  Int?
+  typicalHighCents Int?
+  priceNote        String? // e.g. "kada 8 kilo" — what the range is FOR
+  sort             Int     @default(100)
+  active           Boolean @default(true)
+
+  jobs               Job[]
+  providerCategories ProviderCategory[]
+}
+
+model ProviderCategory {
+  id         String  @id @default(cuid())
+  providerId String
+  categoryId String
+  headline   String? // "Labandera for 10 yrs, may sariling plantsa"
+  rateCents  Int? // indicative rate
+  rateUnit   String? // PER_HOUR | PER_JOB | PER_KILO | PER_DAY
+  yearsExp   Int?
+
+  provider User     @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, categoryId])
+  @@index([categoryId])
+}
+
+model AvailabilitySlot {
+  id         String @id @default(cuid())
+  providerId String
+  weekday    Int // 0=Sunday .. 6=Saturday
+  startMin   Int // minutes from midnight
+  endMin     Int
+
+  provider User @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@index([providerId])
+}
+
+model Job {
+  id          String @id @default(cuid())
+  clientId    String
+  categoryId  String
+  title       String
+  description String
+
+  regionCode  String
+  cityCode    String
+  barangay    String?
+  // Exact address is PRIVATE: only revealed to the booked provider.
+  addressNote String?
+  lat         Float?
+  lng         Float?
+
+  payType     String // FIXED | HOURLY
+  budgetCents Int // client's offer/budget (per job or per hour)
+  durationMin Int? // estimated duration in minutes
+  scheduledAt DateTime?
+  flexible    Boolean   @default(true)
+
+  status String @default("OPEN")
+  // OPEN -> BOOKED -> IN_PROGRESS -> DONE_BY_PROVIDER -> COMPLETED
+  //   \-> CANCELLED           \-> DISPUTED
+
+  // PUBLIC: in the feed, any provider may offer.
+  // DIRECT: a booking request aimed at one provider — never listed, never
+  // broadcast; only that provider can see it, and their confirmation books
+  // it (holding escrow from the client, who consented to that at request
+  // time). The Airbnb request-to-book shape, on our escrow rails.
+  visibility       String  @default("PUBLIC")
+  directProviderId String?
+
+  assignedProviderId String?
+  acceptedOfferId    String?   @unique
+  agreedPriceCents   Int?
+  takeRateBps        Int? // frozen at booking time
+  escrowHeld         Boolean   @default(false)
+  completedAt        DateTime?
+
+  // Auto-release clock. A provider must not be able to lose a week's pay
+  // because a client forgot to press one button, so escrow releases on its
+  // own after AUTO_RELEASE_HOURS unless somebody disputes.
+  doneAt          DateTime? // set when the provider marks the work done
+  autoReleaseAt   DateTime? // when escrow releases without client action
+  releaseWarnedAt DateTime? // the "confirm soon" nudge was sent
+  autoReleased    Boolean   @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  client    User          @relation("JobClient", fields: [clientId], references: [id], onDelete: Cascade)
+  provider  User?         @relation("JobProvider", fields: [assignedProviderId], references: [id])
+  category  Category      @relation(fields: [categoryId], references: [id])
+  offers    Offer[]
+  messages  Message[]
+  reviews   Review[]
+  ledger    LedgerEntry[]
+  disputes  Dispute[]
+  checkIns  JobCheckIn[]
+  photos    JobPhoto[]
+  sosAlerts SosAlert[]
+
+  @@index([status, regionCode, cityCode])
+  @@index([clientId])
+  @@index([assignedProviderId])
+  @@index([categoryId, status])
+  @@index([status, autoReleaseAt])
+  @@index([directProviderId, status])
+}
+
+model Offer {
+  id         String @id @default(cuid())
+  jobId      String
+  providerId String
+  priceCents Int
+  message    String
+  status     String @default("PENDING") // PENDING | ACCEPTED | DECLINED | WITHDRAWN
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  job      Job  @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  provider User @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, providerId])
+  @@index([providerId])
+}
+
+model Message {
+  id          String   @id @default(cuid())
+  jobId       String
+  senderId    String
+  recipientId String
+  body        String // masked body — the ONLY thing ever shown
+  rawFlagged  Boolean  @default(false) // true if contact info was detected & masked
+  createdAt   DateTime @default(now())
+
+  job       Job  @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  sender    User @relation("MsgSender", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient User @relation("MsgRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([jobId, createdAt])
+  @@index([recipientId])
+}
+
+model Review {
+  id      String  @id @default(cuid())
+  jobId   String
+  raterId String
+  rateeId String
+  rating  Int // 1..5
+  comment String?
+
+  createdAt DateTime @default(now())
+
+  job   Job  @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  rater User @relation("ReviewRater", fields: [raterId], references: [id], onDelete: Cascade)
+  ratee User @relation("ReviewRatee", fields: [rateeId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, raterId])
+  @@index([rateeId])
+}
+
+// Double-entry-lite money ledger. Balance = sum(amountCents) per user.
+// Escrow is modeled as money leaving the client's balance into a job hold,
+// then splitting into provider payout + platform commission on release.
+model LedgerEntry {
+  id          String   @id @default(cuid())
+  userId      String? // null => platform account
+  jobId       String?
+  type        String
+  // TOPUP | ESCROW_HOLD | ESCROW_RELEASE_PAYOUT | ESCROW_REFUND |
+  // COMMISSION | PAYOUT_CASHOUT | ADJUSTMENT
+  amountCents Int // signed; positive = credit to user balance
+  note        String?
+  createdAt   DateTime @default(now())
+
+  // Financial records must survive account removal — never cascade-delete
+  // money history. Account erasure (DPA) anonymizes the user row instead.
+  user User? @relation(fields: [userId], references: [id], onDelete: Restrict)
+  job  Job?  @relation(fields: [jobId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([jobId])
+  @@index([type])
+}
+
+model PayoutRequest {
+  id          String    @id @default(cuid())
+  userId      String
+  amountCents Int
+  channel     String // GCASH | MAYA | BANK
+  accountRef  String // e.g. GCash number — stored masked except last 4
+  status      String    @default("PENDING") // PENDING | PAID | REJECTED
+  processedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([status])
+  @@index([userId])
+}
+
+model KycSubmission {
+  id          String    @id @default(cuid())
+  userId      String
+  level       Int // 2 = gov ID, 3 = NBI/police clearance
+  docType     String // PHILSYS | DRIVERS_LICENSE | UMID | PASSPORT | NBI | POLICE
+  idLastFour  String? // never store the full ID number
+  docRef      String? // storage key for the uploaded image — NEVER a public URL
+  docMime     String?
+  docBytes    Int?
+  docPurgedAt DateTime? // set when the image is deleted post-decision (DPA minimization)
+  status      String    @default("PENDING") // PENDING | APPROVED | REJECTED
+  reviewerId  String?
+  notes       String?
+  reviewedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  user     User  @relation("KycOwner", fields: [userId], references: [id], onDelete: Cascade)
+  reviewer User? @relation("KycReviewer", fields: [reviewerId], references: [id])
+
+  @@index([status])
+  @@index([userId])
+}
+
+model Report {
+  id         String   @id @default(cuid())
+  reporterId String
+  targetId   String
+  jobId      String?
+  reason     String // SCAM | HARASSMENT | NO_SHOW | OFF_PLATFORM | UNSAFE | OTHER
+  details    String?
+  status     String   @default("OPEN") // OPEN | RESOLVED | DISMISSED
+  createdAt  DateTime @default(now())
+
+  reporter User @relation("ReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  target   User @relation("ReportTarget", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([targetId])
+}
+
+model Dispute {
+  id         String    @id @default(cuid())
+  jobId      String
+  openedById String
+  reason     String
+  resolution String? // REFUND_CLIENT | PAY_PROVIDER | SPLIT
+  status     String    @default("OPEN") // OPEN | RESOLVED
+  resolvedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String
+  targetType String?
+  targetId   String?
+  meta       String? // JSON
+  ip         String?
+  createdAt  DateTime @default(now())
+
+  @@index([actorId, createdAt])
+  @@index([action])
+}
+
+// In-app notifications. Deliberately denormalized (title/body stored at
+// write time) so the feed renders from one indexed query and stays correct
+// even if the underlying job is later edited or removed.
+model Notification {
+  id     String  @id @default(cuid())
+  userId String
+  type   String
+  // OFFER_RECEIVED | OFFER_ACCEPTED | OFFER_DECLINED | JOB_STARTED |
+  // JOB_DONE | JOB_COMPLETED | JOB_CANCELLED | MESSAGE | DISPUTE_OPENED |
+  // DISPUTE_RESOLVED | KYC_APPROVED | KYC_REJECTED | PAYOUT_PAID |
+  // PAYOUT_REJECTED | PAYMENT_RECEIVED
+  title  String
+  body   String
+  href   String? // where tapping it should go
+  jobId  String?
+
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+}
+
+// Someone the user chooses to alert if they raise an SOS. Stored so a
+// provider heading to a stranger's house always has a person who knows.
+model TrustedContact {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  phone     String // canonical +639XXXXXXXXX
+  relation  String? // "Asawa", "Kapatid", "Kaibigan"
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// Arrival / departure record for an active booking. Gives both sides a
+// timestamped trail, and gives support something factual in a dispute.
+model JobCheckIn {
+  id     String  @id @default(cuid())
+  jobId  String
+  userId String
+  kind   String // ARRIVED | LEFT
+  lat    Float?
+  lng    Float?
+  note   String?
+
+  createdAt DateTime @default(now())
+
+  job  Job  @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([jobId, createdAt])
+}
+
+// A panic alert. Never rate-limited into uselessness: the record is always
+// written. Resolution is manual and human.
+model SosAlert {
+  id              String    @id @default(cuid())
+  userId          String
+  jobId           String?
+  lat             Float?
+  lng             Float?
+  note            String?
+  // How many trusted contacts we actually reached, for the incident file
+  alertedContacts Int       @default(0)
+  status          String    @default("OPEN") // OPEN | ACKNOWLEDGED | RESOLVED
+  handlerId       String?
+  resolution      String?
+  resolvedAt      DateTime?
+
+  createdAt DateTime @default(now())
+
+  user    User  @relation("SosRaiser", fields: [userId], references: [id], onDelete: Cascade)
+  handler User? @relation("SosResolver", fields: [handlerId], references: [id])
+  job     Job?  @relation(fields: [jobId], references: [id])
+
+  @@index([status, createdAt])
+  @@index([userId])
+}
+
+/// Evidence photos on a booking. Disputes are otherwise one person's word
+/// against another's — a photo of the room before and after settles most of
+/// them in seconds. Stored exactly like ID documents (private store,
+/// unguessable key, no public URL) because a photo of somebody's home is
+/// personal data even when it is only a pile of laundry.
+model JobPhoto {
+  id         String    @id @default(cuid())
+  jobId      String
+  uploaderId String
+  kind       String // BEFORE | AFTER | ISSUE
+  storageKey String
+  mime       String
+  bytes      Int
+  caption    String?
+  purgedAt   DateTime? // set when the bytes are deleted after the dispute window
+
+  createdAt DateTime @default(now())
+
+  job      Job  @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  uploader User @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@index([uploaderId])
+}
+
+/// A verifiable proof-of-income statement — the "Patunay ng Kita".
+///
+/// The people this platform serves cannot prove income to a bank, a
+/// landlord, or an embassy, which locks them out of loans, leases and visas
+/// no matter how much they actually earn. Every completed job here is a
+/// ledger row; this turns that ledger into a document a loan officer can
+/// verify in ten seconds by entering a code.
+///
+/// Totals are SNAPSHOTTED at generation, not recomputed at verification:
+/// what the provider handed the bank must be exactly what the bank sees,
+/// even if support later adjusts something. The code is unguessable, the
+/// statement expires, and the provider can revoke it.
+model EarningsStatement {
+  id               String    @id @default(cuid())
+  providerId       String
+  code             String    @unique
+  periodFrom       DateTime
+  periodTo         DateTime
+  totalPayoutCents Int
+  jobsCount        Int
+  monthlyJson      String // [{ month: "2026-05", payoutCents, jobs }]
+  createdAt        DateTime  @default(now())
+  expiresAt        DateTime
+  revokedAt        DateTime?
+
+  provider User @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@index([providerId])
+}

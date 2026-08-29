@@ -1,0 +1,105 @@
+name: HanapGawa CI
+
+on:
+  push:
+    branches: [main]
+    paths: ["hanapgawa/**", ".github/workflows/hanapgawa-ci.yml"]
+  pull_request:
+    paths: ["hanapgawa/**", ".github/workflows/hanapgawa-ci.yml"]
+
+# A newer push to the same branch supersedes an in-flight run.
+concurrency:
+  group: hanapgawa-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: hanapgawa
+
+jobs:
+  verify:
+    name: Typecheck, test, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      # CI uses the SQLite dev target; production runs Postgres with the same schema.
+      DATABASE_URL: "file:./ci.db"
+      # Not a secret — CI never serves real traffic, but the app refuses to
+      # boot in production without a strong value, so keep this NODE_ENV-safe.
+      SESSION_SECRET: "ci-only-secret-not-used-in-production-0123456789abcdef"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: hanapgawa/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Create database and seed
+        run: |
+          npx prisma db push --skip-generate
+          npm run db:seed
+
+      - name: Production build
+        run: npx next build
+
+      - name: Smoke-test the built server
+        run: |
+          npx next start -p 3000 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID 2>/dev/null || true' EXIT
+
+          # Wait for readiness rather than sleeping a fixed amount.
+          for i in $(seq 1 30); do
+            if curl -fsS -o /dev/null http://localhost:3000/; then break; fi
+            if [ "$i" = "30" ]; then echo "server never came up"; exit 1; fi
+            sleep 2
+          done
+
+          echo "→ landing page"
+          curl -fsS -o /dev/null -w '  %{http_code}\n' http://localhost:3000/
+
+          echo "→ categories API returns seeded rows"
+          curl -fsS http://localhost:3000/api/categories | grep -q '"slug":"laundry"'
+
+          echo "→ open job feed responds"
+          curl -fsS -o /dev/null -w '  %{http_code}\n' 'http://localhost:3000/api/jobs?region=13'
+
+          echo "→ protected route rejects anonymous callers"
+          code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/api/notifications)
+          test "$code" = "401" || { echo "expected 401, got $code"; exit 1; }
+
+          echo "→ admin route rejects anonymous callers"
+          code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/api/admin/overview)
+          test "$code" = "401" || { echo "expected 401, got $code"; exit 1; }
+
+          echo "→ escrow sweep refuses to run without a scheduler secret"
+          # CRON_SECRET is intentionally unset for this job, so the endpoint
+          # must fail closed. A 200 here would mean anyone on the internet
+          # could release every held escrow.
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:3000/api/cron/auto-release)
+          test "$code" = "503" || { echo "expected 503, got $code"; exit 1; }
+
+          echo "→ manifest is served for install"
+          curl -fsS http://localhost:3000/manifest.webmanifest | grep -q '"display":"standalone"'
+
+          echo "→ service worker and offline page are reachable"
+          curl -fsS -o /dev/null http://localhost:3000/sw.js
+          curl -fsS -o /dev/null http://localhost:3000/offline.html
+
+          echo "all smoke checks passed"
