@@ -89,20 +89,21 @@ function JobsFeed() {
       {/* Filters */}
       <Card className="space-y-3">
         <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 sm:grid-cols-4">
-          <Select value={region} onChange={(e) => { setRegion(e.target.value); setCity(""); }} className="w-full">
+          <Select aria-label={t("Region", "Region")} value={region} onChange={(e) => { setRegion(e.target.value); setCity(""); }} className="w-full">
             <option value="">{t("Lahat ng region", "All regions")}</option>
             {REGIONS.map((r) => <option key={r.code} value={r.code}>{r.short}</option>)}
           </Select>
-          <Select value={city} onChange={(e) => setCity(e.target.value)} disabled={!region}>
+          <Select aria-label={t("City", "City")} value={city} onChange={(e) => setCity(e.target.value)} disabled={!region}>
             <option value="">{t("Lahat ng city", "All cities")}</option>
             {citiesOfRegion(region).map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
           </Select>
-          <Select value={category} onChange={(e) => setCategory(e.target.value)}>
+          <Select aria-label={t("Kategorya", "Category")} value={category} onChange={(e) => setCategory(e.target.value)}>
             <option value="">{t("Lahat ng kategorya", "All categories")}</option>
             {categories.map((c) => <option key={c.id} value={c.id}>{c.icon} {catName(lang, c)}</option>)}
           </Select>
           <input
             className="min-h-12 rounded-xl border border-stone-300 px-4 text-base"
+            aria-label={t("Maghanap", "Search")}
             placeholder={t("Maghanap… (hal. labada)", "Search… (e.g. laundry)")}
             value={q}
             onChange={(e) => setQ(e.target.value)}
@@ -176,7 +177,7 @@ function JobsFeed() {
                   <div className="flex items-start gap-3">
                     <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-stone-100 text-2xl">{j.category.icon}</span>
                     <div>
-                      <h3 className="font-bold leading-snug">{j.title}</h3>
+                      <h2 className="font-bold leading-snug">{j.title}</h2>
                       <p className="mt-0.5 line-clamp-2 text-sm text-gray-600">{j.description}</p>
                       <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-500">
                         <Badge tone="brand">{catName(lang, j.category)}</Badge>

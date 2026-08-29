@@ -58,15 +58,15 @@ export default function ProvidersPage() {
       <h1 className="text-xl font-bold sm:text-2xl">{t("Mga Service Provider", "Service Providers")}</h1>
       <Card>
         <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 sm:grid-cols-3">
-          <Select value={region} onChange={(e) => { setRegion(e.target.value); setCity(""); }}>
+          <Select aria-label={t("Region", "Region")} value={region} onChange={(e) => { setRegion(e.target.value); setCity(""); }}>
             <option value="">{t("Lahat ng region", "All regions")}</option>
             {REGIONS.map((r) => <option key={r.code} value={r.code}>{r.short}</option>)}
           </Select>
-          <Select value={city} onChange={(e) => setCity(e.target.value)} disabled={!region}>
+          <Select aria-label={t("City", "City")} value={city} onChange={(e) => setCity(e.target.value)} disabled={!region}>
             <option value="">{t("Lahat ng city", "All cities")}</option>
             {citiesOfRegion(region).map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
           </Select>
-          <Select value={category} onChange={(e) => setCategory(e.target.value)}>
+          <Select aria-label={t("Serbisyo", "Service")} value={category} onChange={(e) => setCategory(e.target.value)}>
             <option value="">{t("Lahat ng serbisyo", "All services")}</option>
             {categories.map((c) => <option key={c.id} value={c.id}>{c.icon} {catName(lang, c)}</option>)}
           </Select>
@@ -102,7 +102,7 @@ export default function ProvidersPage() {
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex min-w-0 items-center gap-2">
                     <Avatar photoUrl={p.photoUrl} firstName={p.firstName} lastInitial={p.lastInitial} size={40} />
-                    <h3 className="truncate font-bold">{p.firstName} {p.lastInitial}</h3>
+                    <h2 className="truncate font-bold">{p.firstName} {p.lastInitial}</h2>
                   </div>
                   <KycBadge level={p.kycLevel} />
                 </div>
