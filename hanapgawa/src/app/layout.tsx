@@ -81,7 +81,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <p className="font-semibold text-gray-700">HanapGawa</p>
             <p className="mt-1">{tr(lang, "Ligtas na trabaho, ligtas na bayaran.", "Safe work, safe payments.")}</p>
             <p className="mt-2 flex flex-wrap justify-center gap-x-4 gap-y-1">
-              <a href="/safety" className="underline hover:text-brand-800">{tr(lang, "Safety", "Safety")}</a>
+              <a href="/help" className="underline hover:text-brand-800">{tr(lang, "Tulong / FAQ", "Help / FAQ")}</a>
+              <a href="/safety" className="underline hover:text-brand-800">Safety</a>
               <a href="/terms" className="underline hover:text-brand-800">Terms of Service</a>
               <a href="/privacy" className="underline hover:text-brand-800">Privacy Notice</a>
             </p>

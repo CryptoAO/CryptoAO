@@ -2,6 +2,10 @@ import { verifyStatement } from "@/lib/earnings";
 
 export const dynamic = "force-dynamic";
 
+// Statements are reachable only by their unguessable code — search engines
+// must never turn someone's income into a query result.
+export const metadata = { robots: { index: false, follow: false } };
+
 // The page a loan officer, landlord, or embassy clerk sees when they enter
 // the code a provider handed them. It must read as a document, not an app:
 // no navigation into the product, no marketing, nothing to tap — just the
